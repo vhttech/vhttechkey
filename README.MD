@@ -1,20 +1,20 @@
-# vime — Vietnamese Input Method Engine
+# VHTTechKey — Bộ gõ tiếng Việt
 
-A modern, compositor-aware Vietnamese IME for Linux, written in Rust.
+Bộ gõ tiếng Việt hiện đại, nhận biết compositor, dành cho Linux — viết bằng Rust.
 
-## Features
+## Tính năng
 
-- **Three built-in input methods**: Telex, VNI, VIQR — switch without restarting
-- **Custom rule sets**: define your own key → character mappings in TOML
-- **Named profiles**: create per-language or per-app profiles, export/import as TOML
-- **Real-time configuration**: all changes apply instantly via IPC — no logout required
-- **Wayland-native**: uses `zwp_text_input_v3` with per-compositor quirk workarounds
-- **X11 support**: XIM for legacy apps alongside modern Wayland
-- **IBus and Fcitx5**: plug-in engines for both major Linux IME frameworks
-- **NFC output guaranteed**: all committed text passes through the unicode normalization pipeline
-- **egui settings UI**: visual keyboard heatmap, typing test with NFC analysis, log viewer
+- **Ba kiểu gõ tích hợp**: Telex, VNI, VIQR — chuyển đổi không cần khởi động lại
+- **Bộ quy tắc tùy chỉnh**: định nghĩa ánh xạ phím → ký tự trong TOML
+- **Profile đặt tên**: tạo profile theo ngôn ngữ hoặc ứng dụng, xuất/nhập dạng TOML
+- **Cấu hình thời gian thực**: mọi thay đổi áp dụng ngay qua IPC — không cần đăng xuất
+- **Wayland-native**: dùng `zwp_text_input_v3` kèm workaround theo từng compositor
+- **Hỗ trợ X11**: XIM cho ứng dụng cũ, song song với Wayland hiện đại
+- **IBus và Fcitx5**: engine cắm vào hai framework IME phổ biến trên Linux
+- **Đầu ra NFC đảm bảo**: mọi văn bản commit đều qua pipeline chuẩn hóa Unicode
+- **Giao diện cài đặt egui**: bản đồ nhiệt bàn phím, bài test gõ với phân tích NFC, xem log
 
-## Requirements
+## Yêu cầu
 
 ```bash
 # Debian / Ubuntu
@@ -28,63 +28,63 @@ sudo dnf install \
     wayland-devel wayland-protocols-devel libxcb-devel mesa-libGL-devel
 ```
 
-Rust toolchain (stable) is required — see [docs/contributing.md](docs/contributing.md) for
-the full dependency list, build steps, and optional tools (Miri, fuzz).
+Cần Rust toolchain (stable) — xem [docs/contributing.md](docs/contributing.md) để biết
+đầy đủ phụ thuộc, các bước build và công cụ tùy chọn (Miri, fuzz).
 
-## Quick start
+## Bắt đầu nhanh
 
-Five commands to get typing:
+Năm lệnh để bắt đầu gõ:
 
 ```bash
-# 1. Start the daemon
+# 1. Khởi động daemon
 vi-daemon &
 
-# 2. Set Telex input method
+# 2. Chọn kiểu gõ Telex
 vi-tools set-method telex
 
-# 3. Configure your session (add to ~/.profile)
+# 3. Cấu hình phiên làm việc (thêm vào ~/.profile)
 export GTK_IM_MODULE=ibus
 export QT_IM_MODULE=ibus
 export XMODIFIERS=@im=ibus
 
-# 4. Start the settings UI
+# 4. Mở giao diện cài đặt
 vi-ui &
 
-# 5. Open any text editor and type:
+# 5. Mở trình soạn thảo bất kỳ và gõ thử:
 #    viet nam  →  việt nam
 #    khong     →  không
 #    truong    →  trường
 ```
 
-## Documentation
+## Tài liệu
 
-| Document | Description |
+| Tài liệu | Mô tả |
 |---|---|
-| [docs/architecture.md](docs/architecture.md) | Layered diagram, data flow, crate dependency graph |
-| [docs/unicode-pipeline.md](docs/unicode-pipeline.md) | Why NFC, pipeline steps, common wrong encodings |
-| [docs/wayland-compat.md](docs/wayland-compat.md) | Compositor compatibility table and known quirks |
-| [docs/ibus-fcitx5.md](docs/ibus-fcitx5.md) | IBus/Fcitx5 sequence diagrams (typing, focus, restart) |
-| [docs/troubleshooting.md](docs/troubleshooting.md) | Doubled characters, missing tones, stuck preedit, VS Code/Electron vs Chrome, CPU |
-| [docs/contributing.md](docs/contributing.md) | Build from source, tests, adding input methods, compositor quirks |
-| [docs/verification.md](docs/verification.md) | Release checklist (tests, Miri, fuzz, manual E2E, Valgrind) |
-| [docs/sequence-diagrams.md](docs/sequence-diagrams.md) | Mermaid sequence diagrams: typing, focus-out, restart, method switch |
-| [docs/state-machine.md](docs/state-machine.md) | CompositionEngine state machine diagram and transition table |
+| [docs/architecture.md](docs/architecture.md) | Sơ đồ lớp, luồng dữ liệu, đồ thị phụ thuộc crate |
+| [docs/unicode-pipeline.md](docs/unicode-pipeline.md) | Vì sao dùng NFC, các bước pipeline, lỗi mã hóa thường gặp |
+| [docs/wayland-compat.md](docs/wayland-compat.md) | Bảng tương thích compositor và quirk đã biết |
+| [docs/ibus-fcitx5.md](docs/ibus-fcitx5.md) | Sơ đồ trình tự IBus/Fcitx5 (gõ, focus, khởi động lại) |
+| [docs/troubleshooting.md](docs/troubleshooting.md) | Chữ đôi, mất dấu, preedit kẹt, VS Code/Electron vs Chrome, CPU cao |
+| [docs/contributing.md](docs/contributing.md) | Build từ source, test, thêm kiểu gõ, quirk compositor |
+| [docs/verification.md](docs/verification.md) | Checklist phát hành (test, Miri, fuzz, E2E thủ công, Valgrind) |
+| [docs/sequence-diagrams.md](docs/sequence-diagrams.md) | Sơ đồ trình tự Mermaid: gõ, focus-out, restart, đổi kiểu gõ |
+| [docs/state-machine.md](docs/state-machine.md) | Sơ đồ và bảng chuyển trạng thái CompositionEngine |
 
-## Keyboard shortcuts (default)
+## Phím tắt (mặc định)
 
-| Action | Binding |
+| Thao tác | Phím |
 |---|---|
-| Toggle IME on/off | `Ctrl+Space` |
-| Next profile | `Ctrl+Shift+.` |
-| Previous profile | `Ctrl+Shift+,` |
-| Reset preedit | `Escape` |
+| Bật/tắt IME | `Ctrl+Space` |
+| Profile kế tiếp | `Ctrl+Shift+.` |
+| Profile trước | `Ctrl+Shift+,` |
+| Xóa preedit | `Escape` |
 
-All bindings are configurable in vi-ui → Key Map Editor.
+Mọi phím tắt đều cấu hình được trong vi-ui → Key Map Editor.
 
-## License
+## Giấy phép
 
-This project is licensed under the [GNU General Public License v3.0 or later](LICENSE)
-(GPL-3.0-or-later). See the [LICENSE](LICENSE) file for the full text.
+Dự án được cấp phép theo [GNU General Public License v3.0 hoặc mới hơn](LICENSE)
+(GPL-3.0-or-later). Xem file [LICENSE](LICENSE) để đọc toàn văn.
 
-Bundled third-party assets may use other licenses (for example, the Hack font in
-`data/fonts/Hack/` and the Vietnamese dictionary in `data/dictionaries/`).
+Tài nguyên bên thứ ba đi kèm có thể dùng giấy phép khác (ví dụ font Hack trong
+`data/fonts/Hack/` và từ điển tiếng Việt trong `data/dictionaries/`).

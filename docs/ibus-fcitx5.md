@@ -1,21 +1,20 @@
-# IBus and Fcitx5 Integration
+# Tích hợp IBus và Fcitx5
 
-## Normal typing flow
+## Luồng gõ bình thường
 
-> **IBus rendering**: vhttechkey attaches `IBUS_ATTR_TYPE_NONE` attributes (no-underline mode),
-> so Gtk/Qt usually draw **no** composition underline even though Chromium may still
-> decorate inline preedit differently.
+> **Hiển thị IBus**: VHTTechKey gắn thuộc tính `IBUS_ATTR_TYPE_NONE` (chế độ không gạch chân),
+> nên Gtk/Qt thường **không** vẽ gạch chân composition dù Chromium vẫn có thể
+> trang trí preedit inline khác.
 
-If **VS Code or another Electron app** loses the whole word right after commit while
-**Chrome or Telegram** behave normally, update to a vime build that emits
-**`CommitText` before `HidePreeditText`** on IBus (vhttechkey commit order).
-If the problem persists, it is usually a **different IME surface** (Wayland vs
-XWayland, Qt vs Electron), not the NFC commit step in the diagram below — see the
-**Electron (VS Code, …)** section in [docs/troubleshooting.md](troubleshooting.md).
+Nếu **VS Code hoặc app Electron khác** mất cả từ ngay sau commit trong khi
+**Chrome hoặc Telegram** vẫn bình thường, hãy cập nhật bản VHTTechKey phát
+**`CommitText` trước `HidePreeditText`** trên IBus (thứ tự commit của VHTTechKey).
+Nếu vẫn lỗi, thường do **bề mặt IME khác nhau** (Wayland vs XWayland, Qt vs Electron),
+không phải bước commit NFC trong sơ đồ dưới — xem mục
+**Electron (VS Code, …)** trong [docs/troubleshooting.md](troubleshooting.md).
 
-The sequence below shows what happens when the user types `"viet"` using the
-Telex input method.  The preedit accumulates until the syllable is complete,
-then commits `"việt"` in NFC.
+Sơ đồ dưới cho thấy điều gì xảy ra khi người dùng gõ `"viet"` bằng kiểu Telex.
+Preedit tích lũy đến khi âm tiết hoàn chỉnh, rồi commit `"việt"` ở dạng NFC.
 
 ### IBus
 
@@ -83,9 +82,9 @@ User          Application      Fcitx5 Daemon       vi-daemon (Fcitx5 addon)
  │  "việt" in doc │                  │                        │
 ```
 
-## Focus switch during composition
+## Chuyển focus khi đang soạn
 
-If the user clicks another window while `"vie"` is in preedit:
+Nếu người dùng bấm cửa sổ khác khi preedit còn `"vie"`:
 
 ```
 User          App A           IBus / Fcitx5       vi-daemon
@@ -104,12 +103,12 @@ User          App A           IBus / Fcitx5       vi-daemon
  │                │                  │                 │ Fresh state for App B
 ```
 
-> **Policy**: on `FocusOut` vime commits any in-progress preedit as raw ASCII
-> rather than discarding it, to avoid silently losing keystrokes.
+> **Chính sách**: khi `FocusOut`, VHTTechKey commit mọi preedit đang soạn dưới dạng ASCII thô
+> thay vì bỏ im, để tránh mất phím im lặng.
 
-## Daemon restart recovery
+## Phục hồi sau khởi động lại daemon
 
-If vi-daemon crashes or is restarted while typing:
+Nếu vi-daemon crash hoặc được khởi động lại khi đang gõ:
 
 ```
 App           IBus / Fcitx5       vi-daemon (old)    vi-daemon (new)
@@ -129,14 +128,14 @@ App           IBus / Fcitx5       vi-daemon (old)    vi-daemon (new)
  │◄─────────────────┤                                       │
 ```
 
-The `watchdog.rs` module in vi-daemon monitors the engine subprocess and
-restarts it within 500 ms.  The IME framework (IBus / Fcitx5) is unaware of
-the restart; it sees only a brief gap in `ProcessKeyEvent` responses.
+Module `watchdog.rs` trong vi-daemon giám sát subprocess engine và
+khởi động lại trong vòng 500 ms. Framework IME (IBus / Fcitx5) không biết
+việc restart; chỉ thấy khoảng trống ngắn trong phản hồi `ProcessKeyEvent`.
 
-## PlantUML source
+## Nguồn PlantUML
 
-The diagrams above can be rendered with PlantUML for visual presentation.
-Save the following as `ibus-normal.puml`:
+Các sơ đồ trên có thể render bằng PlantUML để trình bày trực quan.
+Lưu nội dung sau thành `ibus-normal.puml`:
 
 ```plantuml
 @startuml

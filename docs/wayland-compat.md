@@ -1,50 +1,50 @@
-# Wayland Compatibility
+# Tương thích Wayland
 
-vime uses the **zwp_text_input_v3** protocol for Wayland input method support
-(`vi-wayland` crate).  Compositor behaviour varies; this table documents known
-quirks and their workarounds.
+VHTTechKey dùng giao thức **zwp_text_input_v3** cho hỗ trợ bộ gõ trên Wayland
+(crate `vi-wayland`). Hành vi compositor khác nhau; bảng này ghi quirk đã biết
+và cách xử lý.
 
-## Compositor compatibility table
+## Bảng tương thích compositor
 
-| Compositor | Protocol Version | Known Quirks | Workaround | Test Status |
+| Compositor | Phiên bản giao thức | Quirk đã biết | Cách xử lý | Trạng thái test |
 |---|---|---|---|---|
-| **GNOME Shell** (Mutter ≥ 44) | text-input-v3 | `commit_string` events are ignored if no `preedit_string` was sent in the same serial; sends spurious `leave` on window raise | Always send an empty `preedit_string("")` before `commit_string`; re-send `activate` on `enter` after focus restore | ✅ Passing |
-| **KDE Plasma** (KWin ≥ 5.27) | text-input-v3 | Content-type hints not propagated to the IM; `surrounding_text` offset is byte-based, not char-based | Ignore content-type; treat all offsets as byte offsets and convert to char boundaries | ✅ Passing |
-| **Sway** (wlroots ≥ 0.17) | text-input-v3 | Protocol-correct; no known quirks | None required | ✅ Passing |
-| **Hyprland** (≥ 0.35) | text-input-v3 | `done` event arrives before `preedit_string` update in rapid typing; cursor rect occasionally reported at (0,0) | Buffer the `preedit_string` update; ignore cursor rect if both coordinates are zero | ✅ Passing |
-| **river** (wlroots ≥ 0.17) | text-input-v3 | Same behaviour as Sway | None required | ✅ Passing |
-| **Weston** (≥ 12.0) | text-input-v3 | Reference implementation; strict protocol ordering required | Follow protocol ordering exactly | ✅ Passing |
-| **labwc** (≥ 0.7) | text-input-v3 | No protocol issues; IME popup positioning not supported | Suppress candidate window positioning | ⚠ Partial |
-| **Mir** (Ubuntu 23.10+) | text-input-v3 | `surrounding_text` not sent | Operate without surrounding-text context | ⚠ Partial |
-| **GNOME Shell** (Mutter 42–43) | text-input-v3 early | `text_change_cause` enum values differ | Map enum values to the v3-final equivalents | 🔶 Legacy |
-| **Enlightenment** | text-input-v1 | v1 only; no v3 support | Falls back to X11 backend via XWayland | ❌ No native |
-| **Gamescope** | none | No IME protocol support | No text input support in gaming mode | ❌ N/A |
+| **GNOME Shell** (Mutter ≥ 44) | text-input-v3 | `commit_string` bị bỏ qua nếu không có `preedit_string` cùng serial; gửi `leave` thừa khi raise cửa sổ | Luôn gửi `preedit_string("")` trước `commit_string`; gửi lại `activate` trên `enter` sau khi restore focus | ✅ Pass |
+| **KDE Plasma** (KWin ≥ 5.27) | text-input-v3 | Gợi ý content-type không truyền tới IM; offset `surrounding_text` theo byte, không theo ký tự | Bỏ qua content-type; coi mọi offset là byte và chuyển sang ranh giới ký tự | ✅ Pass |
+| **Sway** (wlroots ≥ 0.17) | text-input-v3 | Đúng giao thức; không quirk | Không cần | ✅ Pass |
+| **Hyprland** (≥ 0.35) | text-input-v3 | Sự kiện `done` tới trước cập nhật `preedit_string` khi gõ nhanh; cursor rect đôi khi (0,0) | Buffer cập nhật `preedit_string`; bỏ qua cursor rect nếu cả hai tọa độ bằng 0 | ✅ Pass |
+| **river** (wlroots ≥ 0.17) | text-input-v3 | Giống Sway | Không cần | ✅ Pass |
+| **Weston** (≥ 12.0) | text-input-v3 | Triển khai tham chiếu; cần thứ tự sự kiện giao thức chặt | Tuân thủ thứ tự giao thức chính xác | ✅ Pass |
+| **labwc** (≥ 0.7) | text-input-v3 | Không lỗi giao thức; không hỗ trợ định vị popup IME | Tắt định vị cửa sổ candidate | ⚠ Một phần |
+| **Mir** (Ubuntu 23.10+) | text-input-v3 | Không gửi `surrounding_text` | Hoạt động không có ngữ cảnh surrounding-text | ⚠ Một phần |
+| **GNOME Shell** (Mutter 42–43) | text-input-v3 sớm | Giá trị enum `text_change_cause` khác | Ánh xạ enum sang tương đương v3-final | 🔶 Legacy |
+| **Enlightenment** | text-input-v1 | Chỉ v1; không hỗ trợ v3 | Fallback backend X11 qua XWayland | ❌ Không native |
+| **Gamescope** | none | Không hỗ trợ giao thức IME | Không hỗ trợ nhập văn bản ở chế độ game | ❌ N/A |
 
-### Status legend
+### Chú giải trạng thái
 
-| Symbol | Meaning |
+| Ký hiệu | Ý nghĩa |
 |---|---|
-| ✅ Passing | All manual and automated tests pass |
-| ⚠ Partial | Core typing works; some features (candidate positioning, surrounding text) degraded |
-| 🔶 Legacy | Workaround in place; only tested on distro LTS with older compositor |
-| ❌ No native | Falls back to X11 backend or is unsupported |
+| ✅ Pass | Mọi test thủ công và tự động pass |
+| ⚠ Một phần | Gõ cơ bản ổn; một số tính năng (định vị candidate, surrounding text) suy giảm |
+| 🔶 Legacy | Có workaround; chỉ test trên distro LTS với compositor cũ |
+| ❌ Không native | Fallback backend X11 hoặc không hỗ trợ |
 
-## Testing a compositor
+## Test compositor
 
-To verify vime works with a compositor, run the manual test suite:
+Để xác minh VHTTechKey chạy với compositor, chạy bộ test thủ công:
 
 ```bash
-# 1. Start vi-daemon in the Wayland session
+# 1. Khởi động vi-daemon trong phiên Wayland
 vi-daemon &
 
-# 2. Open a text editor (e.g. foot terminal + nano)
+# 2. Mở trình soạn thảo (ví dụ foot terminal + nano)
 foot nano /tmp/test.txt
 
-# 3. Type the Telex test string and verify output
-#    Type: viet nam  → expect: việt nam
-#    Type: khong  → expect: không
+# 3. Gõ chuỗi test Telex và xác minh kết quả
+#    Gõ: viet nam  → mong đợi: việt nam
+#    Gõ: khong  → mong đợi: không
 
-# 4. Check NFC
+# 4. Kiểm tra NFC
 python3 -c "
 import unicodedata, sys
 text = open('/tmp/test.txt').read()
@@ -53,31 +53,31 @@ print('NFD chars:', bad if bad else 'none — all NFC')
 "
 ```
 
-## Compositor quirks
+## Quirk compositor
 
-The table below documents the quirks detected by `crates/vi-wayland/src/quirks.rs` and
-the mitigation applied at runtime.  Detection is performed by inspecting Wayland globals
-advertised in the registry; an environment variable `VIME_COMPOSITOR_PROFILE` overrides
-the heuristic for debugging.
+Bảng dưới ghi quirk được phát hiện bởi `crates/vi-wayland/src/quirks.rs` và
+biện pháp giảm thiểu áp dụng lúc runtime. Phát hiện bằng cách kiểm tra global
+Wayland quảng bá trong registry; biến môi trường `VIME_COMPOSITOR_PROFILE` ghi đè
+heuristic để debug.
 
-| Compositor | Quirk (`CompositorQuirks` flag) | Detection signal | Mitigation |
+| Compositor | Quirk (cờ `CompositorQuirks`) | Tín hiệu phát hiện | Biện pháp |
 |---|---|---|---|
-| **GNOME Shell** (Mutter ≥ 44) / **Cinnamon** | `empty_preedit_before_commit` — `commit_string` is silently dropped when no `preedit_string` was sent in the same serial | `zwp_text_input_manager_v3` present, `kde_output_management_v2` absent (GNOME); `cinnamon_shell_v1` global (Cinnamon fast-path) | Always send `preedit_string("")` immediately before `commit_string` |
-| **KDE Plasma** (KWin ≥ 5.27) | `snap_cursor_to_char_boundary` — `surrounding_text` byte offset may bisect a multi-byte codepoint | `kde_output_management_v2` global | Snap byte offset to nearest UTF-8 character boundary via `snap_to_char_boundary()` |
-| **Hyprland** (≥ 0.35) / **labwc** | `buffer_preedit_updates` — socket flush deferred on rapid preedit updates | `hyprland_global_shortcuts_manager_v1` (Hyprland); `labwc_options_v1` (labwc fast-path, ≥ 0.7) | Batch preedit socket writes; defer flush until stable |
-| **labwc** (≥ 0.7) | `suppress_candidate_position` — IME popup positioning not supported | `labwc_options_v1` global | Omit candidate-window positioning calls entirely |
-| **Niri** | `niri_dual_protocol` — `zwp_input_method_v2` and `zwp_text_input_v3` lifecycles must be co-managed | `niri_ipc` global (fast-path) | Manage both protocol enable/disable sequences together |
-| **Mir** (Ubuntu 23.10+) | `no_surrounding_text` — surrounding-text events are not delivered | `mir_shell` global | Operate without surrounding-text context |
-| **XFCE** (xfwm4-wayland) | `delay_preedit_clear` — preedit clear must be delayed one event-loop roundtrip after `commit_string` | `wp_viewporter` present; `kde_output_management_v2`, `hyprland_global_shortcuts_manager_v1`, `wp_cursor_shape_manager_v1` absent | Delay preedit clear by one roundtrip |
-| **LXQt** (Openbox-Wayland) | `virtual_keyboard_fallback` — no `zwp_input_method_manager_v2` present | Modern compositor globals without `zwp_text_input_manager_v3` or `zwp_input_method_manager_v2`; `wl_compositor` version ≥ 4 | Fall back to virtual-keyboard protocol |
-| **Weston** (≥ 12.0) | None — reference implementation; strict protocol event ordering required | `weston_screenshooter` global | Follow protocol ordering exactly; no extra quirk flags needed |
-| **Sway** / **River** (wlroots ≥ 0.17) | None — protocol-correct; serial counters must not overflow silently | `zwlr_output_manager_v1` without Hyprland globals (Sway); `river_control_v1` (River) | Use `wrapping_add` for serial counters |
+| **GNOME Shell** (Mutter ≥ 44) / **Cinnamon** | `empty_preedit_before_commit` — `commit_string` bị bỏ im lặng khi không có `preedit_string` cùng serial | Có `zwp_text_input_manager_v3`, không có `kde_output_management_v2` (GNOME); global `cinnamon_shell_v1` (Cinnamon fast-path) | Luôn gửi `preedit_string("")` ngay trước `commit_string` |
+| **KDE Plasma** (KWin ≥ 5.27) | `snap_cursor_to_char_boundary` — offset byte `surrounding_text` có thể cắt giữa codepoint nhiều byte | Global `kde_output_management_v2` | Snap offset byte về ranh giới ký tự UTF-8 gần nhất qua `snap_to_char_boundary()` |
+| **Hyprland** (≥ 0.35) / **labwc** | `buffer_preedit_updates` — flush socket bị trì hoãn khi cập nhật preedit nhanh | `hyprland_global_shortcuts_manager_v1` (Hyprland); `labwc_options_v1` (labwc fast-path, ≥ 0.7) | Gom ghi socket preedit; trì hoãn flush đến khi ổn định |
+| **labwc** (≥ 0.7) | `suppress_candidate_position` — không hỗ trợ định vị popup IME | Global `labwc_options_v1` | Bỏ hoàn toàn lệnh định vị cửa sổ candidate |
+| **Niri** | `niri_dual_protocol` — vòng đời `zwp_input_method_v2` và `zwp_text_input_v3` phải đồng quản lý | Global `niri_ipc` (fast-path) | Quản lý chuỗi enable/disable cả hai giao thức cùng lúc |
+| **Mir** (Ubuntu 23.10+) | `no_surrounding_text` — không gửi sự kiện surrounding-text | Global `mir_shell` | Hoạt động không có ngữ cảnh surrounding-text |
+| **XFCE** (xfwm4-wayland) | `delay_preedit_clear` — xóa preedit phải trì hoãn một vòng event-loop sau `commit_string` | Có `wp_viewporter`; không có `kde_output_management_v2`, `hyprland_global_shortcuts_manager_v1`, `wp_cursor_shape_manager_v1` | Trì hoãn xóa preedit một roundtrip |
+| **LXQt** (Openbox-Wayland) | `virtual_keyboard_fallback` — không có `zwp_input_method_manager_v2` | Global compositor hiện đại nhưng thiếu `zwp_text_input_manager_v3` hoặc `zwp_input_method_manager_v2`; `wl_compositor` version ≥ 4 | Fallback giao thức virtual-keyboard |
+| **Weston** (≥ 12.0) | Không — triển khai tham chiếu; cần thứ tự sự kiện giao thức chặt | Global `weston_screenshooter` | Tuân thủ thứ tự giao thức chính xác; không cần cờ quirk |
+| **Sway** / **River** (wlroots ≥ 0.17) | Không — đúng giao thức; bộ đếm serial không được tràn im lặng | `zwlr_output_manager_v1` không có global Hyprland (Sway); `river_control_v1` (River) | Dùng `wrapping_add` cho bộ đếm serial |
 
-## Adding a new compositor quirk
+## Thêm quirk compositor mới
 
-1. Reproduce the issue in `crates/vi-wayland/tests/integration_test.rs` with a
-   mock compositor (see `tests/fixtures/mock_compositor.rs`).
-2. Add the quirk detection in `crates/vi-wayland/src/lib.rs` behind a
-   `CompositorQuirks` bitflag.
-3. Document it in this table.
-4. Add an entry to `docs/contributing.md` under "Adding a compositor quirk".
+1. Tái hiện lỗi trong `crates/vi-wayland/tests/integration_test.rs` với
+   mock compositor (xem `tests/fixtures/mock_compositor.rs`).
+2. Thêm phát hiện quirk trong `crates/vi-wayland/src/lib.rs` sau
+   bitflag `CompositorQuirks`.
+3. Ghi vào bảng này.
+4. Thêm mục vào `docs/contributing.md` dưới "Thêm quirk compositor".

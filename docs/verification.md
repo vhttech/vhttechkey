@@ -1,45 +1,45 @@
-# Verification Checklist
+# Checklist xác minh
 
-Run these checks before every release.  All items must pass with zero failures,
-zero warnings, and zero crashes.
+Chạy các kiểm tra sau trước mỗi bản phát hành. Mọi mục phải pass với
+không lỗi, không cảnh báo, không crash.
 
 ---
 
-## 1. Automated test suite
+## 1. Bộ test tự động
 
 ```bash
 cargo test --workspace
 ```
 
-**Pass criteria**: 0 test failures, 0 ignored tests regressing from baseline.
+**Tiêu chí pass**: 0 test fail, không có test bị ignore hồi quy so với baseline.
 
 ---
 
-## 2. Clippy — zero warnings
+## 2. Clippy — không cảnh báo
 
 ```bash
 cargo clippy --workspace -- -D warnings
 ```
 
-**Pass criteria**: no `warning:` or `error:` lines in output.
+**Tiêu chí pass**: không có dòng `warning:` hoặc `error:` trong output.
 
 ---
 
-## 3. Miri — memory safety (nightly)
+## 3. Miri — an toàn bộ nhớ (nightly)
 
 ```bash
 cargo +nightly miri test -p vi-core
 ```
 
-**Pass criteria**: `Miri: test result: ok.  N passed; 0 failed` and no
-`error: Undefined Behavior` output.
+**Tiêu chí pass**: `Miri: test result: ok.  N passed; 0 failed` và không có
+output `error: Undefined Behavior`.
 
-Note: Miri does not support I/O-heavy crates (vi-daemon, vi-wayland, etc.).
-Only vi-core (pure logic) is expected to run cleanly under Miri.
+Lưu ý: Miri không hỗ trợ crate I/O nặng (vi-daemon, vi-wayland, v.v.).
+Chỉ vi-core (logic thuần) được kỳ vọng chạy sạch dưới Miri.
 
 ---
 
-## 4. Fuzz — no crashes
+## 4. Fuzz — không crash
 
 ```bash
 cargo fuzz run fuzz_key_sequence  -- -max_total_time=60
@@ -47,21 +47,21 @@ cargo fuzz run fuzz_config        -- -max_total_time=60
 cargo fuzz run fuzz_unicode_pipeline -- -max_total_time=60
 ```
 
-**Pass criteria**: no `CRASH`, `TIMEOUT`, or `OOM` lines; each run ends with
-`Done N runs in 60 second(s)`.
+**Tiêu chí pass**: không có dòng `CRASH`, `TIMEOUT`, hoặc `OOM`; mỗi lần chạy
+kết thúc bằng `Done N runs in 60 second(s)`.
 
 ---
 
-## 5. Manual end-to-end: Telex typing in four environments
+## 5. E2E thủ công: gõ Telex trong bốn môi trường
 
-For each app listed below:
+Với mỗi ứng dụng dưới đây:
 
-1. Ensure vi-daemon is running and the method is set to **Telex**.
-2. Open the app and focus a text field.
-3. Type `viet nam` (9 keystrokes, no special key).
-4. Verify the result reads **`việt nam`** on screen.
+1. Đảm bảo vi-daemon đang chạy và kiểu gõ là **Telex**.
+2. Mở app và focus vào ô văn bản.
+3. Gõ `viet nam` (9 phím, không phím đặc biệt).
+4. Xác minh kết quả trên màn hình là **`việt nam`**.
 
-| App | Backend | Expected result |
+| Ứng dụng | Backend | Kết quả mong đợi |
 |---|---|---|
 | gedit | IBus | `việt nam` |
 | Kate | Fcitx5 | `việt nam` |
@@ -70,9 +70,9 @@ For each app listed below:
 
 ---
 
-## 6. Python NFC verification
+## 6. Xác minh NFC bằng Python
 
-After step 5, check the saved file (use foot/nano output):
+Sau bước 5, kiểm tra file đã lưu (dùng output foot/nano):
 
 ```bash
 python3 -c "
@@ -86,9 +86,9 @@ for ch in text:
 "
 ```
 
-**Pass criteria**: every line reads `NFC`; no `NOT NFC` entries.
+**Tiêu chí pass**: mọi dòng ghi `NFC`; không có mục `NOT NFC`.
 
-Expected output:
+Kết quả mong đợi:
 
 ```
 U+0076  'v'  NFC  LATIN SMALL LETTER V
@@ -103,7 +103,7 @@ U+006D  'm'  NFC  LATIN SMALL LETTER M
 
 ---
 
-## 7. Valgrind — zero memory leaks
+## 7. Valgrind — không rò rỉ bộ nhớ
 
 ```bash
 valgrind \
@@ -113,7 +113,7 @@ valgrind \
   vi-daemon &
 DAEMON_PID=$!
 
-# Send 1000 synthetic key events
+# Gửi 1000 sự kiện phím giả lập
 for i in $(seq 1 1000); do
   echo '{"cmd":"set_method","method":"telex"}' | \
     nc -q1 -U "$XDG_RUNTIME_DIR/vi-daemon.sock" > /dev/null
@@ -123,36 +123,36 @@ kill $DAEMON_PID
 wait $DAEMON_PID
 ```
 
-**Pass criteria**: valgrind exits with code 0 and reports
+**Tiêu chí pass**: valgrind thoát với mã 0 và báo
 `definitely lost: 0 bytes in 0 blocks`.
 
 ---
 
-## 8. UI smoke test — VNI mode
+## 8. Smoke test UI — chế độ VNI
 
-1. Launch `vi-ui`.
-2. Open the **Input Method** panel.
-3. Switch to **VNI** from the dropdown.  Verify the rule summary updates.
-4. Open the **Typing Test** panel.
-5. Type `81 82 83` (space-separated digit sequences) — with VNI active in the
-   system IME, each sequence should produce a Vietnamese character.
-6. The typing test text area should contain `ặ ắ ẳ` (U+1EB7 U+0020 U+1EAF
+1. Khởi chạy `vi-ui`.
+2. Mở panel **Input Method**.
+3. Chuyển sang **VNI** từ dropdown. Xác minh tóm tắt quy tắc cập nhật.
+4. Mở panel **Typing Test**.
+5. Gõ `81 82 83` (chuỗi số cách nhau bằng space) — với VNI bật trong IME hệ thống,
+   mỗi chuỗi phải cho một ký tự tiếng Việt.
+6. Vùng test gõ phải chứa `ặ ắ ẳ` (U+1EB7 U+0020 U+1EAF
    U+0020 U+1EB3).
 
-**Pass criteria**: all three characters display correctly; the NFC analysis
-table shows `✓` for each character and no `U+03xx` combining marks.
+**Tiêu chí pass**: cả ba ký tự hiển thị đúng; bảng phân tích NFC
+hiện `✓` cho mỗi ký tự và không có dấu kết hợp `U+03xx`.
 
 ---
 
-## Sign-off
+## Ký duyệt
 
-| Item | Status | Tester | Date |
+| Mục | Trạng thái | Người test | Ngày |
 |---|---|---|---|
 | 1. `cargo test` | | | |
 | 2. `cargo clippy` | | | |
 | 3. Miri | | | |
 | 4. Fuzz | | | |
-| 5. Manual E2E | | | |
+| 5. E2E thủ công | | | |
 | 6. Python NFC | | | |
 | 7. Valgrind | | | |
-| 8. UI smoke | | | |
+| 8. Smoke test UI | | | |

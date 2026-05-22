@@ -1,37 +1,37 @@
-# Troubleshooting
+# Xử lý sự cố
 
-## Characters appear doubled
+## Chữ bị lặp đôi
 
-**Symptom**: typing `aa` produces `aâ` instead of `â`, or `dd` produces `dđ`.
+**Triệu chứng**: gõ `aa` ra `aâ` thay vì `â`, hoặc `dd` ra `dđ`.
 
-**Causes and fixes**:
+**Nguyên nhân và cách khắc phục**:
 
-1. **Two IMEs running simultaneously** (most common).
-   Both IBus and Fcitx5 are active and each processes the key once.
+1. **Hai IME chạy cùng lúc** (hay gặp nhất).
+   Cả IBus và Fcitx5 đều đang bật, mỗi bên xử lý phím một lần.
    ```bash
-   # Check which IME frameworks are running
+   # Kiểm tra framework IME nào đang chạy
    pgrep -a ibus-daemon
    pgrep -a fcitx5
-   # Stop the one you don't use
-   pkill ibus-daemon  # or pkill fcitx5
+   # Dừng cái bạn không dùng
+   pkill ibus-daemon  # hoặc pkill fcitx5
    ```
 
-2. **`GTK_IM_MODULE` / `QT_IM_MODULE` mismatch**.
-   The app is sending keys to a different IME than vi-daemon is registered with.
+2. **`GTK_IM_MODULE` / `QT_IM_MODULE` không khớp**.
+   Ứng dụng gửi phím tới IME khác với IME mà vi-daemon đăng ký.
    ```bash
    echo $GTK_IM_MODULE $QT_IM_MODULE
-   # Should be either "ibus" or "fcitx5", not both or mixed
+   # Phải là "ibus" hoặc "fcitx5", không trộn lẫn
    ```
 
-3. **XWayland key replay**.
-   On Wayland with XWayland apps, the compositor may replay the key after the
-   IME commits.  Workaround: ensure `XMODIFIERS=@im=ibus` (or fcitx5) is set in
-   your session, not `XMODIFIERS=@im=none`.
+3. **XWayland replay phím**.
+   Trên Wayland với app XWayland, compositor có thể gửi lại phím sau khi IME commit.
+   Cách xử lý: đặt `XMODIFIERS=@im=ibus` (hoặc fcitx5) trong phiên làm việc,
+   không dùng `XMODIFIERS=@im=none`.
 
-4. **vi-daemon running twice**.
+4. **vi-daemon chạy hai instance**.
    ```bash
-   pgrep -c vi-daemon   # should print 1
-   pkill -o vi-daemon   # kill the older instance
+   pgrep -c vi-daemon   # phải in ra 1
+   pkill -o vi-daemon   # dừng instance cũ hơn
    ```
 
 ---
@@ -85,71 +85,71 @@ vi-daemon có thể nạp `vietnamese.cm.dict` (một từ một dòng). Trong p
 
 ---
 
-## Tone marks missing
+## Mất dấu thanh
 
-**Symptom**: typing `viet` produces `viet` instead of `việt`.
+**Triệu chứng**: gõ `viet` ra `viet` thay vì `việt`.
 
-**Diagnosis steps**:
+**Các bước chẩn đoán**:
 
-1. Check vi-daemon is running and connected:
+1. Kiểm tra vi-daemon đang chạy và kết nối:
    ```bash
-   # Send a status request directly
+   # Gửi yêu cầu trạng thái trực tiếp
    echo '{"cmd":"status"}' | nc -U "$XDG_RUNTIME_DIR/vi-daemon.sock"
    ```
-   Expected: `{"type":"status","backend":"ibus","method":"telex","preedit":""}`
+   Kết quả mong đợi: `{"type":"status","backend":"ibus","method":"telex","preedit":""}`
 
-2. Verify the active method is Telex (not pass-through):
+2. Xác nhận kiểu gõ đang active là Telex (không phải pass-through):
    ```bash
    echo '{"cmd":"set_method","method":"telex"}' | nc -U "$XDG_RUNTIME_DIR/vi-daemon.sock"
    ```
 
-3. Check the IME is enabled for the application:
-   - IBus: click the IBus indicator and ensure it shows the vime engine, not "English".
-   - Fcitx5: the system tray should show "VI" not "EN".
+3. Kiểm tra IME đã bật cho ứng dụng:
+   - IBus: bấm biểu tượng IBus và chọn engine **VHTTechKey**, không phải "English".
+   - Fcitx5: khay hệ thống phải hiện "VI", không phải "EN".
 
-4. Test with the vi-ui Typing Test panel.  If it shows "việt" but gedit doesn't,
-   the issue is the GTK IM module, not vi-daemon.
+4. Thử panel Typing Test trong vi-ui. Nếu panel hiện "việt" mà gedit không,
+   lỗi nằm ở module GTK IM, không phải vi-daemon.
 
-5. Ensure `XMODIFIERS`, `GTK_IM_MODULE`, `QT_IM_MODULE`, and `SDL_IM_MODULE` are
-   set in your `~/.profile` or `/etc/environment`:
+5. Đảm bảo `XMODIFIERS`, `GTK_IM_MODULE`, `QT_IM_MODULE` và `SDL_IM_MODULE`
+   được đặt trong `~/.profile` hoặc `/etc/environment`:
    ```bash
    export GTK_IM_MODULE=ibus
    export QT_IM_MODULE=ibus
    export XMODIFIERS=@im=ibus
    ```
-   Log out and back in after changing.
+   Đăng xuất và đăng nhập lại sau khi thay đổi.
 
 ---
 
-## Preedit stuck
+## Preedit bị kẹt
 
-**Symptom**: the underlined preedit text remains in the app and nothing commits,
-even after pressing Space or Enter.
+**Triệu chứng**: chuỗi preedit gạch chân vẫn còn trong app và không commit,
+kể cả sau khi bấm Space hoặc Enter.
 
-**Causes and fixes**:
+**Nguyên nhân và cách khắc phục**:
 
-1. **vi-daemon crashed mid-composition**.
-   The preedit string was sent to the app but the commit never arrived.
+1. **vi-daemon crash giữa chừng khi đang soạn**.
+   Preedit đã gửi tới app nhưng commit chưa tới.
    ```bash
-   # Force-clear preedit by restarting vi-daemon
+   # Xóa preedit bằng cách khởi động lại vi-daemon
    pkill vi-daemon && vi-daemon &
-   # Then press Escape in the affected app to clear the stale preedit
+   # Sau đó bấm Escape trong app bị ảnh hưởng để xóa preedit cũ
    ```
 
-2. **App does not support preedit** (terminal emulators without IME support).
-   Use `foot` or `kitty` instead of `xterm` for Wayland; or configure
-   `overTheSpot` XIM mode for X11 apps.
+2. **App không hỗ trợ preedit** (terminal không có IME).
+   Dùng `foot` hoặc `kitty` thay vì `xterm` trên Wayland; hoặc cấu hình
+   chế độ XIM `overTheSpot` cho app X11.
 
-3. **Fcitx5 input context not activated**.
-   Some Qt apps need `fcitx5-qt` installed separately:
+3. **Fcitx5 input context chưa kích hoạt**.
+   Một số app Qt cần cài `fcitx5-qt` riêng:
    ```bash
    sudo apt install fcitx5-frontend-qt6   # Ubuntu/Debian
    sudo dnf install fcitx5-qt             # Fedora
    ```
 
-4. **Compositor serial number mismatch** (Wayland only).
-   The preedit was sent with an old serial.  Upgrade vi-wayland to ≥ 0.2.0 and
-   the compositor to a version that tolerates stale serials.
+4. **Serial compositor không khớp** (chỉ Wayland).
+   Preedit được gửi với serial cũ. Nâng vi-wayland lên ≥ 0.2.0 và
+   compositor lên bản chấp nhận serial cũ.
 
 ---
 
@@ -158,9 +158,9 @@ even after pressing Space or Enter.
 **Triệu chứng**: ở Chromium thấy gạch chân (hoặc kiểu composition) rõ hơn; ở Telegram (Qt),
 VS Code (Electron) hoặc gedit (GTK) có thể **không** gạch chân dù vẫn gõ Telex bình thường.
 
-**Nguyên nhân**: vime gửi `UpdatePreeditText` với `IBusAttrList` chứa một thuộc tính
-`IBUS_ATTR_TYPE_NONE` (mặc định *IBnoUnderline* của vhttechkey): không
-cố ý vẽ underline.  Toolkit và từng ứng dụng vẫn quyết định có hiển thị “đang soạn” hay
+**Nguyên nhân**: VHTTechKey gửi `UpdatePreeditText` với `IBusAttrList` chứa thuộc tính
+`IBUS_ATTR_TYPE_NONE` (mặc định *IBnoUnderline*): không
+cố ý vẽ gạch chân. Toolkit và từng ứng dụng vẫn quyết định có hiển thị “đang soạn” hay
 không — Chromium thường vẽ khác Gtk/Qt.
 
 **Không cần cấu hình** nếu gõ đúng; đây là hành vi kỹ thuật, không phải lỗi IME.
@@ -169,9 +169,9 @@ không — Chromium thường vẽ khác Gtk/Qt.
 
 ## Chrome / Chromium: không ra chữ, lệch chữ, hoặc cần chỉnh đường IME
 
-**Bối cảnh**: vime trên IBus **không** tự bật `surrounding_commit` (`DeleteSurroundingText`)
+**Bối cảnh**: VHTTechKey trên IBus **không** tự bật `surrounding_commit` (`DeleteSurroundingText`)
 hay `ForwardKeyEvent` theo bit `SetCapabilities` — mọi client mặc định dùng preedit
-(`UpdatePreeditText` với `IBUS_ENGINE_PREEDIT_COMMIT` = 1 theo `ibustypes.h`).  Nhánh
+(`UpdatePreeditText` với `IBUS_ENGINE_PREEDIT_COMMIT` = 1 theo `ibustypes.h`). Nhánh
 cũ dùng `DeleteSurroundingText` đã gây hỏng trên Chrome / Electron nên bị loại khỏi chọn
 tự động.
 
@@ -197,16 +197,16 @@ Khởi động lại `vi-daemon` sau khi sửa cấu hình.
 
 ## Electron (VS Code, Slack, …): không có chữ tiếng Việt hoặc chữ biến mất khi commit
 
-**Triệu chứng**: không thấy preedit, hoặc vừa “commit” thì ký tự biến mất.  Hay gặp:
+**Triệu chứng**: không thấy preedit, hoặc vừa “commit” thì ký tự biến mất. Hay gặp:
 **gõ xong một từ** (Space, ngắt âm tiết, hoặc phím kết thúc từ) thì **cả cụm đang
 soạn biến mất**, không còn chữ trong editor.
 
 **Nguyên nhân**: Electron dùng stack IME của Chromium qua D-Bus; không dùng
-`GTK_IM_MODULE`.  Trên Wayland, đường `text-input-v3` ổn định hơn XWayland.
+`GTK_IM_MODULE`. Trên Wayland, đường `text-input-v3` ổn định hơn XWayland.
 
 ### Chrome / Telegram ổn nhưng VS Code (hay app Electron khác) vẫn mất chữ
 
-Điều này **không** có nghĩa vime “chỉ hỏng một app”: cùng một `vi-daemon`, nhưng
+Điều này **không** có nghĩa VHTTechKey “chỉ hỏng một app”: cùng một `vi-daemon`, nhưng
 mỗi tiến trình dùng **đường IME khác**:
 
 - **Chromium / Chrome**: tiến trình riêng; nhiều bản cài đã chạy **Ozone Wayland**
@@ -219,7 +219,7 @@ mỗi tiến trình dùng **đường IME khác**:
 **Việc nên làm** (ưu tiên từ trên xuống; tập trung sửa VS Code trước khi đổi cấu
 hình IBus toàn cục):
 
-1. Kiểm tra Electron: `vi-tools sandbox-status` khi VS Code đang mở.  Nếu dòng
+1. Kiểm tra Electron: `vi-tools sandbox-status` khi VS Code đang mở. Nếu dòng
    `code` báo **`needs-flags`**, hãy luôn khởi động editor với Ozone Wayland:
    ```bash
    code --enable-features=UseOzonePlatform --ozone-platform=wayland
@@ -229,7 +229,7 @@ hình IBus toàn cục):
 
 2. Môi trường chỉ X11: thử `ELECTRON_OZONE_PLATFORM_HINT=auto code` rồi gõ lại.
 
-3. IBus: khi focus vào VS Code, đảm bảo chế độ **Input Method** (bật vime), **không**
+3. IBus: khi focus vào VS Code, đảm bảo chế độ **Input Method** (bật VHTTechKey), **không**
    để **Direct Input** cho cửa sổ đó.
 
 4. Nếu sau các bước trên **vẫn** mất chữ, thử trong `~/.config/vime/config.toml`:
@@ -239,78 +239,78 @@ hình IBus toàn cục):
    force_chrome_direct = true
    ```
 
-   Sau đó **khởi động lại `vi-daemon`**.  Đây là tùy chọn **toàn cục**; Chrome và
-   Telegram thường vẫn ổn.  Nếu một ứng dụng khác lại xấu đi, xem mục **Chrome /
+   Sau đó **khởi động lại `vi-daemon`**. Đây là tùy chọn **toàn cục**; Chrome và
+   Telegram thường vẫn ổn. Nếu một ứng dụng khác lại xấu đi, xem mục **Chrome /
    Chromium** phía trên (dùng `force_preedit_mode = true` cùng khối `[ibus]`).
 
 5. Cuối cùng: mở VS Code từ terminal với `XMODIFIERS=@im=ibus code` (tránh snap /
    môi trường thiếu biến XMODIFIERS).
 
-**Ghi chú**: vime trên IBus gửi **`CommitText` rồi mới `HidePreeditText`** khi kết thúc
-từ (vhttechkey commit order), vì một số bản Electron (VS Code) xóa cả
-cụm preedit nếu nhận `HidePreeditText` trước.  Nếu vẫn lỗi sau khi cập nhật bản build,
+**Ghi chú**: VHTTechKey trên IBus gửi **`CommitText` rồi mới `HidePreeditText`** khi kết thúc
+từ (thứ tự commit của VHTTechKey), vì một số bản Electron (VS Code) xóa cả
+cụm preedit nếu nhận `HidePreeditText` trước. Nếu vẫn lỗi sau khi cập nhật bản build,
 phần còn lại thường là **Electron phải nhận IME đúng phiên** (Ozone Wayland, v.v.).
 
 ---
 
-## High CPU usage
+## CPU cao
 
-**Symptom**: `vi-daemon` or `ibus-daemon` consumes >5% CPU at idle.
+**Triệu chứng**: `vi-daemon` hoặc `ibus-daemon` tiêu thụ >5% CPU khi rảnh.
 
-**Diagnosis steps**:
+**Các bước chẩn đoán**:
 
-1. Check if vime is polling too aggressively:
+1. Kiểm tra VHTTechKey có poll quá dày không:
    ```bash
    strace -p $(pgrep vi-daemon) -e trace=epoll_wait,read,write 2>&1 | head -40
    ```
-   You should see `epoll_wait` blocking with a timeout of ~1000 ms, not spinning.
+   Bạn nên thấy `epoll_wait` block với timeout ~1000 ms, không quay vòng liên tục.
 
-2. Check for a stuck preedit:
+2. Kiểm tra preedit bị kẹt:
    ```bash
    echo '{"cmd":"status"}' | nc -U "$XDG_RUNTIME_DIR/vi-daemon.sock"
-   # If "preedit" is non-empty, the engine is holding state unnecessarily
+   # Nếu "preedit" khác rỗng, engine đang giữ trạng thái không cần thiết
    ```
-   Reset with:
+   Reset bằng:
    ```bash
    echo '{"cmd":"set_method","method":"telex"}' | nc -U "$XDG_RUNTIME_DIR/vi-daemon.sock"
    ```
 
-3. Check for a log-spam loop:
+3. Kiểm tra vòng lặp log spam:
    ```bash
    journalctl -u vi-daemon -f --since "1 minute ago"
    ```
-   If you see repeated error messages at >10/second, there is a reconnect loop.
-   Check that `$XDG_RUNTIME_DIR` is writable and the socket path is not stale.
+   Nếu thấy lỗi lặp >10 lần/giây, có vòng reconnect. Kiểm tra `$XDG_RUNTIME_DIR`
+   ghi được và đường socket không còn stale.
 
 4. Profile:
    ```bash
    perf record -g -p $(pgrep vi-daemon) -- sleep 10
    perf report
    ```
-   Common hot paths at idle: unicode normalization on every keypress (expected
-   ~0.1 ms), zbus D-Bus polling (expected ~0.5% CPU).
+   Hot path thường gặp khi rảnh: chuẩn hóa Unicode mỗi phím (~0.1 ms, bình thường),
+   poll D-Bus zbus (~0.5% CPU, bình thường).
 
-5. Disable the `notify` file watcher if config hot-reload is not needed:
+5. Tắt file watcher `notify` nếu không cần hot-reload cấu hình:
    ```bash
-   # In ~/.config/vime/config.toml
+   # Trong ~/.config/vime/config.toml
    [watcher]
    enabled = false
    ```
 
 ---
 
-## Sandbox auto-detection (Electron, Flatpak, Snap)
+## Tự phát hiện sandbox (Electron, Flatpak, Snap)
 
-vi-daemon automatically scans `/proc` at startup to detect sandboxed
-applications and logs warnings with suggested remediation.
+vi-daemon tự quét `/proc` lúc khởi động để phát hiện ứng dụng trong sandbox
+và ghi cảnh báo kèm hướng xử lý.
 
-### Reading daemon logs
+### Đọc log daemon
 
 ```bash
 journalctl -u vi-daemon --since today | grep -E 'WARN|electron|flatpak|snap'
 ```
 
-**Electron on Wayland** produces a `WARN` line like:
+**Electron trên Wayland** in dòng `WARN` kiểu:
 
 ```
 WARN vi_daemon: Electron process detected on Wayland pid=12345
@@ -318,24 +318,23 @@ WARN vi_daemon: Electron process detected on Wayland pid=12345
      to enable IME input
 ```
 
-Apply the suggestion by editing the application's `.desktop` launcher or
-passing the flags on the command line:
+Áp dụng gợi ý bằng cách sửa launcher `.desktop` của ứng dụng hoặc
+truyền cờ trên dòng lệnh:
 ```bash
 code --ozone-platform=wayland --enable-features=UseOzonePlatform
 ```
 
-**Flatpak apps** log an `INFO` line with the app-id.  If the
-`org.freedesktop.portal.InputMethod` portal is not installed the daemon also
-emits a `WARN`; install `xdg-desktop-portal` and a suitable backend (e.g.
-`xdg-desktop-portal-gnome`) to resolve it.
+**App Flatpak** in dòng `INFO` kèm app-id. Nếu portal
+`org.freedesktop.portal.InputMethod` chưa cài, daemon cũng ghi `WARN`; cài
+`xdg-desktop-portal` và backend phù hợp (ví dụ `xdg-desktop-portal-gnome`).
 
-### Checking sandbox status with vi-tools
+### Kiểm tra trạng thái sandbox bằng vi-tools
 
 ```bash
 vi-tools sandbox-status
 ```
 
-Example output:
+Ví dụ kết quả:
 
 ```
 PID       TYPE          IME STATUS
@@ -345,16 +344,16 @@ PID       TYPE          IME STATUS
 11223     snap          unsupported [firefox]
 ```
 
-Status values:
-- **needs-flags** — Electron process; relaunch with the displayed flags.
-- **OK (portal)** — Flatpak app; portal input method route available.
-- **unsupported** — Snap app; direct IME integration is not supported; use
-  `XMODIFIERS=@im=ibus` as a workaround where the snap allows it.
+Giá trị trạng thái:
+- **needs-flags** — tiến trình Electron; khởi động lại với cờ hiển thị.
+- **OK (portal)** — app Flatpak; đường IME qua portal khả dụng.
+- **unsupported** — app Snap; tích hợp IME trực tiếp không được hỗ trợ; thử
+  `XMODIFIERS=@im=ibus` nếu snap cho phép.
 
-### D-Bus diagnostics interface
+### Giao diện chẩn đoán D-Bus
 
-When Electron processes are detected, vi-daemon registers a D-Bus object that
-desktop environment components can query programmatically:
+Khi phát hiện tiến trình Electron, vi-daemon đăng ký object D-Bus để
+thành phần desktop truy vấn:
 
 ```bash
 dbus-send --session --print-reply \
@@ -363,5 +362,5 @@ dbus-send --session --print-reply \
   org.freedesktop.vime.Diagnostics1.SuggestElectronFlags
 ```
 
-The reply is a string array of recommended flags, e.g.
+Phản hồi là mảng chuỗi cờ khuyến nghị, ví dụ
 `["--ozone-platform=wayland", "--enable-features=UseOzonePlatform"]`.

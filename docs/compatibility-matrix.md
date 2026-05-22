@@ -1,46 +1,45 @@
-# Compatibility Matrix
+# Ma trận tương thích
 
-Each cell shows the test status for a compositor × input-method-backend
-combination.  Compositor quirks that affect the Wayland-direct backend are
-handled in `crates/vi-wayland/src/lib.rs` via compile-time feature flags
+Mỗi ô cho biết trạng thái test của tổ hợp compositor × backend kiểu gõ.
+Quirk compositor ảnh hưởng backend Wayland trực tiếp được xử lý trong
+`crates/vi-wayland/src/lib.rs` qua cờ feature lúc biên dịch
 (`gnome`, `kwin`, `hyprland`).
 
-## Matrix
+## Ma trận
 
-| Compositor | IBus | Fcitx5 | Wayland-direct | X11-XIM | Notes |
+| Compositor | IBus | Fcitx5 | Wayland trực tiếp | X11-XIM | Ghi chú |
 |---|---|---|---|---|---|
-| **GNOME Shell** (Mutter ≥ 44) | ✅ | ✅ | ✅ | ⚠ | Wayland: empty preedit must precede commit; re-activate on focus restore (`gnome` flag). X11-XIM: XWayland apps only. |
-| **KDE Plasma** (KWin ≥ 5.27) | ✅ | ✅ | ✅ | ⚠ | Wayland: `surrounding_text` offsets are byte-based, not char-based (`kwin` flag). X11-XIM: XWayland apps only. |
-| **Hyprland** (≥ 0.35) | ✅ | ✅ | ✅ | ❌ | Wayland: falls back to `zwp_virtual_keyboard_v1` when `zwp_input_method_manager_v2` absent; buffers preedit on rapid typing (`hyprland` flag). |
-| **Sway** (wlroots ≥ 0.17) | ✅ | ✅ | ✅ | ❌ | Protocol-correct; no quirks required. |
-| **Niri** | ❓ | ❓ | ❓ | ❌ | Implements text-input-v3; untested — expected to work without quirks. |
-| **Weston** (≥ 12.0) | ❓ | ❓ | ✅ | ❌ | Reference implementation; strict protocol event ordering required. Detection via `weston_screenshooter` global. |
-| **XFCE** (xfwm4-wayland) | ✅ | ✅ | ⚠ | ✅ | Wayland: `delay_preedit_clear` quirk applied (detected via `wp_viewporter`). X11-XIM: native on classic xfwm4. |
-| **Cinnamon** (Muffin ≥ 6.0) | ✅ | ✅ | ⚠ | ✅ | Wayland: `empty_preedit_before_commit` quirk applied (detected via `cinnamon_shell_v1`). X11-XIM: native on X11 Cinnamon. |
+| **GNOME Shell** (Mutter ≥ 44) | ✅ | ✅ | ✅ | ⚠ | Wayland: preedit rỗng phải gửi trước commit; kích hoạt lại khi restore focus (`gnome`). X11-XIM: chỉ app XWayland. |
+| **KDE Plasma** (KWin ≥ 5.27) | ✅ | ✅ | ✅ | ⚠ | Wayland: offset `surrounding_text` theo byte, không theo ký tự (`kwin`). X11-XIM: chỉ app XWayland. |
+| **Hyprland** (≥ 0.35) | ✅ | ✅ | ✅ | ❌ | Wayland: fallback `zwp_virtual_keyboard_v1` khi thiếu `zwp_input_method_manager_v2`; buffer preedit khi gõ nhanh (`hyprland`). |
+| **Sway** (wlroots ≥ 0.17) | ✅ | ✅ | ✅ | ❌ | Đúng giao thức; không cần quirk. |
+| **Niri** | ❓ | ❓ | ❓ | ❌ | Có text-input-v3; chưa test — dự kiến chạy không cần quirk. |
+| **Weston** (≥ 12.0) | ❓ | ❓ | ✅ | ❌ | Triển khai tham chiếu; cần thứ tự sự kiện giao thức chặt. Phát hiện qua global `weston_screenshooter`. |
+| **XFCE** (xfwm4-wayland) | ✅ | ✅ | ⚠ | ✅ | Wayland: quirk `delay_preedit_clear` (phát hiện qua `wp_viewporter`). X11-XIM: native trên xfwm4 cổ điển. |
+| **Cinnamon** (Muffin ≥ 6.0) | ✅ | ✅ | ⚠ | ✅ | Wayland: quirk `empty_preedit_before_commit` (phát hiện qua `cinnamon_shell_v1`). X11-XIM: native trên Cinnamon X11. |
 
-## Legend
+## Chú giải
 
-| Symbol | Meaning |
+| Ký hiệu | Ý nghĩa |
 |---|---|
-| ✅ | Tested and passing |
-| ⚠ | Partial — core typing works; some features degraded (see Notes) |
-| ❓ | Untested / unknown |
-| ❌ | Not supported |
+| ✅ | Đã test và pass |
+| ⚠ | Một phần — gõ cơ bản ổn; một số tính năng suy giảm (xem Ghi chú) |
+| ❓ | Chưa test / chưa rõ |
+| ❌ | Không hỗ trợ |
 
-## Backend notes
+## Ghi chú backend
 
-**IBus** — handled by the `vi-ibus` crate via the IBus D-Bus protocol.
-Works on any compositor/desktop that runs an IBus daemon.
+**IBus** — xử lý bởi crate `vi-ibus` qua giao thức D-Bus IBus.
+Chạy trên mọi compositor/desktop có daemon IBus.
 
-**Fcitx5** — handled by the `vi-fcitx5` crate via the Fcitx5 D-Bus protocol.
-Works on any compositor/desktop that runs a Fcitx5 daemon.
+**Fcitx5** — xử lý bởi crate `vi-fcitx5` qua giao thức D-Bus Fcitx5.
+Chạy trên mọi compositor/desktop có daemon Fcitx5.
 
-**Wayland-direct** — handled by the `vi-wayland` crate using
-`zwp_input_method_v2` + `zwp_text_input_v3`.  Compositor-specific quirks are
-applied through compile-time feature flags; see
-`crates/vi-wayland/src/lib.rs` for implementation details and
-`docs/wayland-compat.md` for the full per-compositor quirk list.
+**Wayland trực tiếp** — xử lý bởi crate `vi-wayland` dùng
+`zwp_input_method_v2` + `zwp_text_input_v3`. Quirk theo compositor áp dụng
+qua cờ feature lúc biên dịch; xem `crates/vi-wayland/src/lib.rs` để biết chi tiết
+triển khai và `docs/wayland-compat.md` để xem danh sách quirk đầy đủ.
 
-**X11-XIM** — handled by the `vi-x11` crate using the X Input Method protocol.
-Available natively on X11 compositors (Xfwm, Cinnamon, …) and for XWayland
-applications running inside a Wayland session (GNOME, KDE Plasma).
+**X11-XIM** — xử lý bởi crate `vi-x11` qua giao thức X Input Method.
+Có native trên compositor X11 (Xfwm, Cinnamon, …) và cho ứng dụng XWayland
+chạy trong phiên Wayland (GNOME, KDE Plasma).

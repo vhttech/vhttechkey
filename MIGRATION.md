@@ -1,36 +1,35 @@
-# Migration guide: vi-* → vime-* (planned for 0.2.0)
+# Hướng dẫn migration: vi-* → vime-* (dự kiến 0.2.0)
 
-> **Status**: The `vime-*` crates do not exist yet.  The current release (0.1.x)
-> ships only `vi-*` binaries and crates.  This document describes the planned
-> rename so that downstream scripts and packages can prepare in advance.
+> **Trạng thái**: Crate `vime-*` chưa tồn tại. Bản phát hành hiện tại (0.1.x)
+> chỉ có binary và crate `vi-*`. Tài liệu này mô tả kế hoạch đổi tên để
+> script và gói downstream chuẩn bị trước.
 
-## Binary (planned)
+## Binary (dự kiến)
 
-| Current (0.1.x) | Planned (0.2.0) |
+| Hiện tại (0.1.x) | Dự kiến (0.2.0) |
 |---|---|
 | `vi-daemon` | `vime-daemon` |
 | `vi-tools` | `vime-tools` |
 | `vi-ui` | `vime-ui` |
 
-## Config directory
+## Thư mục cấu hình
 
-The config directory is already `~/.config/vime/` in the current 0.1.x release —
-the daemon reads `~/.config/vime/config.toml` at startup.  No migration needed here.
+Thư mục cấu hình đã là `~/.config/vime/` từ bản 0.1.x —
+daemon đọc `~/.config/vime/config.toml` lúc khởi động. Không cần migration ở đây.
 
-## Why vime-*?
+## Vì sao vime-*?
 
-The `vime-*` series will add several improvements over the current `vi-*`:
+Chuỗi `vime-*` sẽ bổ sung nhiều cải tiến so với `vi-*` hiện tại:
 
-- **xkbcommon integration** in the X11 backend — correct dead-key and AltGr
-  handling instead of a hardcoded US QWERTY map
-- **Key-repeat detection** — held keys no longer produce duplicate composition
-  steps
-- **Preedit callbacks** — applications receive granular preedit-change events
-  rather than full-string replacements
+- **Tích hợp xkbcommon** trong backend X11 — xử lý dead-key và AltGr đúng
+  thay vì bản đồ US QWERTY cứng
+- **Phát hiện lặp phím** — giữ phím không còn tạo bước composition trùng
+- **Callback preedit** — ứng dụng nhận sự kiện thay đổi preedit chi tiết
+  thay vì thay thế toàn chuỗi
 
-## Crate mapping (planned)
+## Ánh xạ crate (dự kiến)
 
-| Current (`vi-*`) | Planned (`vime-*`) |
+| Hiện tại (`vi-*`) | Dự kiến (`vime-*`) |
 |---|---|
 | `vi-core` | `vime-core` |
 | `vi-daemon` | `vime-daemon` |
@@ -40,7 +39,7 @@ The `vime-*` series will add several improvements over the current `vi-*`:
 | `vi-x11` | `vime-x11` |
 | `vi-config` | `vime-config` |
 | `vi-testing` | `vime-tests` |
-| `vi-platform` | _(will be merged into `vime-core`)_ |
-| `vi-portal` | _(will be merged into `vime-daemon`)_ |
+| `vi-platform` | _(sẽ gộp vào `vime-core`)_ |
+| `vi-portal` | _(sẽ gộp vào `vime-daemon`)_ |
 | `vi-tools` | `vime-tools` |
 | `vi-ui` | `vime-ui` |

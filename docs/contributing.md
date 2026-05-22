@@ -1,16 +1,16 @@
-# Contributing
+# Đóng góp
 
-## Build from source
+## Build từ source
 
-### Prerequisites
+### Yêu cầu trước
 
 ```bash
-# Rust toolchain (stable + nightly for Miri/fuzz)
+# Rust toolchain (stable + nightly cho Miri/fuzz)
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 rustup toolchain install nightly
 rustup component add miri --toolchain nightly
 
-# System libraries (Ubuntu/Debian)
+# Thư viện hệ thống (Ubuntu/Debian)
 sudo apt install \
     libdbus-1-dev \
     libglib2.0-dev \
@@ -22,7 +22,7 @@ sudo apt install \
     libgl1-mesa-dev \
     pkg-config
 
-# System libraries (Fedora)
+# Thư viện hệ thống (Fedora)
 sudo dnf install \
     dbus-devel \
     glib2-devel \
@@ -40,75 +40,75 @@ sudo dnf install \
 git clone ssh://git@git.hocitvn.com:22222/vhttech/miliondolar/vhttechkey.git
 cd vhttechkey
 
-# Debug build (all crates)
+# Build debug (toàn bộ crate)
 cargo build --workspace
 
-# Release build
+# Build release
 cargo build --workspace --release
 
-# Build only the settings UI
+# Chỉ build giao diện cài đặt
 cargo build -p vi-ui --release
 
-# Build only the daemon
+# Chỉ build daemon
 cargo build -p vi-daemon --release
 ```
 
-The daemon binary is at `target/release/vi-daemon` and the UI at
-`target/release/vi-ui`.  The CLI tool is at `target/release/vi-tools`.
+Binary daemon ở `target/release/vi-daemon`, UI ở
+`target/release/vi-ui`. Công cụ CLI ở `target/release/vi-tools`.
 
-## Running tests
+## Chạy test
 
 ```bash
-# All unit and integration tests
+# Toàn bộ unit test và integration test
 cargo test --workspace
 
-# Single crate
+# Một crate
 cargo test -p vi-core
 
-# With output (useful for debugging)
+# Có output (hữu ích khi debug)
 cargo test --workspace -- --nocapture
 
-# Linting (must be clean — CI enforces -D warnings)
+# Lint (phải sạch — CI bắt buộc -D warnings)
 cargo clippy --workspace -- -D warnings
 
-# Formatting check
+# Kiểm tra format
 cargo fmt --check
 
-# Miri (memory safety, nightly only)
+# Miri (an toàn bộ nhớ, chỉ nightly)
 cargo +nightly miri test -p vi-core
 
-# Fuzzing (requires cargo-fuzz)
+# Fuzz (cần cargo-fuzz)
 cargo install cargo-fuzz
 cargo fuzz run fuzz_key_sequence -- -max_total_time=60
 cargo fuzz run fuzz_config -- -max_total_time=60
 cargo fuzz run fuzz_unicode_pipeline -- -max_total_time=60
 ```
 
-## Adding a new input method rule set
+## Thêm bộ quy tắc kiểu gõ mới
 
-Input methods live in `crates/vi-core/src/methods/`.
+Kiểu gõ nằm trong `crates/vi-core/src/methods/`.
 
-1. **Create the rule file** — copy `telex.rs` as a template:
+1. **Tạo file quy tắc** — sao chép `telex.rs` làm mẫu:
    ```bash
    cp crates/vi-core/src/methods/telex.rs crates/vi-core/src/methods/mymethod.rs
    ```
 
-2. **Implement the trait**:
+2. **Triển khai trait**:
    ```rust
    // crates/vi-core/src/methods/mymethod.rs
    use crate::{InputEvent, StateTransition};
    use super::MethodEngine;
 
-   pub struct MyMethod { /* rule table fields */ }
+   pub struct MyMethod { /* trường bảng quy tắc */ }
 
    impl MethodEngine for MyMethod {
        fn name(&self) -> &'static str { "mymethod" }
        fn process(&mut self, event: &InputEvent) -> StateTransition { /* … */ }
-       fn reset(&mut self) { /* clear state */ }
+       fn reset(&mut self) { /* xóa trạng thái */ }
    }
    ```
 
-3. **Register it** in `crates/vi-core/src/methods/mod.rs`:
+3. **Đăng ký** trong `crates/vi-core/src/methods/mod.rs`:
    ```rust
    mod mymethod;
    pub use mymethod::MyMethod;
@@ -116,72 +116,72 @@ Input methods live in `crates/vi-core/src/methods/`.
    impl InputMethod {
        pub fn engine(&self) -> Box<dyn MethodEngine> {
            match self {
-               // … existing arms …
+               // … nhánh hiện có …
                InputMethod::MyMethod => Box::new(MyMethod::new()),
            }
        }
    }
    ```
 
-4. **Add the variant** to the `InputMethod` enum in `types.rs`.
+4. **Thêm biến thể** vào enum `InputMethod` trong `types.rs`.
 
-5. **Write golden tests** in `crates/vi-core/tests/` — see `syllables.rs` for
-   the pattern.  Add at least:
-   - All tone marks on at least 3 vowel classes
-   - Backspace handling
-   - Round-trip: commit text is NFC
+5. **Viết golden test** trong `crates/vi-core/tests/` — xem `syllables.rs` làm
+   mẫu. Thêm ít nhất:
+   - Mọi dấu thanh trên ít nhất 3 lớp nguyên âm
+   - Xử lý Backspace
+   - Round-trip: văn bản commit là NFC
 
-6. **Add a fuzz target** in `fuzz/fuzz_targets/` that feeds random bytes into
-   the new method and asserts the output is NFC.
+6. **Thêm fuzz target** trong `fuzz/fuzz_targets/` nạp byte ngẫu nhiên vào
+   kiểu gõ mới và khẳng định đầu ra là NFC.
 
-7. **Document** the rule table in `docs/unicode-pipeline.md`.
+7. **Ghi tài liệu** bảng quy tắc trong `docs/unicode-pipeline.md`.
 
-## Adding a compositor quirk
+## Thêm quirk compositor
 
-Compositor-specific workarounds live in `crates/vi-wayland/src/lib.rs` behind
-the `CompositorQuirks` bitflag struct.
+Workaround theo compositor nằm trong `crates/vi-wayland/src/lib.rs` sau
+struct bitflag `CompositorQuirks`.
 
-1. **Reproduce** the bug in `crates/vi-wayland/tests/integration_test.rs` using
-   the mock compositor harness:
+1. **Tái hiện** lỗi trong `crates/vi-wayland/tests/integration_test.rs` bằng
+   mock compositor:
    ```rust
    #[test]
    fn gnome_commit_without_preedit_quirk() {
        let mut session = MockCompositorSession::new(CompositorKind::Gnome);
        session.quirks |= CompositorQuirks::GNOME_PREEDIT_REQUIRED_BEFORE_COMMIT;
-       // … assert correct behaviour with/without the workaround
+       // … khẳng định hành vi đúng có/không có workaround
    }
    ```
 
-2. **Detect the compositor** in `detect_compositor()` (already reads
-   `$XDG_CURRENT_DESKTOP` and the `wl_compositor` name advertised by the server).
+2. **Phát hiện compositor** trong `detect_compositor()` (đã đọc
+   `$XDG_CURRENT_DESKTOP` và tên `wl_compositor` server quảng bá).
 
-3. **Apply the workaround** in the relevant protocol handler:
+3. **Áp dụng workaround** trong handler giao thức tương ứng:
    ```rust
    if self.quirks.contains(CompositorQuirks::GNOME_PREEDIT_REQUIRED) {
        self.send_empty_preedit_before_commit();
    }
    ```
 
-4. **Update** `docs/wayland-compat.md` with the new row in the compatibility table.
+4. **Cập nhật** `docs/wayland-compat.md` với hàng mới trong bảng tương thích.
 
-5. **Update** `docs/troubleshooting.md` if the quirk causes a user-visible
-   symptom that warrants a troubleshooting entry.
+5. **Cập nhật** `docs/troubleshooting.md` nếu quirk gây triệu chứng người dùng
+   thấy được, đáng thêm mục xử lý sự cố.
 
-## Commit conventions
+## Quy ước commit
 
-- Subject line: imperative mood, ≤72 chars, no period.
-- Body: explain *why*, not *what* (the diff shows what).
-- Reference issues: `Fixes #123` or `Part of #456`.
-- No merge commits on `main`; rebase your branch before opening a PR.
+- Dòng subject: thì mệnh lệnh, ≤72 ký tự, không dấu chấm cuối.
+- Body: giải thích *vì sao*, không phải *làm gì* (diff đã cho thấy làm gì).
+- Tham chiếu issue: `Fixes #123` hoặc `Part of #456`.
+- Không merge commit trên `main`; rebase nhánh trước khi mở PR.
 
 ## CI
 
-GitHub Actions runs on every PR:
+GitHub Actions chạy trên mỗi PR:
 
 1. `cargo test --workspace`
 2. `cargo clippy --workspace -- -D warnings`
 3. `cargo fmt --check`
 4. `cargo +nightly miri test -p vi-core`
-5. Fuzz for 60 s on each target
+5. Fuzz 60 giây trên mỗi target
 
-All checks must pass before merge.
+Mọi kiểm tra phải pass trước khi merge.

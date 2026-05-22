@@ -1,9 +1,9 @@
-# Sequence Diagrams
+# Sơ đồ trình tự
 
-## 1. Normal typing flow
+## 1. Luồng gõ bình thường
 
-Key events travel from the compositor to `vi-daemon`, through the `vi-core`
-engine, back as preedit updates, and finally as a commit to the application.
+Sự kiện phím đi từ compositor tới `vi-daemon`, qua engine `vi-core`,
+trả về dưới dạng cập nhật preedit, cuối cùng là commit tới ứng dụng.
 
 ```mermaid
 sequenceDiagram
@@ -42,10 +42,10 @@ sequenceDiagram
     Compositor-->>App: "tô" inserted into document
 ```
 
-## 2. Focus-out commit
+## 2. Commit khi mất focus
 
-When the user switches focus away, `vi-daemon` receives a `FocusOut` event and
-auto-commits any pending preedit so the text is not lost.
+Khi người dùng chuyển focus đi chỗ khác, `vi-daemon` nhận sự kiện `FocusOut` và
+tự commit preedit đang chờ để không mất chữ.
 
 ```mermaid
 sequenceDiagram
@@ -67,10 +67,10 @@ sequenceDiagram
     Note over Engine: Buffer cleared → Idle state
 ```
 
-## 3. Daemon restart recovery
+## 3. Phục hồi sau khởi động lại daemon
 
-`vi-daemon` serializes the in-progress preedit buffer before shutting down so
-the composition can be restored after a restart.
+`vi-daemon` tuần tự hóa buffer preedit đang soạn trước khi tắt để
+composition có thể khôi phục sau khi khởi động lại.
 
 ```mermaid
 sequenceDiagram
@@ -96,10 +96,10 @@ sequenceDiagram
     Note over Daemon: Input method active, composition resumed
 ```
 
-## 4. Input method switching
+## 4. Chuyển kiểu gõ
 
-The user toggles the active input method via a key binding. `vi-daemon` receives
-the request over IPC, resets the engine, and loads the new method.
+Người dùng bật/tắt kiểu gõ đang active qua phím tắt. `vi-daemon` nhận
+yêu cầu qua IPC, reset engine và nạp kiểu gõ mới.
 
 ```mermaid
 sequenceDiagram

@@ -1,111 +1,109 @@
-# Unicode Pipeline
+# Pipeline Unicode
 
-## Why NFC?
+## Vì sao dùng NFC?
 
-Vietnamese text uses precomposed characters where a single codepoint carries
-both the base vowel and any diacritical marks (e.g. `ệ` = U+1EB9, LATIN SMALL
-LETTER E WITH CIRCUMFLEX AND DOT BELOW).  Two normalization forms are in common
-use:
+Văn bản tiếng Việt dùng ký tự precomposed — một codepoint mang cả nguyên âm gốc
+và dấu (ví dụ `ệ` = U+1EB9, LATIN SMALL LETTER E WITH CIRCUMFLEX AND DOT BELOW).
+Hai dạng chuẩn hóa phổ biến:
 
-| Form | Description | Example for "ệ" |
+| Dạng | Mô tả | Ví dụ cho "ệ" |
 |---|---|---|
-| **NFC** | Precomposed — one codepoint per glyph | U+1EB9 |
-| **NFD** | Decomposed — base + combining marks | U+0065 U+0323 U+0302 |
+| **NFC** | Precomposed — một codepoint mỗi glyph | U+1EB9 |
+| **NFD** | Decomposed — gốc + dấu kết hợp | U+0065 U+0323 U+0302 |
 
-vime always outputs **NFC** because:
+VHTTechKey luôn xuất **NFC** vì:
 
-1. GTK / Qt text widgets store and render NFC internally; inserting NFD causes
-   the combining marks to appear as separate characters (double diacritics).
-2. The Linux clipboard and most app paste handlers expect NFC.
-3. `String::len()` / byte offsets are predictable when each grapheme is one
-   codepoint.
-4. Unicode collation and string comparison is simpler with NFC.
+1. Widget văn bản GTK / Qt lưu và render NFC nội bộ; chèn NFD khiến
+   dấu kết hợp hiện thành ký tự riêng (dấu đôi).
+2. Clipboard Linux và hầu hết handler paste mong đợi NFC.
+3. `String::len()` / offset byte dự đoán được khi mỗi grapheme là một codepoint.
+4. So sánh và collation Unicode đơn giản hơn với NFC.
 
-## Sequence of operations
+## Trình tự thao tác
 
 ```
-Raw preedit string  (may be ASCII partial sequence, e.g. "vie65t")
+Chuỗi preedit thô  (có thể là chuỗi ASCII dở, ví dụ "vie65t")
         │
-        ▼  Step 1 – rule application (vi-core::methods)
-        │   The active input method (Telex/VNI/VIQR) replaces trigger sequences
-        │   with their target Unicode scalar values.
-        │   "vie65t"  →  "viết"  (intermediate, may still be NFD-like)
+        ▼  Bước 1 – áp quy tắc (vi-core::methods)
+        │   Kiểu gõ đang active (Telex/VNI/VIQR) thay chuỗi kích hoạt
+        │   bằng giá trị scalar Unicode tương ứng.
+        │   "vie65t"  →  "viết"  (trung gian, có thể còn giống NFD)
         │
-        ▼  Step 2 – canonical decomposition  (unicode_normalization::nfd())
-        │   Every precomposed character is split into base + combining marks.
-        │   "viết" → "vie\u{0301}\u{0323}t"  (simplified; actual differs)
+        ▼  Bước 2 – phân rã chuẩn  (unicode_normalization::nfd())
+        │   Mọi ký tự precomposed tách thành gốc + dấu kết hợp.
+        │   "viết" → "vie\u{0301}\u{0323}t"  (đơn giản hóa; thực tế khác)
         │
-        ▼  Step 3 – canonical combining class reorder
-        │   Combining marks are sorted by their Canonical Combining Class (CCC).
-        │   Marks with lower CCC sort first.  This ensures a unique byte sequence
-        │   for the same logical character regardless of input order.
+        ▼  Bước 3 – sắp xếp lại canonical combining class
+        │   Dấu kết hợp sắp theo Canonical Combining Class (CCC).
+        │   Dấu CCC thấp hơn đứng trước. Đảm bảo chuỗi byte duy nhất
+        │   cho cùng ký tự logic bất kể thứ tự nhập.
         │
-        ▼  Step 4 – NFC composition  (unicode_normalization::nfc())
-        │   Adjacent pairs (base, combining) are replaced with their precomposed
-        │   codepoint where one exists in the Unicode composition table.
+        ▼  Bước 4 – ghép NFC  (unicode_normalization::nfc())
+        │   Cặp liền kề (gốc, dấu kết hợp) thay bằng codepoint precomposed
+        │   nếu có trong bảng ghép Unicode.
         │   "…\u{0301}\u{0323}…" → "ệ" (U+1EB9)
         │
         ▼
-NfcString  (newtype guaranteeing NFC; only constructable inside UnicodePipeline)
+NfcString  (newtype đảm bảo NFC; chỉ tạo bên trong UnicodePipeline)
 ```
 
-## Vietnamese codepoints affected
+## Codepoint tiếng Việt liên quan
 
-The 134 precomposed Vietnamese codepoints live in two Unicode blocks:
+134 codepoint precomposed tiếng Việt nằm trong hai khối Unicode:
 
-| Block | Range | Codepoints | Examples |
+| Khối | Phạm vi | Codepoint | Ví dụ |
 |---|---|---|---|
 | Latin Extended Additional | U+1E00–U+1EFF | 128 | ề ế ệ ổ ộ ợ ự ặ ắ ằ ẳ ẫ |
 | Latin-1 Supplement | U+00C0–U+00FF | 6 | à á â ã è é |
 
-All of these are **NFC-stable**: their precomposed form is the canonical NFC
-representation and will survive a round-trip through the pipeline unchanged.
+Tất cả đều **ổn định NFC**: dạng precomposed là biểu diễn NFC chuẩn
+và qua pipeline không đổi.
 
-## Common wrong encodings and their NFC forms
+## Mã hóa sai thường gặp và dạng NFC đúng
 
-These encodings appear in legacy documents and cause rendering problems in
-modern Linux apps.  vime's pipeline corrects them on output.
+Các mã hóa này xuất hiện trong tài liệu cũ và gây lỗi hiển thị trên
+app Linux hiện đại. Pipeline VHTTechKey sửa chúng ở đầu ra.
 
-| Wrong encoding | Codepoints (hex) | Description | Correct NFC | Codepoint |
+| Mã hóa sai | Codepoint (hex) | Mô tả | NFC đúng | Codepoint |
 |---|---|---|---|---|
-| a + ◌̣ + ◌̂ | 0061 0323 0302 | NFD, wrong CCC order | ậ | U+1EAD |
-| a + ◌̂ + ◌̣ | 0061 0302 0323 | NFD, correct CCC order | ậ | U+1EAD |
-| ă + ◌́ | 0103 0301 | NFD partial | ắ | U+1EAF |
-| ă + ◌̀ | 0103 0300 | NFD partial | ằ | U+1EB1 |
-| ă + ◌̣ | 0103 0323 | NFD partial | ặ | U+1EB7 |
+| a + ◌̣ + ◌̂ | 0061 0323 0302 | NFD, sai thứ tự CCC | ậ | U+1EAD |
+| a + ◌̂ + ◌̣ | 0061 0302 0323 | NFD, đúng thứ tự CCC | ậ | U+1EAD |
+| ă + ◌́ | 0103 0301 | NFD một phần | ắ | U+1EAF |
+| ă + ◌̀ | 0103 0300 | NFD một phần | ằ | U+1EB1 |
+| ă + ◌̣ | 0103 0323 | NFD một phần | ặ | U+1EB7 |
 | o + ◌̛ + ◌̣ | 006F 031B 0323 | NFD, COMBINING HORN | ợ | U+1EE3 |
 | u + ◌̛ + ◌̣ | 0075 031B 0323 | NFD, COMBINING HORN | ự | U+1EF1 |
-| VISCII cp 0xF5 | — | Legacy 8-bit encoding | ợ | U+1EE3 |
-| VPS cp 0xD5 | — | Legacy 8-bit encoding | ợ | U+1EE3 |
+| VISCII cp 0xF5 | — | Mã hóa 8-bit cũ | ợ | U+1EE3 |
+| VPS cp 0xD5 | — | Mã hóa 8-bit cũ | ợ | U+1EE3 |
 
-## Test coverage matrix
+## Ma trận phủ test
 
-| Test suite | Count | Location | What is verified |
+| Bộ test | Số lượng | Vị trí | Nội dung kiểm tra |
 |---|---|---|---|
-| Golden 216 | 216 | `vi-testing/tests/golden_216.rs` | Every Vietnamese vowel × 6 tones × 3 input methods produces the expected character AND is valid NFC |
-| NFD round-trip | 10+ | `vi-testing/tests/unicode_torture.rs` | NFD input (base + combining marks, including reversed CCC order) normalises to the correct NFC codepoint |
-| Wrong-order same-CCC marks | 1 | `vi-testing/tests/unicode_torture.rs` | `a+U+0301+U+0302` (acute before circumflex, both CCC=230) produces stable NFC output distinct from the intended `ấ` — documents that input order matters for same-CCC mark pairs |
-| Legacy encoding detection | 4+ | `vi-testing/tests/unicode_torture.rs` | C1 control codepoints (U+0080–U+009F) from TCVN3/VPS/VISCII files decoded as Latin-1 are rejected with `CompositionError::LegacyEncoding` |
-| Surrogate rejection | 1 | `vi-testing/tests/unicode_torture.rs` | `CompositionError::SurrogateCodepoint` variant exists for FFI/CESU-8 paths; engine output never contains surrogates |
-| Unicode torture (pipeline) | 40+ | `vi-testing/src/unicode_torture.rs` + `tests/unicode_torture_test.rs` | Full battery of NFD→NFC, emoji ZWJ, C1 detection, orphaned combining marks, non-character codepoints |
-| Property tests | ∞ | `vi-testing/tests/golden_exhaustive_test.rs` | Arbitrary lowercase prefix + golden 216 cases via proptest |
+| Golden 216 | 216 | `vi-testing/tests/golden_216.rs` | Mọi nguyên âm Việt × 6 thanh × 3 kiểu gõ cho ký tự đúng VÀ hợp lệ NFC |
+| Round-trip NFD | 10+ | `vi-testing/tests/unicode_torture.rs` | Đầu vào NFD (gốc + dấu kết hợp, kể cả thứ tự CCC đảo) chuẩn hóa đúng codepoint NFC |
+| Dấu cùng CCC sai thứ tự | 1 | `vi-testing/tests/unicode_torture.rs` | `a+U+0301+U+0302` (sắc trước mũ, cùng CCC=230) cho NFC ổn định khác `ấ` — ghi nhận thứ tự nhập quan trọng với cặp dấu cùng CCC |
+| Phát hiện mã hóa cũ | 4+ | `vi-testing/tests/unicode_torture.rs` | Codepoint điều khiển C1 (U+0080–U+009F) từ file TCVN3/VPS/VISCII decode Latin-1 bị từ chối với `CompositionError::LegacyEncoding` |
+| Từ chối surrogate | 1 | `vi-testing/tests/unicode_torture.rs` | Biến thể `CompositionError::SurrogateCodepoint` cho đường FFI/CESU-8; đầu ra engine không chứa surrogate |
+| Unicode torture (pipeline) | 40+ | `vi-testing/src/unicode_torture.rs` + `tests/unicode_torture_test.rs` | Bộ đầy đủ NFD→NFC, emoji ZWJ, phát hiện C1, dấu kết hợp mồ côi, codepoint non-character |
+| Property test | ∞ | `vi-testing/tests/golden_exhaustive_test.rs` | Tiền tố chữ thường tùy ý + golden 216 qua proptest |
 
-## Legacy encoding detection
+## Phát hiện mã hóa cũ
 
-The pipeline rejects strings that contain **C1 control characters** (U+0080–U+009F).
-These codepoints appear when TCVN3, VPS, or VISCII documents (8-bit encodings)
-are decoded byte-by-byte as Latin-1 and re-encoded as UTF-8.  Byte values
-0x80–0x9F in those encodings map to Vietnamese characters; when misread as
-Latin-1 they become U+0080–U+009F, which have no useful meaning in Unicode text.
+Pipeline từ chối chuỗi chứa **ký tự điều khiển C1** (U+0080–U+009F).
+Các codepoint này xuất hiện khi tài liệu TCVN3, VPS hoặc VISCII (mã 8-bit)
+được decode byte-by-byte thành Latin-1 rồi mã hóa lại UTF-8. Giá trị byte
+0x80–0x9F trong các bảng đó ánh xạ ký tự Việt; đọc nhầm Latin-1 thành
+U+0080–U+009F, không có ý nghĩa hữu ích trong văn bản Unicode.
 
-| Error | Trigger | Meaning |
+| Lỗi | Kích hoạt | Ý nghĩa |
 |---|---|---|
-| `CompositionError::LegacyEncoding(cp)` | Any codepoint in U+0080–U+009F | Caller must re-encode the source document as UTF-8 using the correct code-page table |
+| `CompositionError::LegacyEncoding(cp)` | Bất kỳ codepoint trong U+0080–U+009F | Caller phải mã hóa lại nguồn UTF-8 bằng bảng code-page đúng |
 
-Characters in the Latin-1 Supplement block **above** U+00A0 (e.g., `à` = U+00E0,
-`ô` = U+00F4) are valid Unicode and pass through the pipeline unchanged.
+Ký tự trong khối Latin-1 Supplement **trên** U+00A0 (ví dụ `à` = U+00E0,
+`ô` = U+00F4) là Unicode hợp lệ và qua pipeline không đổi.
 
-## Verifying NFC output
+## Kiểm tra đầu ra NFC
 
 ```python
 import unicodedata
@@ -118,7 +116,7 @@ for ch in text:
     print(f"U+{cp:04X}  {ch!r:4}  {'NFC' if form else 'NOT NFC':7}  {name}")
 ```
 
-Expected output for `"việt nam"` (all NFC):
+Kết quả mong đợi cho `"việt nam"` (tất cả NFC):
 
 ```
 U+0076  'v'  NFC     LATIN SMALL LETTER V

@@ -1,7 +1,7 @@
-# CompositionEngine State Machine
+# Máy trạng thái CompositionEngine
 
-The `StandardEngine` in `vi-core` is a pure state machine with four logical states.
-All transitions are driven by `InputEvent`s and produce a `StateTransition`.
+`StandardEngine` trong `vi-core` là máy trạng thái thuần với bốn trạng thái logic.
+Mọi chuyển trạng thái do `InputEvent` kích hoạt và sinh ra `StateTransition`.
 
 ```mermaid
 stateDiagram-v2
@@ -19,34 +19,34 @@ stateDiagram-v2
     Cleared --> Idle : buffer cleared
 ```
 
-## States
+## Trạng thái
 
-| State | Description | Buffer condition |
+| Trạng thái | Mô tả | Điều kiện buffer |
 |---|---|---|
-| **Idle** | No composition in progress | Empty |
-| **Composing** | Preedit text is displayed to the user | Non-empty |
-| **Committed** | Composed text has been committed to the application | Empty (just cleared) |
-| **Cleared** | Composition was discarded without committing | Empty (just cleared) |
+| **Idle** | Không có composition đang diễn ra | Rỗng |
+| **Composing** | Preedit hiển thị cho người dùng | Không rỗng |
+| **Committed** | Văn bản đã ghép được commit vào ứng dụng | Rỗng (vừa xóa) |
+| **Cleared** | Composition bị bỏ mà không commit | Rỗng (vừa xóa) |
 
-Both `Committed` and `Cleared` are transient: the buffer is empty when they are
-reached, so the next event is processed from `Idle`.
+Cả `Committed` và `Cleared` đều nhất thời: buffer rỗng khi đạt tới,
+nên sự kiện kế tiếp được xử lý từ `Idle`.
 
-## Transitions
+## Chuyển trạng thái
 
-| From | Event | Guard | `StateTransition` emitted | To |
+| Từ | Sự kiện | Điều kiện | `StateTransition` phát ra | Tới |
 |---|---|---|---|---|
 | Idle | `Char key` | — | `PreeditUpdated(text)` | Composing |
-| Idle | `Backspace` | buffer empty | `PassThrough` | Idle |
-| Idle | Non-char key | buffer empty | `PassThrough` | Idle |
+| Idle | `Backspace` | buffer rỗng | `PassThrough` | Idle |
+| Idle | Non-char key | buffer rỗng | `PassThrough` | Idle |
 | Composing | `Char key` | — | `PreeditUpdated(text)` | Composing |
-| Composing | `Backspace` | buffer non-empty after rollback | `PreeditUpdated(text)` | Composing |
-| Composing | `Backspace` | buffer empty after rollback | `Cleared` | Cleared |
+| Composing | `Backspace` | buffer không rỗng sau rollback | `PreeditUpdated(text)` | Composing |
+| Composing | `Backspace` | buffer rỗng sau rollback | `Cleared` | Cleared |
 | Composing | `Return` / `Tab` | — | `CommitAndClear(text)` | Committed |
 | Composing | `Escape` | — | `Cleared` | Cleared |
 | Composing | `Reset` event | — | `Cleared` | Cleared |
 | Composing | `FocusOut` | — | `CommitAndClear(text)` | Committed |
-| Composing | Non-char key | buffer non-empty | `CommitAndClear(text)` | Committed |
-| Any | `KeyUp` | — | `Consumed` | *(unchanged)* |
-| Any | `FocusIn` | — | `Consumed` | *(unchanged)* |
+| Composing | Non-char key | buffer không rỗng | `CommitAndClear(text)` | Committed |
+| Any | `KeyUp` | — | `Consumed` | *(không đổi)* |
+| Any | `FocusIn` | — | `Consumed` | *(không đổi)* |
 
-> Source: `crates/vi-core/src/engine.rs` — `StandardEngine::process`.
+> Nguồn: `crates/vi-core/src/engine.rs` — `StandardEngine::process`.
