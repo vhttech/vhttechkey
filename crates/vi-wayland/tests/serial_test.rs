@@ -106,8 +106,9 @@ fn serial_wraps_correctly_at_u32_max() {
     assert_eq!(sent_commits, 1);
 }
 
-/// The Niri dual-protocol guard fires when `sent_commits.wrapping_sub(ti_serial)
-/// > 2`.  After a wrap the wrapping_sub must still compute correctly so the
+/// The Niri dual-protocol guard fires when `sent_commits.wrapping_sub(ti_serial) > 2`.
+///
+/// After a wrap the wrapping_sub must still compute correctly so the
 /// guard does not produce false positives immediately after Activate.
 #[test]
 fn niri_guard_wrapping_sub_is_safe_after_activate() {

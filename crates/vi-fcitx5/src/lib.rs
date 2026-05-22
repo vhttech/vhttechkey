@@ -102,8 +102,8 @@ enum DeltaOp {
 
 #[cfg(test)]
 fn compute_preedit_delta(old: &str, new: &str) -> Vec<DeltaOp> {
-    let (backspaces, to_insert): (usize, Vec<char>) = if new.starts_with(old) {
-        (0, new[old.len()..].chars().collect())
+    let (backspaces, to_insert): (usize, Vec<char>) = if let Some(suffix) = new.strip_prefix(old) {
+        (0, suffix.chars().collect())
     } else if old.starts_with(new) {
         (old.chars().count() - new.chars().count(), vec![])
     } else {

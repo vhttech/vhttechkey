@@ -31,14 +31,12 @@ fn create_app(
         "HackNerdFont".into(),
         egui::FontData::from_static(include_bytes!(
             "../../../data/fonts/Hack/HackNerdFont-Regular.ttf"
-        ))
-        .into(),
+        )),
     );
 
     fonts.font_data.insert(
         "NotoSans".into(),
-        egui::FontData::from_static(include_bytes!("../../../data/fonts/NotoSans-Regular.ttf"))
-            .into(),
+        egui::FontData::from_static(include_bytes!("../../../data/fonts/NotoSans-Regular.ttf")),
     );
 
     let proportional = fonts

@@ -141,7 +141,7 @@ pub(crate) fn is_alpha(c: char) -> bool {
 }
 
 pub(crate) fn in_key_list(keys: &[char], key: char) -> bool {
-    keys.iter().any(|&k| k == key)
+    keys.contains(&key)
 }
 
 pub(crate) fn is_vietnamese_rune(lower_key: char) -> bool {

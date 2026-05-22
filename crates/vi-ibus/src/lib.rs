@@ -1468,9 +1468,8 @@ async fn try_connect(
             "org.freedesktop.IBus.vhttechkey"
                 .try_into()
                 .map_err(|e: zbus::names::Error| e.to_string())?,
-            (zbus::fdo::RequestNameFlags::ReplaceExisting
-                | zbus::fdo::RequestNameFlags::AllowReplacement)
-                .into(),
+            zbus::fdo::RequestNameFlags::ReplaceExisting
+                | zbus::fdo::RequestNameFlags::AllowReplacement,
         )
         .await
     {
@@ -1839,7 +1838,7 @@ mod tests {
         let owned = ibus_text_owned("test");
         // The OwnedValue itself is the variant; its inner value must be the
         // IBusText structure (sa{sv}sv), NOT another variant.
-        let inner: &Value = &*owned;
+        let inner: &Value = &owned;
         assert!(
             matches!(inner, Value::Structure(_)),
             "ibus_text_owned must not wrap in extra Value::Value; got: {inner:?}"
@@ -1851,7 +1850,7 @@ mod tests {
         let owned = ibus_text_owned("nhà");
         // Extract the text string from the structure (field index 2)
         // and verify it round-trips correctly
-        let inner = Value::try_from(owned).unwrap();
+        let inner = Value::from(owned);
         if let Value::Structure(s) = inner {
             let fields = s.fields();
             assert!(matches!(fields.first(), Some(Value::Str(n)) if n.as_str() == "IBusText"));
@@ -2173,7 +2172,7 @@ mod tests {
     fn ibus_text_owned_vietnamese_composition_chars() {
         for text in &["v", "vi", "vie", "viet", "việt", "nhà", "ổn"] {
             let owned = ibus_text_owned(text);
-            let inner: &Value = &*owned;
+            let inner: &Value = &owned;
             match inner {
                 Value::Structure(s) => {
                     let fields = s.fields();
@@ -2260,9 +2259,7 @@ mod tests {
         force_preedit_mode: bool,
     ) -> (IbusEngineIface, Arc<Mutex<SharedState>>) {
         use vi_core::InputMethod;
-        let mut state = SharedState::default();
-        state.force_chrome_direct = force_chrome_direct;
-        state.force_preedit_mode = force_preedit_mode;
+        let state = SharedState { force_chrome_direct, force_preedit_mode, ..Default::default() };
         let state_arc = Arc::new(Mutex::new(state));
         let iface = IbusEngineIface {
             engine: Arc::new(Mutex::new(StandardEngine::new(InputMethod::Telex))),

@@ -173,9 +173,7 @@ pub(crate) fn has_valid_tone(composition: &[Trans], tone: Tone) -> bool {
     }
     let last_consonants = flat::flatten(&lc, ENGLISH_MODE | LOWERCASE_MODE);
     let dot_with_consonants = ["c", "k", "p", "t", "ch"];
-    !dot_with_consonants
-        .iter()
-        .any(|s| *s == last_consonants.as_str())
+    !dot_with_consonants.contains(&last_consonants.as_str())
 }
 
 pub(crate) fn get_last_tone_transformation(composition: &[Trans]) -> Option<Trans> {
@@ -248,7 +246,7 @@ pub(crate) fn extract_cvc_appending_trans(
         let gi_cluster = g_ok
             && v0 == 'i'
             && vowel.len() > 1
-            && !(vowel[1].read().rule.result == 'e' && !last_consonant.is_empty());
+            && (last_consonant.is_empty() || vowel[1].read().rule.result != 'e');
         let qu_cluster = q_ok && v0 == 'u';
         if gi_cluster || qu_cluster {
             first_consonant.push(vowel[0].clone());
@@ -408,7 +406,6 @@ pub(crate) fn find_target(
         if str_full == flat::flatten(&appended, VIETNAMESE_MODE) {
             continue;
         }
-        let mut target = target;
         if Tone::from(applicable_rule.effect) == Tone::None {
             if let Some(ref t) = target {
                 if is_free(composition, t, EffectType::ToneTransformation)
@@ -518,28 +515,27 @@ pub(crate) fn generate_transformations(
         }
     }
 
-    match find_target(composition, applicable_rules, flags) {
-        Some((Some(target), applicable_rule)) => {
-            transformations.push(new_trans(
-                applicable_rule.clone(),
-                Some(target.clone()),
-                is_upper_case,
-            ));
-            if applicable_rule.effect_type != EffectType::MarkTransformation {
-                return transformations;
-            }
-            let mut new_comp = composition.to_vec();
-            new_comp.push(transformations[0].clone());
-            if is_valid(&new_comp, true) {
-                return transformations;
-            }
-            if let Some((Some(t2), mut vr)) = find_target(&new_comp, applicable_rules, flags) {
-                vr.key = '\0';
-                transformations.push(new_trans(vr, Some(t2), false));
-            }
+    if let Some((Some(target), applicable_rule)) =
+        find_target(composition, applicable_rules, flags)
+    {
+        transformations.push(new_trans(
+            applicable_rule.clone(),
+            Some(target.clone()),
+            is_upper_case,
+        ));
+        if applicable_rule.effect_type != EffectType::MarkTransformation {
             return transformations;
         }
-        _ => {}
+        let mut new_comp = composition.to_vec();
+        new_comp.push(transformations[0].clone());
+        if is_valid(&new_comp, true) {
+            return transformations;
+        }
+        if let Some((Some(t2), mut vr)) = find_target(&new_comp, applicable_rules, flags) {
+            vr.key = '\0';
+            transformations.push(new_trans(vr, Some(t2), false));
+        }
+        return transformations;
     }
 
     if REG_UH_O.is_match(&flat::flatten(

@@ -60,7 +60,7 @@ fn lookup(
             for (k, &ic) in input_runes.iter().enumerate() {
                 let ck = canvas[k];
                 // Go: ic != canvas[k] && !(!inputIsComplete && AddMarkToTonelessChar(canvas[k],0)==ic)
-                if ic != ck && !(!input_is_complete && add_mark_to_toneless_char(ck, 0) == ic) {
+                if ic != ck && (input_is_complete || add_mark_to_toneless_char(ck, 0) != ic) {
                     is_match = false;
                     break;
                 }

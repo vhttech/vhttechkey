@@ -80,11 +80,8 @@ async fn dispatch_transition(
                 "dispatch: commit_replacing_preedit"
             );
             backend.commit_replacing_preedit(c.as_nfc())?;
-            match event {
-                InputEvent::KeyDown(Key::Return | Key::Tab, _) => {
-                    backend.forward_key(event).ok();
-                }
-                _ => {}
+            if let InputEvent::KeyDown(Key::Return | Key::Tab, _) = event {
+                backend.forward_key(event).ok();
             }
             Ok(())
         }

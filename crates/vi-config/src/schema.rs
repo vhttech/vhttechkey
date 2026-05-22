@@ -34,7 +34,7 @@ pub enum IbusCommitMode {
 }
 
 /// IBus-specific configuration options.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
 pub struct IbusConfig {
     /// When `true`, clears `chrome_direct_mode` and keeps the standard IBus
     /// preedit path (`UpdatePreeditText` + `HidePreeditText` + `CommitText`).
@@ -58,15 +58,6 @@ pub struct IbusConfig {
     pub commit_mode: IbusCommitMode,
 }
 
-impl Default for IbusConfig {
-    fn default() -> Self {
-        Self {
-            force_preedit_mode: false,
-            force_chrome_direct: false,
-            commit_mode: IbusCommitMode::default(),
-        }
-    }
-}
 
 /// Top-level configuration file structure.
 #[derive(Debug, Clone, Serialize, Deserialize)]

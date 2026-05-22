@@ -53,6 +53,7 @@ fn nguyeenf_nguyen_huyen() {
 /// Modified-vowel ươ — two Telex styles (same result):
 /// - One `w` after medial `uo`: `thuowng` (Case B: consonant + u + o + w → ươ).
 /// - Two `w` (uw then ow): `thuwowng` — matches habits from some IMEs.
+///
 /// Tone on ơ → ợ (j = nặng).
 #[test]
 fn thuowngj_thuong_nang_one_w_after_uo() {

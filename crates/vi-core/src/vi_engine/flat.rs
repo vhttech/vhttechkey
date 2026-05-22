@@ -26,12 +26,7 @@ pub(crate) fn get_canvas(composition: &[Trans], mode: EngineMode) -> Vec<char> {
 
     for trans in composition {
         let inner = trans.read();
-        if mode & ENGLISH_MODE != 0 {
-            if inner.rule.key == '\0' {
-                continue;
-            }
-            appending_list.push(trans.clone());
-        } else if inner.rule.effect_type == EffectType::Appending {
+        if mode & ENGLISH_MODE != 0 || inner.rule.effect_type == EffectType::Appending {
             if inner.rule.key == '\0' {
                 continue;
             }
