@@ -62,7 +62,10 @@ pub fn watch(path: impl AsRef<Path>) -> Result<ConfigWatcher, ConfigError> {
         .watch(&path, notify::RecursiveMode::NonRecursive)
         .map_err(ConfigError::Watch)?;
 
-    Ok(ConfigWatcher { rx, _watcher: watcher })
+    Ok(ConfigWatcher {
+        rx,
+        _watcher: watcher,
+    })
 }
 
 #[cfg(test)]

@@ -71,7 +71,7 @@ pub fn cases() -> Vec<UnicodeTortureCase> {
         // ── Already-NFC passthrough ───────────────────────────────────────────
         UnicodeTortureCase {
             description: "already-NFC Vietnamese sentence passthrough",
-            raw_input: "Xin ch\u{00E0}o",   // "Xin chào" precomposed
+            raw_input: "Xin ch\u{00E0}o", // "Xin chào" precomposed
             expected_nfc: Some("Xin ch\u{00E0}o"),
         },
         UnicodeTortureCase {
@@ -86,7 +86,7 @@ pub fn cases() -> Vec<UnicodeTortureCase> {
         },
         UnicodeTortureCase {
             description: "CJK characters passthrough",
-            raw_input: "\u{4E2D}\u{6587}",  // 中文
+            raw_input: "\u{4E2D}\u{6587}", // 中文
             expected_nfc: Some("\u{4E2D}\u{6587}"),
         },
         // ── Emoji / special sequences ─────────────────────────────────────────
@@ -313,7 +313,11 @@ mod tests {
         let with_emoji = format!("\u{1F44D}{nfd}");
         let r2 = UnicodePipeline::process(&with_emoji).unwrap();
         let expected: String = "\u{1F44D}tốt".nfc().collect();
-        assert_eq!(r2.as_str(), expected, "tone marks must survive emoji+NFD input");
+        assert_eq!(
+            r2.as_str(),
+            expected,
+            "tone marks must survive emoji+NFD input"
+        );
     }
 
     /// Invalid UTF-8 byte sequences at the engine boundary must never panic;
@@ -356,8 +360,7 @@ mod tests {
                         assert_no_surrogates(&t);
                     }
                 }
-                if let Ok(t) =
-                    engine.process(&InputEvent::KeyDown(Key::Return, Modifiers::none()))
+                if let Ok(t) = engine.process(&InputEvent::KeyDown(Key::Return, Modifiers::none()))
                 {
                     assert_no_surrogates(&t);
                 }

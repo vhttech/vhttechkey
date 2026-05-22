@@ -23,7 +23,9 @@ struct MockWayland {
 /// Assert: engine method reflects the last SetMethod; preedit is cleared.
 #[test]
 fn set_method_race_consistent_state() {
-    let engine = Arc::new(Mutex::new(MockEngine { method: "vi-telex".to_string() }));
+    let engine = Arc::new(Mutex::new(MockEngine {
+        method: "vi-telex".to_string(),
+    }));
     let wayland = Arc::new(Mutex::new(MockWayland {
         active: true,
         pending_preedit: Some(("đ".to_string(), 2)),
@@ -61,8 +63,14 @@ fn set_method_race_consistent_state() {
 
     let eng = engine.lock();
     let wl = wayland.lock();
-    assert_eq!(eng.method, "vi-viqr", "engine method must reflect last SetMethod");
-    assert!(wl.pending_preedit.is_none(), "stale preedit must be cleared");
+    assert_eq!(
+        eng.method, "vi-viqr",
+        "engine method must reflect last SetMethod"
+    );
+    assert!(
+        wl.pending_preedit.is_none(),
+        "stale preedit must be cleared"
+    );
 }
 
 /// Acquiring locks in the defined order (A then B) must never deadlock.

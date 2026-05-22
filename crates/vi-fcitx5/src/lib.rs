@@ -121,8 +121,11 @@ fn compute_preedit_delta(old: &str, new: &str) -> Vec<DeltaOp> {
 
 #[cfg(test)]
 fn soft_preedit_diff(old: &str, new: &str) -> (usize, String) {
-    let prefix_chars =
-        old.chars().zip(new.chars()).take_while(|(a, b)| a == b).count();
+    let prefix_chars = old
+        .chars()
+        .zip(new.chars())
+        .take_while(|(a, b)| a == b)
+        .count();
     let old_tail = old
         .char_indices()
         .nth(prefix_chars)
@@ -157,7 +160,10 @@ pub struct FcitxShimBackend {
 
 impl FcitxShimBackend {
     pub fn new(socket_path: PathBuf, engine: Arc<Mutex<StandardEngine>>) -> Self {
-        Self { socket_path, engine }
+        Self {
+            socket_path,
+            engine,
+        }
     }
 
     /// Start the Unix socket server; runs until cancelled.
@@ -206,7 +212,11 @@ impl ImeBackend for FcitxShimBackend {
         Ok(None)
     }
     fn capabilities(&self) -> Capabilities {
-        Capabilities { preedit: true, surrounding_text: false, lookup_table: true }
+        Capabilities {
+            preedit: true,
+            surrounding_text: false,
+            lookup_table: true,
+        }
     }
 }
 
@@ -237,10 +247,7 @@ pub async fn handle_shim_connection(stream: UnixStream, engine: Arc<Mutex<Standa
 ///
 /// The returned string does **not** end with `\n`; the caller appends it.
 /// Multi-line responses (RESULT with ops) use embedded `\n` between lines.
-pub(crate) fn dispatch_shim_line(
-    line: &str,
-    engine: &Arc<Mutex<StandardEngine>>,
-) -> String {
+pub(crate) fn dispatch_shim_line(line: &str, engine: &Arc<Mutex<StandardEngine>>) -> String {
     let mut parts = line.split_ascii_whitespace();
     match parts.next() {
         Some("ACTIVATE") => {
@@ -265,8 +272,7 @@ pub(crate) fn dispatch_shim_line(
         }
         Some("KEYUP") => {
             // Reset the repeat-guard so a genuine re-press is never suppressed.
-            let keyval: u32 =
-                parts.next().and_then(|s| s.parse().ok()).unwrap_or(0);
+            let keyval: u32 = parts.next().and_then(|s| s.parse().ok()).unwrap_or(0);
             engine
                 .lock()
                 .unwrap_or_else(|e| e.into_inner())
@@ -275,12 +281,9 @@ pub(crate) fn dispatch_shim_line(
             "RESULT 0 0".to_owned()
         }
         Some("KEY") => {
-            let keyval: u32 =
-                parts.next().and_then(|s| s.parse().ok()).unwrap_or(0);
-            let _keycode: u32 =
-                parts.next().and_then(|s| s.parse().ok()).unwrap_or(0);
-            let state: u32 =
-                parts.next().and_then(|s| s.parse().ok()).unwrap_or(0);
+            let keyval: u32 = parts.next().and_then(|s| s.parse().ok()).unwrap_or(0);
+            let _keycode: u32 = parts.next().and_then(|s| s.parse().ok()).unwrap_or(0);
+            let state: u32 = parts.next().and_then(|s| s.parse().ok()).unwrap_or(0);
             process_key_event_impl(engine, keyval, state)
         }
         _ => {
@@ -322,10 +325,7 @@ fn format_response(consumed: bool, ops: Vec<String>) -> String {
     out
 }
 
-fn state_transition_to_ops(
-    t: StateTransition,
-    original: Option<&InputEvent>,
-) -> Vec<String> {
+fn state_transition_to_ops(t: StateTransition, original: Option<&InputEvent>) -> Vec<String> {
     match t {
         StateTransition::PreeditUpdated(p) => {
             let n = p.as_str().chars().count();
@@ -402,20 +402,18 @@ fn map_keyval_to_key(keyval: u32) -> Key {
         // Printable ASCII (space through tilde).
         0x0020..=0x007e => Key::Char(char::from_u32(keyval).unwrap()),
         // X11 Unicode extension: keysym = 0x01000000 + Unicode codepoint.
-        v @ 0x01000000..=0x0110ffff => {
-            Key::Char(char::from_u32(v - 0x01000000).unwrap_or('\0'))
-        }
+        v @ 0x01000000..=0x0110ffff => Key::Char(char::from_u32(v - 0x01000000).unwrap_or('\0')),
         other => Key::Keysym(other),
     }
 }
 
 fn map_xkb_state(state: u32) -> Modifiers {
     Modifiers {
-        shift:     state & 1 != 0,
+        shift: state & 1 != 0,
         caps_lock: state & 2 != 0,
-        ctrl:      state & 4 != 0,
-        alt:       state & 8 != 0,
-        altgr:     state & (1 << 7) != 0,
+        ctrl: state & 4 != 0,
+        alt: state & 8 != 0,
+        altgr: state & (1 << 7) != 0,
         super_key: state & (1 << 26) != 0,
     }
 }
@@ -430,7 +428,7 @@ fn is_modifier_keysym(keyval: u32) -> bool {
         | 0xffe9 | 0xffea // Alt_L / Alt_R
         | 0xffeb | 0xffec // Super_L / Super_R
         | 0xff7f          // Num_Lock
-        | 0xfe03          // ISO_Level3_Shift (AltGr)
+        | 0xfe03 // ISO_Level3_Shift (AltGr)
     )
 }
 
@@ -455,11 +453,21 @@ fn key_to_xkb(key: &Key) -> u32 {
 
 fn mods_to_xkb(mods: &Modifiers) -> u32 {
     let mut m = 0u32;
-    if mods.shift     { m |= 1; }
-    if mods.caps_lock { m |= 2; }
-    if mods.ctrl      { m |= 4; }
-    if mods.alt       { m |= 8; }
-    if mods.super_key { m |= 1 << 26; }
+    if mods.shift {
+        m |= 1;
+    }
+    if mods.caps_lock {
+        m |= 2;
+    }
+    if mods.ctrl {
+        m |= 4;
+    }
+    if mods.alt {
+        m |= 8;
+    }
+    if mods.super_key {
+        m |= 1 << 26;
+    }
     m
 }
 
@@ -491,7 +499,10 @@ mod tests {
     #[test]
     fn plain_char_produces_key_down() {
         let event = map_fcitx5_key(b'a' as u32, 0, false).unwrap();
-        assert_eq!(event, InputEvent::KeyDown(Key::Char('a'), Modifiers::none()));
+        assert_eq!(
+            event,
+            InputEvent::KeyDown(Key::Char('a'), Modifiers::none())
+        );
     }
 
     #[test]

@@ -1,4 +1,7 @@
-use crate::{error::CompositionError, types::{InputEvent, Key, Modifiers}};
+use crate::{
+    error::CompositionError,
+    types::{InputEvent, Key, Modifiers},
+};
 
 /// Abstract representation of a key event after layout resolution.
 ///
@@ -7,8 +10,12 @@ use crate::{error::CompositionError, types::{InputEvent, Key, Modifiers}};
 /// platform-free.
 pub trait KeyboardLayout: Send + Sync {
     /// Resolve a raw platform keysym + modifier state into a logical `InputEvent`.
-    fn resolve(&self, keysym: u32, modifiers: Modifiers, pressed: bool)
-        -> Result<InputEvent, CompositionError>;
+    fn resolve(
+        &self,
+        keysym: u32,
+        modifiers: Modifiers,
+        pressed: bool,
+    ) -> Result<InputEvent, CompositionError>;
 }
 
 /// A layout that treats every keysym as a direct Unicode codepoint.
@@ -69,11 +76,9 @@ fn keysym_to_key(keysym: u32) -> Result<Key, CompositionError> {
                 .ok_or(CompositionError::UnknownKey(format!("{k:#010x}")))
         }
         // Latin-1 printable range maps directly.
-        k if (0x0020..=0x007E).contains(&k) || (0x00A0..=0x00FF).contains(&k) => {
-            char::from_u32(k)
-                .map(Key::Char)
-                .ok_or(CompositionError::UnknownKey(format!("{k:#010x}")))
-        }
+        k if (0x0020..=0x007E).contains(&k) || (0x00A0..=0x00FF).contains(&k) => char::from_u32(k)
+            .map(Key::Char)
+            .ok_or(CompositionError::UnknownKey(format!("{k:#010x}"))),
         k => Err(CompositionError::UnknownKey(format!("{k:#010x}"))),
     }
 }

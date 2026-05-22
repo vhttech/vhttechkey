@@ -53,16 +53,13 @@ async fn call_update_preedit(conn: &Connection, text: &str, cursor: u32, visible
 /// Type text through the engine, then channel the engine output to the mock
 /// daemon via D-Bus.  Returns the committed text (empty if nothing was
 /// committed).
-async fn type_and_send(
-    engine: &mut StandardEngine,
-    client: &Connection,
-    keys: &str,
-) -> String {
+async fn type_and_send(engine: &mut StandardEngine, client: &Connection, keys: &str) -> String {
     let mut committed = String::new();
     for ch in keys.chars() {
         match engine.process(&key(ch)).unwrap() {
             StateTransition::PreeditUpdated(p) => {
-                call_update_preedit(client, p.as_str(), p.as_str().chars().count() as u32, true).await;
+                call_update_preedit(client, p.as_str(), p.as_str().chars().count() as u32, true)
+                    .await;
             }
             StateTransition::CommitAndClear(c) | StateTransition::Commit(c) => {
                 call_commit_text(client, c.as_str()).await;
@@ -94,13 +91,18 @@ async fn ibus_daemon_restart_recovery() {
     // Phase 1: type "aa" (Telex → "â"), then commit via Return.
     let mut engine = StandardEngine::new(InputMethod::Telex);
     type_and_send(&mut engine, &client, "aa").await;
-    if let StateTransition::CommitAndClear(c) = engine.process(&InputEvent::KeyDown(Key::Return, Modifiers::none())).unwrap() {
+    if let StateTransition::CommitAndClear(c) = engine
+        .process(&InputEvent::KeyDown(Key::Return, Modifiers::none()))
+        .unwrap()
+    {
         call_commit_text(&client, c.as_str()).await;
     }
 
     let calls_before = daemon.calls();
     assert!(
-        calls_before.iter().any(|c| matches!(c, IbusCall::CommitText(t) if t == "â")),
+        calls_before
+            .iter()
+            .any(|c| matches!(c, IbusCall::CommitText(t) if t == "â")),
         "CommitText('â') not captured before restart; calls: {calls_before:?}",
     );
 
@@ -110,13 +112,18 @@ async fn ibus_daemon_restart_recovery() {
     // Phase 3: type "oo" (Telex → "ô"), commit.
     let mut engine2 = StandardEngine::new(InputMethod::Telex);
     type_and_send(&mut engine2, &client, "oo").await;
-    if let StateTransition::CommitAndClear(c) = engine2.process(&InputEvent::KeyDown(Key::Return, Modifiers::none())).unwrap() {
+    if let StateTransition::CommitAndClear(c) = engine2
+        .process(&InputEvent::KeyDown(Key::Return, Modifiers::none()))
+        .unwrap()
+    {
         call_commit_text(&client, c.as_str()).await;
     }
 
     let calls_after = daemon.calls();
     assert!(
-        calls_after.iter().any(|c| matches!(c, IbusCall::CommitText(t) if t == "ô")),
+        calls_after
+            .iter()
+            .any(|c| matches!(c, IbusCall::CommitText(t) if t == "ô")),
         "CommitText('ô') not captured after restart; calls: {calls_after:?}",
     );
 }

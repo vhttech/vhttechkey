@@ -1,9 +1,21 @@
-use vi_ui::candidate::{CandidateOrientation, CandidateWindow, MonitorInfo, cursor_monitor};
+use vi_ui::candidate::{cursor_monitor, CandidateOrientation, CandidateWindow, MonitorInfo};
 
 fn dual_monitor_setup() -> Vec<MonitorInfo> {
     vec![
-        MonitorInfo { x: 0,    y: 0, width: 1920, height: 1080, scale_factor: 1.0 },
-        MonitorInfo { x: 1920, y: 0, width: 2560, height: 1440, scale_factor: 2.0 },
+        MonitorInfo {
+            x: 0,
+            y: 0,
+            width: 1920,
+            height: 1080,
+            scale_factor: 1.0,
+        },
+        MonitorInfo {
+            x: 1920,
+            y: 0,
+            width: 2560,
+            height: 1440,
+            scale_factor: 2.0,
+        },
     ]
 }
 
@@ -63,9 +75,13 @@ fn empty_monitor_list_returns_none() {
 /// - `CandidateWindow::scale_factor()` reflects the new value immediately.
 #[test]
 fn scale_change_mid_session_no_crash_and_updates_scale() {
-    let mut monitors = vec![
-        MonitorInfo { x: 0, y: 0, width: 1920, height: 1080, scale_factor: 1.0 },
-    ];
+    let mut monitors = vec![MonitorInfo {
+        x: 0,
+        y: 0,
+        width: 1920,
+        height: 1080,
+        scale_factor: 1.0,
+    }];
     let mut win = CandidateWindow::new(CandidateOrientation::Horizontal);
 
     win.set_cursor(100, 100, &monitors);

@@ -4,7 +4,7 @@
 //! the virtual-keyboard fallback path without needing a live Wayland compositor.
 #![allow(unused_assignments)]
 
-use vi_core::{Key, Modifiers, InputEvent};
+use vi_core::{InputEvent, Key, Modifiers};
 
 // ── Event-ordering tests ──────────────────────────────────────────────────────
 
@@ -128,15 +128,15 @@ fn test_serial_resets_on_activate() {
     let mut serial = 0u32;
 
     // Simulate a full first cycle: Activate → Done × 3 → Deactivate.
-    serial = 0;                         // Activate resets to 0
-    serial = serial.wrapping_add(1);    // Done #1 → 1
-    serial = serial.wrapping_add(1);    // Done #2 → 2
-    serial = serial.wrapping_add(1);    // Done #3 → 3
-    // Deactivate: serial stays at 3 locally, but next Activate must reset it.
+    serial = 0; // Activate resets to 0
+    serial = serial.wrapping_add(1); // Done #1 → 1
+    serial = serial.wrapping_add(1); // Done #2 → 2
+    serial = serial.wrapping_add(1); // Done #3 → 3
+                                     // Deactivate: serial stays at 3 locally, but next Activate must reset it.
 
     // Second cycle: compositor sends Activate again.
-    serial = 0;                         // Activate resets to 0
-    serial = serial.wrapping_add(1);    // Done #1 → 1
+    serial = 0; // Activate resets to 0
+    serial = serial.wrapping_add(1); // Done #1 → 1
     assert_eq!(serial, 1, "serial must restart from 1 after re-activation");
 }
 
@@ -151,25 +151,26 @@ fn test_serial_monotonic_no_stale_double_commit() {
     let mut serial = 0u32;
 
     // Simulate: Activate → Done → commit text (GNOME quirk fixed path).
-    serial = 0;                         // Activate
-    serial = serial.wrapping_add(1);    // Done #1 → serial = 1
+    serial = 0; // Activate
+    serial = serial.wrapping_add(1); // Done #1 → serial = 1
 
     // Fixed path: single commit() for clear-preedit + commit-string together.
     // set_preedit_string("") + commit_string("viê") → commit(1)
-    commits.push(serial);               // commit(1)
+    commits.push(serial); // commit(1)
 
     // Compositor processes, fires Done again.
-    serial = serial.wrapping_add(1);    // Done #2 → serial = 2
+    serial = serial.wrapping_add(1); // Done #2 → serial = 2
 
     // Next operation uses the updated serial.
-    commits.push(serial);               // commit(2)
+    commits.push(serial); // commit(2)
 
     // Verify monotonically increasing (no duplicate serials).
     for window in commits.windows(2) {
         assert!(
             window[1] > window[0],
             "commit serial must increase: {} then {}",
-            window[0], window[1]
+            window[0],
+            window[1]
         );
     }
 }
@@ -184,11 +185,18 @@ fn test_stale_serial_produces_duplicate_bad_pattern() {
     //   im.set_preedit_string(""); im.commit(serial);   ← uses serial N
     //   im.commit_string(text);   im.commit(serial);   ← reuses serial N = stale!
     let commits = [serial, serial]; // both use N
-    assert_eq!(commits[0], commits[1], "old pattern has duplicate serial (this is the bug)");
+    assert_eq!(
+        commits[0], commits[1],
+        "old pattern has duplicate serial (this is the bug)"
+    );
 
     // New (fixed) pattern: single commit() per atomic update.
     let fixed_commits = [serial]; // only one commit() per update
-    assert_eq!(fixed_commits.len(), 1, "fixed pattern uses exactly one commit per update");
+    assert_eq!(
+        fixed_commits.len(),
+        1,
+        "fixed pattern uses exactly one commit per update"
+    );
 }
 
 // ── Surrounding text ─────────────────────────────────────────────────────────

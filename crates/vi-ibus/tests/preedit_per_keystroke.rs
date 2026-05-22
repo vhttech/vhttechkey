@@ -57,7 +57,9 @@ fn five_keystrokes_produce_five_preedit_updated() {
     let mut preedit_updated_count = 0u32;
 
     for ch in ['a', 'b', 'c', 'd', 'e'] {
-        let transition = engine.process(&key_down(ch)).expect("engine must not error");
+        let transition = engine
+            .process(&key_down(ch))
+            .expect("engine must not error");
         let _ = engine.process(&key_up(ch));
         if matches!(transition, StateTransition::PreeditUpdated(_)) {
             preedit_updated_count += 1;
@@ -78,14 +80,19 @@ fn five_keystrokes_produce_five_preedit_updated_vni() {
     let mut preedit_updated_count = 0u32;
 
     for ch in ['a', 'b', 'c', 'd', 'e'] {
-        let transition = engine.process(&key_down(ch)).expect("engine must not error");
+        let transition = engine
+            .process(&key_down(ch))
+            .expect("engine must not error");
         let _ = engine.process(&key_up(ch));
         if matches!(transition, StateTransition::PreeditUpdated(_)) {
             preedit_updated_count += 1;
         }
     }
 
-    assert_eq!(preedit_updated_count, 5, "VNI: 5 keystrokes must yield 5 PreeditUpdated");
+    assert_eq!(
+        preedit_updated_count, 5,
+        "VNI: 5 keystrokes must yield 5 PreeditUpdated"
+    );
 }
 
 /// Repeat across VIQR.
@@ -95,14 +102,19 @@ fn five_keystrokes_produce_five_preedit_updated_viqr() {
     let mut preedit_updated_count = 0u32;
 
     for ch in ['a', 'b', 'c', 'd', 'e'] {
-        let transition = engine.process(&key_down(ch)).expect("engine must not error");
+        let transition = engine
+            .process(&key_down(ch))
+            .expect("engine must not error");
         let _ = engine.process(&key_up(ch));
         if matches!(transition, StateTransition::PreeditUpdated(_)) {
             preedit_updated_count += 1;
         }
     }
 
-    assert_eq!(preedit_updated_count, 5, "VIQR: 5 keystrokes must yield 5 PreeditUpdated");
+    assert_eq!(
+        preedit_updated_count, 5,
+        "VIQR: 5 keystrokes must yield 5 PreeditUpdated"
+    );
 }
 
 // ── Mode selection: ALL apps → preedit ───────────────────────────────────────
@@ -142,8 +154,8 @@ fn preedit_selected_for_caps_gnome_x11() {
 #[test]
 fn caps_surrounding_selects_preedit_mode() {
     for caps in [
-        IBUS_CAP_SURROUNDING_TEXT,                          // 0x20 surrounding only
-        IBUS_CAP_PREEDIT_TEXT | IBUS_CAP_SURROUNDING_TEXT,  // 0x21 Chrome/VSCode
+        IBUS_CAP_SURROUNDING_TEXT,                         // 0x20 surrounding only
+        IBUS_CAP_PREEDIT_TEXT | IBUS_CAP_SURROUNDING_TEXT, // 0x21 Chrome/VSCode
     ] {
         assert_eq!(
             mode_for_caps(caps),
@@ -158,9 +170,15 @@ fn caps_surrounding_selects_preedit_mode() {
 fn caps_chrome_vscode_selects_preedit() {
     let caps = IBUS_CAP_PREEDIT_TEXT | IBUS_CAP_SURROUNDING_TEXT; // 0x21
     let mode = mode_for_caps(caps);
-    assert_ne!(mode, "surrounding_commit", "caps={caps:#x} must NOT select surrounding_commit");
-    assert_ne!(mode, "forward_key",        "caps={caps:#x} must NOT select forward_key");
-    assert_eq!(mode, "preedit",            "caps={caps:#x} must select preedit mode");
+    assert_ne!(
+        mode, "surrounding_commit",
+        "caps={caps:#x} must NOT select surrounding_commit"
+    );
+    assert_ne!(
+        mode, "forward_key",
+        "caps={caps:#x} must NOT select forward_key"
+    );
+    assert_eq!(mode, "preedit", "caps={caps:#x} must select preedit mode");
 }
 
 /// Engine produces PreeditUpdated for character keystrokes regardless of caps.
@@ -186,9 +204,12 @@ fn engine_produces_preedit_updated_regardless_of_caps() {
 #[test]
 fn caps_zero_selects_preedit() {
     let mode = mode_for_caps(0x00);
-    assert_ne!(mode, "surrounding_commit", "caps=0x00 must NOT select surrounding_commit");
-    assert_ne!(mode, "forward_key",        "caps=0x00 must NOT select forward_key");
-    assert_eq!(mode, "preedit",            "caps=0x00 must select preedit");
+    assert_ne!(
+        mode, "surrounding_commit",
+        "caps=0x00 must NOT select surrounding_commit"
+    );
+    assert_ne!(mode, "forward_key", "caps=0x00 must NOT select forward_key");
+    assert_eq!(mode, "preedit", "caps=0x00 must select preedit");
 }
 
 // ── No CommitAndClear emitted during preedit composition ─────────────────────
@@ -199,7 +220,9 @@ fn caps_zero_selects_preedit() {
 fn no_commit_and_clear_during_composition_telex() {
     let mut engine = StandardEngine::new(InputMethod::Telex);
     for ch in ['t', 'o', 'i'] {
-        let transition = engine.process(&key_down(ch)).expect("engine must not error");
+        let transition = engine
+            .process(&key_down(ch))
+            .expect("engine must not error");
         let _ = engine.process(&key_up(ch));
         assert!(
             !matches!(transition, StateTransition::CommitAndClear(_)),
@@ -216,7 +239,9 @@ fn no_commit_and_clear_during_composition_telex() {
 fn preedit_updated_text_non_empty_for_five_keystrokes() {
     let mut engine = StandardEngine::new(InputMethod::Telex);
     for ch in ['a', 'b', 'c', 'd', 'e'] {
-        let transition = engine.process(&key_down(ch)).expect("engine must not error");
+        let transition = engine
+            .process(&key_down(ch))
+            .expect("engine must not error");
         let _ = engine.process(&key_up(ch));
         if let StateTransition::PreeditUpdated(ref p) = transition {
             assert!(

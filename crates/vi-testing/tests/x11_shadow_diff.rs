@@ -110,7 +110,10 @@ fn run_shadow_sim(method: InputMethod, events: &[InputEvent]) -> String {
 fn diff_erases_two_byte_char_with_one_backspace() {
     // 'ô' = U+00F4 = 2 UTF-8 bytes but 1 Unicode character.
     let (bs, tail) = shadow_diff("tô", "t");
-    assert_eq!(bs, 1, "erasing 'ô' must take 1 BackSpace (char), not 2 (bytes)");
+    assert_eq!(
+        bs, 1,
+        "erasing 'ô' must take 1 BackSpace (char), not 2 (bytes)"
+    );
     assert_eq!(tail, "");
 }
 
@@ -119,7 +122,10 @@ fn diff_erases_two_byte_char_with_one_backspace() {
 fn diff_erases_three_byte_char_with_one_backspace() {
     // 'ổ' = U+1ED5 = 3 UTF-8 bytes.
     let (bs, tail) = shadow_diff("hổ", "h");
-    assert_eq!(bs, 1, "erasing 'ổ' must take 1 BackSpace (char), not 3 (bytes)");
+    assert_eq!(
+        bs, 1,
+        "erasing 'ổ' must take 1 BackSpace (char), not 3 (bytes)"
+    );
     assert_eq!(tail, "");
 }
 
@@ -128,7 +134,10 @@ fn diff_erases_three_byte_char_with_one_backspace() {
 fn trong_clear_uses_char_count_not_byte_count() {
     let word = "trông"; // t(1) + r(1) + ô(2) + n(1) + g(1) = 6 bytes, 5 chars
     assert_eq!(word.chars().count(), 5, "trông has 5 Unicode characters");
-    assert!(word.len() > word.chars().count(), "trông has more bytes than chars");
+    assert!(
+        word.len() > word.chars().count(),
+        "trông has more bytes than chars"
+    );
 
     let (bs, tail) = shadow_diff(word, "");
     assert_eq!(
@@ -279,7 +288,10 @@ fn multiple_backspaces_clear_multibyte_preedit() {
 fn backspace_on_empty_preedit_no_underflow() {
     let events = [backspace(), backspace()];
     let shadow = run_shadow_sim(InputMethod::Telex, &events);
-    assert_eq!(shadow, "", "shadow must stay empty after BackSpace on empty preedit");
+    assert_eq!(
+        shadow, "",
+        "shadow must stay empty after BackSpace on empty preedit"
+    );
 }
 
 // ── 5. Long-string path detection ────────────────────────────────────────────

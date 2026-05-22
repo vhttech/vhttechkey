@@ -4,9 +4,7 @@
 //! [`MockCompositor`] backend that simulates per-compositor quirks.  Tests iterate
 //! over all meaningful quirk combinations and assert core IME invariants.
 
-use vi_core::{
-    CompositionEngine, InputEvent, StandardEngine, StateTransition,
-};
+use vi_core::{CompositionEngine, InputEvent, StandardEngine, StateTransition};
 
 // ── Quirk flags ───────────────────────────────────────────────────────────────
 
@@ -190,9 +188,9 @@ mod tests {
     fn commit_fires_exactly_once_per_syllable() {
         // Each pair is (telex_keys, expected_committed_text).
         let syllables: &[(&str, &str)] = &[
-            ("as", "á"),  // a + sắc
-            ("af", "à"),  // a + huyền
-            ("ar", "ả"),  // a + hỏi
+            ("as", "á"), // a + sắc
+            ("af", "à"), // a + huyền
+            ("ar", "ả"), // a + hỏi
         ];
 
         for quirk_bits in 0u32..32 {

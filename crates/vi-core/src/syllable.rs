@@ -36,32 +36,26 @@ pub const VALID_NUCLEI: &[&str] = &[
     "a", "ă", "â", "e", "ê", "i", "o", "ô", "ơ", "u", "ư", "y",
     // ── Inherent diphthong nuclei (open syllables) ────────────────────────────
     // These are the pre-final forms; final-consonant forms (iê/uô/ươ) are below.
-    "ia",  // iê before a final consonant; tone on i
-    "ua",  // uô before a final consonant; tone on u
-    "ưa",  // ươ before a final consonant; tone on ơ (ư has form mark)
+    "ia", // iê before a final consonant; tone on i
+    "ua", // uô before a final consonant; tone on u
+    "ưa", // ươ before a final consonant; tone on ơ (ư has form mark)
     // ── Medial-onset nucleus (o / u is initial glide) ─────────────────────────
     "oa", "oă", "oe", "oê", "uy", "uê",
     // ── Closed diphthong nuclei (final glide is coda) ─────────────────────────
-    "ai", "ay", "ao", "au",
-    "âu", "ây",
-    "eo", "êu",
-    "iu",
-    "ôi", "ôu",
-    "ơi", "ơu",
-    "oi",        // informal / southern Vietnamese
-    "ui",
-    "ưi", "ưu",
+    "ai", "ay", "ao", "au", "âu", "ây", "eo", "êu", "iu", "ôi", "ôu", "ơi", "ơu",
+    "oi", // informal / southern Vietnamese
+    "ui", "ưi", "ưu",
     // ── Closed diphthong nucleus forms (preedit display) ─────────────────────
-    "iê",  // ia before final consonant; ê gets tone
-    "uô",  // ua before final consonant; ô gets tone
-    "ươ",  // ưa before final consonant; ơ gets tone
+    "iê", // ia before final consonant; ê gets tone
+    "uô", // ua before final consonant; ô gets tone
+    "ươ", // ưa before final consonant; ơ gets tone
     // ── Triphthong nuclei ────────────────────────────────────────────────────
-    "iêu",          // ê gets tone
-    "oai", "oay",   // a gets tone (before final i/y glide)
-    "uâu", "uây",   // â gets tone
-    "uôi",          // ô gets tone
-    "uơi",          // ơ gets tone  (u + ow + i in Telex: "uowi")
-    "ươi", "ươu",   // ơ gets tone
+    "iêu", // ê gets tone
+    "oai", "oay", // a gets tone (before final i/y glide)
+    "uâu", "uây", // â gets tone
+    "uôi", // ô gets tone
+    "uơi", // ơ gets tone  (u + ow + i in Telex: "uowi")
+    "ươi", "ươu", // ơ gets tone
 ];
 
 /// Returns `true` if `chars[idx]` is an initial-onset medial that must not be
@@ -96,7 +90,11 @@ pub fn find_tone_position(chars: &[char]) -> Option<usize> {
         .enumerate()
         .filter_map(|(i, &c)| {
             let b = strip_tone(c);
-            if ALL_VOWELS.contains(b) && !is_initial_medial(chars, i) { Some((i, b)) } else { None }
+            if ALL_VOWELS.contains(b) && !is_initial_medial(chars, i) {
+                Some((i, b))
+            } else {
+                None
+            }
         })
         .collect();
 

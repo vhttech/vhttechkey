@@ -53,7 +53,9 @@ async fn fcitx5_capability_negotiation() {
         .object_server()
         .at(
             "/org/fcitx/icproxy/by_display/0",
-            MockFcitx5Service { capabilities: Arc::clone(&capabilities) },
+            MockFcitx5Service {
+                capabilities: Arc::clone(&capabilities),
+            },
         )
         .await
         .expect("register Fcitx5 object");
@@ -90,7 +92,11 @@ async fn fcitx5_capability_negotiation() {
         recorded, initial_caps,
         "daemon must record SURROUNDING_TEXT | PREEDIT"
     );
-    assert_ne!(recorded & CAP_SURROUNDING_TEXT, 0, "SURROUNDING_TEXT must be set");
+    assert_ne!(
+        recorded & CAP_SURROUNDING_TEXT,
+        0,
+        "SURROUNDING_TEXT must be set"
+    );
     assert_ne!(recorded & CAP_PREEDIT, 0, "PREEDIT must be set");
 
     // Step 2: simulate Fcitx5 sending UpdateCapability to reduce the set

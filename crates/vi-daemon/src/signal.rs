@@ -37,10 +37,16 @@ impl PreeditSnapshot {
 
         // Acquire exclusive write access. create_new(true) uses O_CREAT|O_EXCL so
         // it fails with AlreadyExists if another daemon instance is already writing.
-        let _guard = match OpenOptions::new().write(true).create_new(true).open(&lock_path) {
+        let _guard = match OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&lock_path)
+        {
             Ok(_f) => LockGuard(lock_path),
             Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
-                tracing::warn!("SIGTERM: skipping snapshot, another daemon instance holds the lock");
+                tracing::warn!(
+                    "SIGTERM: skipping snapshot, another daemon instance holds the lock"
+                );
                 return;
             }
             Err(e) => {
@@ -92,8 +98,8 @@ impl PreeditSnapshot {
 
 /// Wait for SIGTERM, then return. Caller handles snapshot and shutdown.
 pub async fn wait_for_sigterm() {
-    let mut sigterm = signal(SignalKind::terminate())
-        .expect("SIGTERM handler registration should not fail");
+    let mut sigterm =
+        signal(SignalKind::terminate()).expect("SIGTERM handler registration should not fail");
     sigterm.recv().await;
     info!("Received SIGTERM — shutting down gracefully");
 }
@@ -110,8 +116,8 @@ pub async fn save_snapshot(snap: PreeditSnapshot) {
     {
         Ok(Ok(())) => {}
         Ok(Err(e)) => tracing::error!("SIGTERM: snapshot save task failed: {e}"),
-        Err(_) => tracing::error!(
-            "SIGTERM: snapshot write timed out after 2 s, proceeding with shutdown"
-        ),
+        Err(_) => {
+            tracing::error!("SIGTERM: snapshot write timed out after 2 s, proceeding with shutdown")
+        }
     }
 }

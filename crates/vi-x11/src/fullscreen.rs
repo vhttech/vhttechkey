@@ -32,8 +32,7 @@ impl FullscreenMonitor {
         self.conn
             .change_window_attributes(
                 root,
-                &xproto::ChangeWindowAttributesAux::new()
-                    .event_mask(EventMask::PROPERTY_CHANGE),
+                &xproto::ChangeWindowAttributesAux::new().event_mask(EventMask::PROPERTY_CHANGE),
             )
             .map_err(|e| PlatformError::X11(e.to_string()))?
             .check()
@@ -45,8 +44,7 @@ impl FullscreenMonitor {
         self.conn
             .change_window_attributes(
                 window,
-                &xproto::ChangeWindowAttributesAux::new()
-                    .event_mask(EventMask::PROPERTY_CHANGE),
+                &xproto::ChangeWindowAttributesAux::new().event_mask(EventMask::PROPERTY_CHANGE),
             )
             .map_err(|e| PlatformError::X11(e.to_string()))?
             .check()

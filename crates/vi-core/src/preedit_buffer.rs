@@ -41,7 +41,12 @@ pub struct PreeditBuffer {
 
 impl PreeditBuffer {
     pub fn new() -> Self {
-        Self { chars: Vec::new(), keys: Vec::new(), history: VecDeque::new(), cached_display: None }
+        Self {
+            chars: Vec::new(),
+            keys: Vec::new(),
+            history: VecDeque::new(),
+            cached_display: None,
+        }
     }
 
     pub fn is_empty(&self) -> bool {
@@ -231,9 +236,14 @@ mod tests {
         }
         assert_eq!(buf.len(), MAX_CODEPOINTS);
         // Replacement is one char shorter — a vowel rule reducing two chars to one.
-        let shrunk: Vec<char> = std::iter::repeat_n('n', MAX_CODEPOINTS - 2).chain(std::iter::once('ô')).collect();
+        let shrunk: Vec<char> = std::iter::repeat_n('n', MAX_CODEPOINTS - 2)
+            .chain(std::iter::once('ô'))
+            .collect();
         let result = buf.set_display(shrunk, 'o');
-        assert!(result.is_ok(), "shrinking set_display must succeed even at MAX_CODEPOINTS");
+        assert!(
+            result.is_ok(),
+            "shrinking set_display must succeed even at MAX_CODEPOINTS"
+        );
         assert_eq!(buf.len(), MAX_CODEPOINTS - 1);
     }
 

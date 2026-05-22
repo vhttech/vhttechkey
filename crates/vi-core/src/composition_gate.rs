@@ -31,11 +31,45 @@ pub fn is_vietnamese_composed_char(c: char) -> bool {
         || (0x1EA0..=0x1EF9).contains(&n)
         || matches!(
             c,
-            'à' | 'á' | 'â' | 'ã' | 'è' | 'é' | 'ê' | 'ì' | 'í'
-                | 'ò' | 'ó' | 'ô' | 'õ' | 'ù' | 'ú' | 'ý'
-                | 'À' | 'Á' | 'Â' | 'Ã' | 'È' | 'É' | 'Ê' | 'Ì' | 'Í'
-                | 'Ò' | 'Ó' | 'Ô' | 'Õ' | 'Ù' | 'Ú' | 'Ý'
-                | 'ă' | 'Ă' | 'ơ' | 'Ơ' | 'ư' | 'Ư' | 'đ' | 'Đ'
+            'à' | 'á'
+                | 'â'
+                | 'ã'
+                | 'è'
+                | 'é'
+                | 'ê'
+                | 'ì'
+                | 'í'
+                | 'ò'
+                | 'ó'
+                | 'ô'
+                | 'õ'
+                | 'ù'
+                | 'ú'
+                | 'ý'
+                | 'À'
+                | 'Á'
+                | 'Â'
+                | 'Ã'
+                | 'È'
+                | 'É'
+                | 'Ê'
+                | 'Ì'
+                | 'Í'
+                | 'Ò'
+                | 'Ó'
+                | 'Ô'
+                | 'Õ'
+                | 'Ù'
+                | 'Ú'
+                | 'Ý'
+                | 'ă'
+                | 'Ă'
+                | 'ơ'
+                | 'Ơ'
+                | 'ư'
+                | 'Ư'
+                | 'đ'
+                | 'Đ'
         )
 }
 
@@ -82,7 +116,10 @@ fn is_two_char_strict_alternation(chars: &[char]) -> bool {
     if a == b {
         return false;
     }
-    chars.iter().enumerate().all(|(i, &c)| c == if i % 2 == 0 { a } else { b })
+    chars
+        .iter()
+        .enumerate()
+        .all(|(i, &c)| c == if i % 2 == 0 { a } else { b })
 }
 
 /// True if either alternating letter is a Telex tone trigger (`s`/`f`/`r`/`x`/`j`/`z`).

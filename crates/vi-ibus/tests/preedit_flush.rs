@@ -100,7 +100,11 @@ fn preedit_flushed_before_commit_tooi_space() {
         .iter()
         .enumerate()
         .filter_map(|(i, c)| {
-            if matches!(c, Call::UpdatePreeditTextWithMode { .. }) { Some(i) } else { None }
+            if matches!(c, Call::UpdatePreeditTextWithMode { .. }) {
+                Some(i)
+            } else {
+                None
+            }
         })
         .collect();
 
@@ -108,7 +112,11 @@ fn preedit_flushed_before_commit_tooi_space() {
         .iter()
         .enumerate()
         .filter_map(|(i, c)| {
-            if matches!(c, Call::CommitText(_)) { Some(i) } else { None }
+            if matches!(c, Call::CommitText(_)) {
+                Some(i)
+            } else {
+                None
+            }
         })
         .collect();
 
@@ -188,5 +196,9 @@ fn preedit_cursor_positions_match_char_count() {
         .collect();
 
     // "t"=1, "to"=2, "tô"=2, "tôi"=3
-    assert_eq!(cursors, [1, 2, 2, 3], "cursor positions must match char counts of preedit text");
+    assert_eq!(
+        cursors,
+        [1, 2, 2, 3],
+        "cursor positions must match char counts of preedit text"
+    );
 }

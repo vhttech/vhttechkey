@@ -23,7 +23,9 @@ fn backspace() -> InputEvent {
 /// Type a character and return the StateTransition; also send the matching
 /// KeyUp so the repeat guard is reset for subsequent presses of the same key.
 fn type_char(engine: &mut StandardEngine, ch: char) -> StateTransition {
-    let result = engine.process(&key_down(ch)).expect("engine must not error");
+    let result = engine
+        .process(&key_down(ch))
+        .expect("engine must not error");
     let _ = engine.process(&key_up(ch));
     result
 }
@@ -34,7 +36,9 @@ fn type_char(engine: &mut StandardEngine, ch: char) -> StateTransition {
 fn every_letter_produces_preedit_updated_telex() {
     for ch in 'a'..='z' {
         let mut engine = StandardEngine::new(InputMethod::Telex);
-        let result = engine.process(&key_down(ch)).expect("engine must not error");
+        let result = engine
+            .process(&key_down(ch))
+            .expect("engine must not error");
         assert!(
             matches!(result, StateTransition::PreeditUpdated(_)),
             "Telex: letter '{ch}' on fresh engine must produce PreeditUpdated, got {result:?}"
@@ -46,7 +50,9 @@ fn every_letter_produces_preedit_updated_telex() {
 fn every_letter_produces_preedit_updated_vni() {
     for ch in 'a'..='z' {
         let mut engine = StandardEngine::new(InputMethod::Vni);
-        let result = engine.process(&key_down(ch)).expect("engine must not error");
+        let result = engine
+            .process(&key_down(ch))
+            .expect("engine must not error");
         assert!(
             matches!(result, StateTransition::PreeditUpdated(_)),
             "VNI: letter '{ch}' on fresh engine must produce PreeditUpdated, got {result:?}"
@@ -58,7 +64,9 @@ fn every_letter_produces_preedit_updated_vni() {
 fn every_letter_produces_preedit_updated_viqr() {
     for ch in 'a'..='z' {
         let mut engine = StandardEngine::new(InputMethod::Viqr);
-        let result = engine.process(&key_down(ch)).expect("engine must not error");
+        let result = engine
+            .process(&key_down(ch))
+            .expect("engine must not error");
         assert!(
             matches!(result, StateTransition::PreeditUpdated(_)),
             "VIQR: letter '{ch}' on fresh engine must produce PreeditUpdated, got {result:?}"
@@ -73,7 +81,9 @@ fn every_letter_produces_preedit_updated_viqr() {
 fn every_digit_produces_preedit_updated_telex() {
     for ch in '0'..='9' {
         let mut engine = StandardEngine::new(InputMethod::Telex);
-        let result = engine.process(&key_down(ch)).expect("engine must not error");
+        let result = engine
+            .process(&key_down(ch))
+            .expect("engine must not error");
         assert!(
             matches!(result, StateTransition::PreeditUpdated(_)),
             "Telex: digit '{ch}' on fresh engine must produce PreeditUpdated, got {result:?}"
@@ -85,7 +95,9 @@ fn every_digit_produces_preedit_updated_telex() {
 fn every_digit_produces_preedit_updated_vni() {
     for ch in '0'..='9' {
         let mut engine = StandardEngine::new(InputMethod::Vni);
-        let result = engine.process(&key_down(ch)).expect("engine must not error");
+        let result = engine
+            .process(&key_down(ch))
+            .expect("engine must not error");
         assert!(
             matches!(result, StateTransition::PreeditUpdated(_)),
             "VNI: digit '{ch}' on fresh engine must produce PreeditUpdated, got {result:?}"
@@ -161,9 +173,15 @@ fn telex_aas_tone_mark_produces_preedit_updated() {
     // Each step must produce PreeditUpdated.
     let mut engine = StandardEngine::new(InputMethod::Telex);
     let a1 = type_char(&mut engine, 'a');
-    assert!(matches!(a1, StateTransition::PreeditUpdated(_)), "'a' must give PreeditUpdated");
+    assert!(
+        matches!(a1, StateTransition::PreeditUpdated(_)),
+        "'a' must give PreeditUpdated"
+    );
     let a2 = type_char(&mut engine, 'a');
-    assert!(matches!(a2, StateTransition::PreeditUpdated(_)), "second 'a' must give PreeditUpdated");
+    assert!(
+        matches!(a2, StateTransition::PreeditUpdated(_)),
+        "second 'a' must give PreeditUpdated"
+    );
     let s = type_char(&mut engine, 's');
     assert!(
         matches!(s, StateTransition::PreeditUpdated(_)),
@@ -182,14 +200,18 @@ fn backspace_mid_word_produces_preedit_updated_telex() {
     }
     assert_eq!(engine.preedit().as_str(), "abcd");
 
-    let bs1 = engine.process(&backspace()).expect("backspace must not error");
+    let bs1 = engine
+        .process(&backspace())
+        .expect("backspace must not error");
     assert!(
         matches!(bs1, StateTransition::PreeditUpdated(_)),
         "first backspace on non-empty preedit must produce PreeditUpdated, got {bs1:?}"
     );
     assert_eq!(engine.preedit().as_str(), "abc");
 
-    let bs2 = engine.process(&backspace()).expect("backspace must not error");
+    let bs2 = engine
+        .process(&backspace())
+        .expect("backspace must not error");
     assert!(
         matches!(bs2, StateTransition::PreeditUpdated(_)),
         "second backspace on non-empty preedit must produce PreeditUpdated, got {bs2:?}"
@@ -203,12 +225,16 @@ fn backspace_mid_word_produces_preedit_updated_vni() {
     for ch in ['a', 'b', 'c', 'd'] {
         type_char(&mut engine, ch);
     }
-    let bs1 = engine.process(&backspace()).expect("backspace must not error");
+    let bs1 = engine
+        .process(&backspace())
+        .expect("backspace must not error");
     assert!(
         matches!(bs1, StateTransition::PreeditUpdated(_)),
         "VNI: first backspace must produce PreeditUpdated, got {bs1:?}"
     );
-    let bs2 = engine.process(&backspace()).expect("backspace must not error");
+    let bs2 = engine
+        .process(&backspace())
+        .expect("backspace must not error");
     assert!(
         matches!(bs2, StateTransition::PreeditUpdated(_)),
         "VNI: second backspace must produce PreeditUpdated, got {bs2:?}"
@@ -221,12 +247,16 @@ fn backspace_mid_word_produces_preedit_updated_viqr() {
     for ch in ['a', 'b', 'c', 'd'] {
         type_char(&mut engine, ch);
     }
-    let bs1 = engine.process(&backspace()).expect("backspace must not error");
+    let bs1 = engine
+        .process(&backspace())
+        .expect("backspace must not error");
     assert!(
         matches!(bs1, StateTransition::PreeditUpdated(_)),
         "VIQR: first backspace must produce PreeditUpdated, got {bs1:?}"
     );
-    let bs2 = engine.process(&backspace()).expect("backspace must not error");
+    let bs2 = engine
+        .process(&backspace())
+        .expect("backspace must not error");
     assert!(
         matches!(bs2, StateTransition::PreeditUpdated(_)),
         "VIQR: second backspace must produce PreeditUpdated, got {bs2:?}"
@@ -239,7 +269,9 @@ fn backspace_mid_word_produces_preedit_updated_viqr() {
 fn preedit_updated_never_empty_telex() {
     for ch in 'a'..='z' {
         let mut engine = StandardEngine::new(InputMethod::Telex);
-        let result = engine.process(&key_down(ch)).expect("engine must not error");
+        let result = engine
+            .process(&key_down(ch))
+            .expect("engine must not error");
         if let StateTransition::PreeditUpdated(ref p) = result {
             assert!(
                 !p.is_empty(),
@@ -253,7 +285,9 @@ fn preedit_updated_never_empty_telex() {
 fn preedit_updated_never_empty_vni() {
     for ch in 'a'..='z' {
         let mut engine = StandardEngine::new(InputMethod::Vni);
-        let result = engine.process(&key_down(ch)).expect("engine must not error");
+        let result = engine
+            .process(&key_down(ch))
+            .expect("engine must not error");
         if let StateTransition::PreeditUpdated(ref p) = result {
             assert!(
                 !p.is_empty(),
@@ -267,7 +301,9 @@ fn preedit_updated_never_empty_vni() {
 fn preedit_updated_never_empty_viqr() {
     for ch in 'a'..='z' {
         let mut engine = StandardEngine::new(InputMethod::Viqr);
-        let result = engine.process(&key_down(ch)).expect("engine must not error");
+        let result = engine
+            .process(&key_down(ch))
+            .expect("engine must not error");
         if let StateTransition::PreeditUpdated(ref p) = result {
             assert!(
                 !p.is_empty(),
@@ -283,7 +319,9 @@ fn preedit_updated_never_empty_viqr() {
 fn plain_letters_never_produce_commit_and_clear_telex() {
     for ch in 'a'..='z' {
         let mut engine = StandardEngine::new(InputMethod::Telex);
-        let result = engine.process(&key_down(ch)).expect("engine must not error");
+        let result = engine
+            .process(&key_down(ch))
+            .expect("engine must not error");
         assert!(
             !matches!(result, StateTransition::CommitAndClear(_)),
             "Telex: plain letter '{ch}' on fresh engine must not produce CommitAndClear, got {result:?}"
@@ -295,7 +333,9 @@ fn plain_letters_never_produce_commit_and_clear_telex() {
 fn plain_letters_never_produce_pass_through_telex() {
     for ch in 'a'..='z' {
         let mut engine = StandardEngine::new(InputMethod::Telex);
-        let result = engine.process(&key_down(ch)).expect("engine must not error");
+        let result = engine
+            .process(&key_down(ch))
+            .expect("engine must not error");
         assert!(
             !matches!(result, StateTransition::PassThrough),
             "Telex: plain letter '{ch}' on fresh engine must not produce PassThrough, got {result:?}"
@@ -342,7 +382,9 @@ fn viqr_hat_vowel_modifier_produces_preedit_updated() {
     // VIQR: a^ → â. '^' must produce PreeditUpdated.
     let mut engine = StandardEngine::new(InputMethod::Viqr);
     type_char(&mut engine, 'a');
-    let hat = engine.process(&key_down('^')).expect("engine must not error");
+    let hat = engine
+        .process(&key_down('^'))
+        .expect("engine must not error");
     assert!(
         matches!(hat, StateTransition::PreeditUpdated(_)),
         "VIQR: '^' after 'a' (a^→â) must produce PreeditUpdated, got {hat:?}"
@@ -355,7 +397,9 @@ fn viqr_tilde_tone_mark_produces_preedit_updated() {
     // VIQR: a~ → ã. '~' must produce PreeditUpdated.
     let mut engine = StandardEngine::new(InputMethod::Viqr);
     type_char(&mut engine, 'a');
-    let tilde = engine.process(&key_down('~')).expect("engine must not error");
+    let tilde = engine
+        .process(&key_down('~'))
+        .expect("engine must not error");
     assert!(
         matches!(tilde, StateTransition::PreeditUpdated(_)),
         "VIQR: '~' after 'a' (a~→ã) must produce PreeditUpdated, got {tilde:?}"

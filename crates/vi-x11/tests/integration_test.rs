@@ -10,7 +10,9 @@ use vi_x11::{
 use x11rb::{
     connection::Connection as _,
     protocol::{
-        xproto::{self, AtomEnum, ConnectionExt as _, CreateWindowAux, EventMask, PropMode, WindowClass},
+        xproto::{
+            self, AtomEnum, ConnectionExt as _, CreateWindowAux, EventMask, PropMode, WindowClass,
+        },
         Event,
     },
     rust_connection::RustConnection,
@@ -49,14 +51,19 @@ fn wine_process_current_pid_is_not_wine() {
 
 #[test]
 fn wine_window_unset_pid_not_detected() {
-    let Some((conn, screen)) = connect_or_skip() else { return };
+    let Some((conn, screen)) = connect_or_skip() else {
+        return;
+    };
     let root = conn.setup().roots[screen].root;
     let win = conn.generate_id().unwrap();
     conn.create_window(
         COPY_DEPTH_FROM_PARENT,
         win,
         root,
-        0, 0, 1, 1,
+        0,
+        0,
+        1,
+        1,
         0,
         WindowClass::INPUT_ONLY,
         0,
@@ -77,14 +84,19 @@ fn wine_window_unset_pid_not_detected() {
 
 #[test]
 fn wine_window_nonexistent_pid_not_detected() {
-    let Some((conn, screen)) = connect_or_skip() else { return };
+    let Some((conn, screen)) = connect_or_skip() else {
+        return;
+    };
     let root = conn.setup().roots[screen].root;
     let win = conn.generate_id().unwrap();
     conn.create_window(
         COPY_DEPTH_FROM_PARENT,
         win,
         root,
-        0, 0, 1, 1,
+        0,
+        0,
+        1,
+        1,
         0,
         WindowClass::INPUT_ONLY,
         0,
@@ -96,10 +108,16 @@ fn wine_window_nonexistent_pid_not_detected() {
 
     let net_wm_pid = intern(&conn, "_NET_WM_PID");
     // Set PID to a non-existent process (high number).
-    conn.change_property32(PropMode::REPLACE, win, net_wm_pid, AtomEnum::CARDINAL, &[4_000_000])
-        .unwrap()
-        .check()
-        .unwrap();
+    conn.change_property32(
+        PropMode::REPLACE,
+        win,
+        net_wm_pid,
+        AtomEnum::CARDINAL,
+        &[4_000_000],
+    )
+    .unwrap()
+    .check()
+    .unwrap();
 
     let bridge = WineXimBridge::new(Arc::clone(&conn), net_wm_pid);
     // Non-existent PID → /proc/<pid>/exe unreadable → not Wine.
@@ -112,7 +130,9 @@ fn wine_window_nonexistent_pid_not_detected() {
 /// events via XSendEvent rather than the XIM commit path.
 #[test]
 fn wine_commit_delivers_key_events_via_xsendevent() {
-    let Some((conn, screen)) = connect_or_skip() else { return };
+    let Some((conn, screen)) = connect_or_skip() else {
+        return;
+    };
     let root = conn.setup().roots[screen].root;
 
     // Create a window that subscribes to key events.
@@ -121,12 +141,14 @@ fn wine_commit_delivers_key_events_via_xsendevent() {
         COPY_DEPTH_FROM_PARENT,
         win,
         root,
-        0, 0, 200, 200,
+        0,
+        0,
+        200,
+        200,
         0,
         WindowClass::INPUT_OUTPUT,
         0,
-        &CreateWindowAux::new()
-            .event_mask(EventMask::KEY_PRESS | EventMask::KEY_RELEASE),
+        &CreateWindowAux::new().event_mask(EventMask::KEY_PRESS | EventMask::KEY_RELEASE),
     )
     .unwrap()
     .check()
@@ -167,7 +189,9 @@ fn fullscreen_atoms_pure_predicate() {
 
 #[test]
 fn fullscreen_monitor_detects_state_property() {
-    let Some((conn, screen)) = connect_or_skip() else { return };
+    let Some((conn, screen)) = connect_or_skip() else {
+        return;
+    };
     let root = conn.setup().roots[screen].root;
 
     let win = conn.generate_id().unwrap();
@@ -175,7 +199,10 @@ fn fullscreen_monitor_detects_state_property() {
         COPY_DEPTH_FROM_PARENT,
         win,
         root,
-        0, 0, 1, 1,
+        0,
+        0,
+        1,
+        1,
         0,
         WindowClass::INPUT_ONLY,
         0,
@@ -204,14 +231,26 @@ fn fullscreen_monitor_detects_state_property() {
     .unwrap()
     .check()
     .unwrap();
-    assert!(monitor.is_fullscreen(win), "fullscreen state must be detected");
+    assert!(
+        monitor.is_fullscreen(win),
+        "fullscreen state must be detected"
+    );
 
     // Clear state.
-    conn.change_property32(PropMode::REPLACE, win, net_wm_state, AtomEnum::ATOM, &[] as &[u32])
-        .unwrap()
-        .check()
-        .unwrap();
-    assert!(!monitor.is_fullscreen(win), "fullscreen must clear when property removed");
+    conn.change_property32(
+        PropMode::REPLACE,
+        win,
+        net_wm_state,
+        AtomEnum::ATOM,
+        &[] as &[u32],
+    )
+    .unwrap()
+    .check()
+    .unwrap();
+    assert!(
+        !monitor.is_fullscreen(win),
+        "fullscreen must clear when property removed"
+    );
 
     conn.destroy_window(win).unwrap().check().unwrap();
 }
@@ -305,7 +344,10 @@ fn make_win(conn: &Arc<RustConnection>, screen: usize) -> (xproto::Window, xprot
         COPY_DEPTH_FROM_PARENT,
         win,
         root,
-        0, 0, 1, 1,
+        0,
+        0,
+        1,
+        1,
         0,
         WindowClass::INPUT_ONLY,
         0,
@@ -367,18 +409,30 @@ fn extract_xim_commits(events: &[Event]) -> Vec<String> {
 /// Initial char 'a': shadow_buf seeded, XIM_COMMIT delivered, no BackSpace.
 #[test]
 fn shadow_diff_first_char_seeds_shadow_buf_and_sends_commit() {
-    let Some((conn, screen)) = connect_or_skip() else { return };
+    let Some((conn, screen)) = connect_or_skip() else {
+        return;
+    };
     let (win, _root) = make_win(&conn, screen);
     let (backend, _rt) = X11Backend::for_test(Arc::clone(&conn)).unwrap();
     backend.set_dest_win_for_test(Some(win));
 
-    backend.update_preedit(&PreeditText::new("a".to_owned()), CharCursor(1)).unwrap();
+    backend
+        .update_preedit(&PreeditText::new("a".to_owned()), CharCursor(1))
+        .unwrap();
 
     let events = drain_events(&conn);
 
     assert_eq!(backend.shadow_buf_snapshot(), "a");
-    assert_eq!(count_backspace_presses(&events), 0, "no BackSpace expected on first char");
-    assert_eq!(extract_xim_commits(&events), vec!["a"], "XIM_COMMIT must deliver 'a'");
+    assert_eq!(
+        count_backspace_presses(&events),
+        0,
+        "no BackSpace expected on first char"
+    );
+    assert_eq!(
+        extract_xim_commits(&events),
+        vec!["a"],
+        "XIM_COMMIT must deliver 'a'"
+    );
 
     conn.destroy_window(win).unwrap().check().unwrap();
 }
@@ -386,21 +440,31 @@ fn shadow_diff_first_char_seeds_shadow_buf_and_sends_commit() {
 /// Telex double-'a' → 'â': one BackSpace to erase 'a', then XIM_COMMIT 'â'.
 #[test]
 fn shadow_diff_telex_double_a_sends_one_backspace_and_new_commit() {
-    let Some((conn, screen)) = connect_or_skip() else { return };
+    let Some((conn, screen)) = connect_or_skip() else {
+        return;
+    };
     let (win, _root) = make_win(&conn, screen);
     let (backend, _rt) = X11Backend::for_test(Arc::clone(&conn)).unwrap();
     backend.set_dest_win_for_test(Some(win));
 
     // Seed shadow_buf = "a".
-    backend.update_preedit(&PreeditText::new("a".to_owned()), CharCursor(1)).unwrap();
+    backend
+        .update_preedit(&PreeditText::new("a".to_owned()), CharCursor(1))
+        .unwrap();
     drain_events(&conn);
 
     // Telex aa → â: shadow diverges at position 0.
-    backend.update_preedit(&PreeditText::new("â".to_owned()), CharCursor(1)).unwrap();
+    backend
+        .update_preedit(&PreeditText::new("â".to_owned()), CharCursor(1))
+        .unwrap();
     let events = drain_events(&conn);
 
     assert_eq!(backend.shadow_buf_snapshot(), "â");
-    assert_eq!(count_backspace_presses(&events), 1, "exactly 1 BackSpace expected");
+    assert_eq!(
+        count_backspace_presses(&events),
+        1,
+        "exactly 1 BackSpace expected"
+    );
     assert_eq!(extract_xim_commits(&events), vec!["â"]);
 
     conn.destroy_window(win).unwrap().check().unwrap();
@@ -409,24 +473,40 @@ fn shadow_diff_telex_double_a_sends_one_backspace_and_new_commit() {
 /// Clear preedit (update to ""): N BackSpace events for each char in shadow, no commit.
 #[test]
 fn shadow_diff_clear_sends_backspace_for_each_char_in_shadow() {
-    let Some((conn, screen)) = connect_or_skip() else { return };
+    let Some((conn, screen)) = connect_or_skip() else {
+        return;
+    };
     let (win, _root) = make_win(&conn, screen);
     let (backend, _rt) = X11Backend::for_test(Arc::clone(&conn)).unwrap();
     backend.set_dest_win_for_test(Some(win));
 
     // Seed shadow_buf = "ab" (2 chars).
-    backend.update_preedit(&PreeditText::new("a".to_owned()), CharCursor(1)).unwrap();
+    backend
+        .update_preedit(&PreeditText::new("a".to_owned()), CharCursor(1))
+        .unwrap();
     drain_events(&conn);
-    backend.update_preedit(&PreeditText::new("ab".to_owned()), CharCursor(2)).unwrap();
+    backend
+        .update_preedit(&PreeditText::new("ab".to_owned()), CharCursor(2))
+        .unwrap();
     drain_events(&conn);
 
     // Clear.
-    backend.update_preedit(&PreeditText::new(String::new()), CharCursor(0)).unwrap();
+    backend
+        .update_preedit(&PreeditText::new(String::new()), CharCursor(0))
+        .unwrap();
     let events = drain_events(&conn);
 
     assert_eq!(backend.shadow_buf_snapshot(), "");
-    assert_eq!(count_backspace_presses(&events), 2, "2 BackSpace presses for 2-char shadow");
-    assert_eq!(extract_xim_commits(&events).len(), 0, "no XIM_COMMIT when clearing to empty");
+    assert_eq!(
+        count_backspace_presses(&events),
+        2,
+        "2 BackSpace presses for 2-char shadow"
+    );
+    assert_eq!(
+        extract_xim_commits(&events).len(),
+        0,
+        "no XIM_COMMIT when clearing to empty"
+    );
 
     conn.destroy_window(win).unwrap().check().unwrap();
 }
@@ -434,39 +514,65 @@ fn shadow_diff_clear_sends_backspace_for_each_char_in_shadow() {
 /// commit() must reset shadow_buf to "".
 #[test]
 fn shadow_diff_commit_resets_shadow_buf() {
-    let Some((conn, _screen)) = connect_or_skip() else { return };
+    let Some((conn, _screen)) = connect_or_skip() else {
+        return;
+    };
     let (backend, _rt) = X11Backend::for_test(conn).unwrap();
     // dest_win is None: no events sent, but shadow_buf is still updated.
 
-    backend.update_preedit(&PreeditText::new("việt".to_owned()), CharCursor(4)).unwrap();
+    backend
+        .update_preedit(&PreeditText::new("việt".to_owned()), CharCursor(4))
+        .unwrap();
     assert_eq!(backend.shadow_buf_snapshot(), "việt");
 
     let nfc = UnicodePipeline::normalize_only("việt");
     backend.commit(&nfc).unwrap();
-    assert_eq!(backend.shadow_buf_snapshot(), "", "commit must clear shadow_buf");
+    assert_eq!(
+        backend.shadow_buf_snapshot(),
+        "",
+        "commit must clear shadow_buf"
+    );
 }
 
 /// fullscreen_mode == true: update_preedit is a no-op; shadow_buf and events unchanged.
 #[test]
 fn shadow_diff_fullscreen_suppresses_update_preedit() {
-    let Some((conn, screen)) = connect_or_skip() else { return };
+    let Some((conn, screen)) = connect_or_skip() else {
+        return;
+    };
     let (win, _root) = make_win(&conn, screen);
     let (backend, _rt) = X11Backend::for_test(Arc::clone(&conn)).unwrap();
     backend.set_dest_win_for_test(Some(win));
 
     // Establish a known shadow_buf.
-    backend.update_preedit(&PreeditText::new("a".to_owned()), CharCursor(1)).unwrap();
+    backend
+        .update_preedit(&PreeditText::new("a".to_owned()), CharCursor(1))
+        .unwrap();
     drain_events(&conn);
     assert_eq!(backend.shadow_buf_snapshot(), "a");
 
     // Enable fullscreen: subsequent update_preedit must be a no-op.
     backend.set_fullscreen_for_test(true);
-    backend.update_preedit(&PreeditText::new("ab".to_owned()), CharCursor(2)).unwrap();
+    backend
+        .update_preedit(&PreeditText::new("ab".to_owned()), CharCursor(2))
+        .unwrap();
     let events = drain_events(&conn);
 
-    assert_eq!(backend.shadow_buf_snapshot(), "a", "fullscreen_mode must leave shadow_buf unchanged");
-    assert_eq!(count_backspace_presses(&events), 0, "no BackSpace when fullscreen");
-    assert_eq!(extract_xim_commits(&events).len(), 0, "no XIM_COMMIT when fullscreen");
+    assert_eq!(
+        backend.shadow_buf_snapshot(),
+        "a",
+        "fullscreen_mode must leave shadow_buf unchanged"
+    );
+    assert_eq!(
+        count_backspace_presses(&events),
+        0,
+        "no BackSpace when fullscreen"
+    );
+    assert_eq!(
+        extract_xim_commits(&events).len(),
+        0,
+        "no XIM_COMMIT when fullscreen"
+    );
 
     conn.destroy_window(win).unwrap().check().unwrap();
 }
@@ -474,36 +580,53 @@ fn shadow_diff_fullscreen_suppresses_update_preedit() {
 /// dest_win == None: returns Ok without panic; shadow_buf is still updated.
 #[test]
 fn shadow_diff_no_dest_win_returns_ok_and_updates_shadow_buf() {
-    let Some((conn, _screen)) = connect_or_skip() else { return };
+    let Some((conn, _screen)) = connect_or_skip() else {
+        return;
+    };
     let (backend, _rt) = X11Backend::for_test(conn).unwrap();
     // dest_win defaults to None.
 
     let result = backend.update_preedit(&PreeditText::new("a".to_owned()), CharCursor(1));
     assert!(result.is_ok(), "must return Ok when dest_win is None");
-    assert_eq!(backend.shadow_buf_snapshot(), "a", "shadow_buf updated even without dest_win");
+    assert_eq!(
+        backend.shadow_buf_snapshot(),
+        "a",
+        "shadow_buf updated even without dest_win"
+    );
 }
 
 /// U+1ED5 'ổ' is 3 UTF-8 bytes but 1 Unicode char → counts as 1 BackSpace.
 #[test]
 fn shadow_diff_vietnamese_multibyte_char_counts_as_one_backspace() {
     assert_eq!("ổ".len(), 3, "test precondition: ổ is 3 UTF-8 bytes");
-    assert_eq!("ổ".chars().count(), 1, "test precondition: ổ is 1 codepoint");
+    assert_eq!(
+        "ổ".chars().count(),
+        1,
+        "test precondition: ổ is 1 codepoint"
+    );
 
-    let Some((conn, screen)) = connect_or_skip() else { return };
+    let Some((conn, screen)) = connect_or_skip() else {
+        return;
+    };
     let (win, _root) = make_win(&conn, screen);
     let (backend, _rt) = X11Backend::for_test(Arc::clone(&conn)).unwrap();
     backend.set_dest_win_for_test(Some(win));
 
     // Seed shadow_buf = "ổ" (1 char, 3 bytes).
-    backend.update_preedit(&PreeditText::new("ổ".to_owned()), CharCursor(1)).unwrap();
+    backend
+        .update_preedit(&PreeditText::new("ổ".to_owned()), CharCursor(1))
+        .unwrap();
     drain_events(&conn);
 
     // Update to an unrelated char: should erase 1 char, not 3 bytes.
-    backend.update_preedit(&PreeditText::new("x".to_owned()), CharCursor(1)).unwrap();
+    backend
+        .update_preedit(&PreeditText::new("x".to_owned()), CharCursor(1))
+        .unwrap();
     let events = drain_events(&conn);
 
     assert_eq!(
-        count_backspace_presses(&events), 1,
+        count_backspace_presses(&events),
+        1,
         "multi-byte char must produce 1 BackSpace (char count), not 3 (byte count)"
     );
 

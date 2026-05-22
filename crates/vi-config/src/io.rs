@@ -25,7 +25,10 @@ pub fn load_str(s: &str) -> Result<Config, ConfigError> {
         .unwrap_or(0);
 
     if version > CURRENT_VERSION {
-        return Err(ConfigError::UnsupportedVersion { found: version, max: CURRENT_VERSION });
+        return Err(ConfigError::UnsupportedVersion {
+            found: version,
+            max: CURRENT_VERSION,
+        });
     }
 
     if version < CURRENT_VERSION {

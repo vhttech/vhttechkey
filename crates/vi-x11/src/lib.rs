@@ -42,8 +42,8 @@ use x11rb::{
     connection::Connection as _,
     protocol::{
         xproto::{
-            self, Atom, ClientMessageData, ClientMessageEvent, ConnectionExt as _,
-            EventMask, KeyPressEvent, Window,
+            self, Atom, ClientMessageData, ClientMessageEvent, ConnectionExt as _, EventMask,
+            KeyPressEvent, Window,
         },
         Event,
     },
@@ -228,7 +228,10 @@ impl XimServer {
             COPY_DEPTH_FROM_PARENT,
             server_win,
             root,
-            0, 0, 1, 1,
+            0,
+            0,
+            1,
+            1,
             0,
             xproto::WindowClass::INPUT_ONLY,
             0,
@@ -262,7 +265,8 @@ impl XimServer {
         )
         .map_err(|e| PlatformError::X11(e.to_string()))?;
 
-        conn.flush().map_err(|e| PlatformError::X11(e.to_string()))?;
+        conn.flush()
+            .map_err(|e| PlatformError::X11(e.to_string()))?;
         info!("X11 XIM: server window={server_win:#x}");
 
         // Initialise RandR: query version, build initial monitor map, and
@@ -271,10 +275,15 @@ impl XimServer {
 
         let xkb_ctx = xkbcommon::xkb::Context::new(xkbcommon::xkb::CONTEXT_NO_FLAGS);
         let xkb_keymap = xkbcommon::xkb::Keymap::new_from_names(
-            &xkb_ctx, "", "", "", "",
+            &xkb_ctx,
+            "",
+            "",
+            "",
+            "",
             None,
             xkbcommon::xkb::KEYMAP_COMPILE_NO_FLAGS,
-        ).ok_or_else(|| PlatformError::X11("xkb keymap init failed".into()))?;
+        )
+        .ok_or_else(|| PlatformError::X11("xkb keymap init failed".into()))?;
         let xkb_state = xkbcommon::xkb::State::new(&xkb_keymap);
 
         let net_wm_pid = intern_atom(&conn, "_NET_WM_PID")?;
@@ -401,15 +410,17 @@ impl XimServer {
                 {
                     let mut off = 8usize;
                     while off + 4 <= data.len() {
-                        let attr_len =
-                            u16::from_le_bytes([data[off + 2], data[off + 3]]) as usize;
+                        let attr_len = u16::from_le_bytes([data[off + 2], data[off + 3]]) as usize;
                         off += 4;
                         if off + attr_len > data.len() {
                             break;
                         }
                         if attr_len == 4 {
                             let v = u32::from_le_bytes([
-                                data[off], data[off + 1], data[off + 2], data[off + 3],
+                                data[off],
+                                data[off + 1],
+                                data[off + 2],
+                                data[off + 3],
                             ]);
                             // XIMPreeditRoot = 0x0004; if client explicitly requests Root
                             // and does NOT request OverTheSpot (0x0008), honour it.
@@ -423,11 +434,14 @@ impl XimServer {
 
                 debug!("XIM: CREATE_IC im={im_id} ic={ic_id} style={preedit_style:?}");
                 if let Some(ics) = self.contexts.get_mut(&im_id) {
-                    ics.insert(ic_id, InputContext {
-                        client_win: cm.window,
-                        focused: false,
-                        preedit_style,
-                    });
+                    ics.insert(
+                        ic_id,
+                        InputContext {
+                            client_win: cm.window,
+                            focused: false,
+                            preedit_style,
+                        },
+                    );
                 }
                 self.send_create_ic_reply(cm.window, im_id, ic_id);
             }
@@ -450,8 +464,12 @@ impl XimServer {
                 let (is_wine, is_fs) = if let Some(win) = client_win {
                     let w = self.wine_bridge.is_wine_window(win);
                     let fs = self.fullscreen_monitor.is_fullscreen(win);
-                    if w { debug!("XIM: IC {ic_id} is a Wine/Proton window"); }
-                    if fs { debug!("XIM: IC {ic_id} is fullscreen"); }
+                    if w {
+                        debug!("XIM: IC {ic_id} is a Wine/Proton window");
+                    }
+                    if fs {
+                        debug!("XIM: IC {ic_id} is fullscreen");
+                    }
                     // Subscribe to PropertyNotify on this window so future
                     // fullscreen transitions are picked up.
                     let _ = self.fullscreen_monitor.subscribe_window(win);
@@ -490,7 +508,7 @@ impl XimServer {
                 // Embedded XKeyEvent: type at offset 12, keycode (detail) at 13.
                 let event_type = data[12];
                 let keycode = data[13];
-                let pressed = event_type == 2;  // KeyPress = 2
+                let pressed = event_type == 2; // KeyPress = 2
                 let released = event_type == 3; // KeyRelease = 3
 
                 // Ghost-key guard: track (ic_id, keycode) pairs.
@@ -506,13 +524,20 @@ impl XimServer {
                         // but do not feed it to the engine.
                         if sync {
                             send_sync_reply(
-                                &self.conn, self.xim_proto_atom,
-                                cm.window, im_id, ic_id,
+                                &self.conn,
+                                self.xim_proto_atom,
+                                cm.window,
+                                im_id,
+                                ic_id,
                             );
                         }
                         forward_event_passthrough(
-                            &self.conn, self.xim_proto_atom,
-                            cm.window, im_id, ic_id, &data,
+                            &self.conn,
+                            self.xim_proto_atom,
+                            cm.window,
+                            im_id,
+                            ic_id,
+                            &data,
                         );
                         // Skip the pending-commit flush that follows.
                         return self.flush_pending_commit(cm.window);
@@ -530,14 +555,15 @@ impl XimServer {
                 // the application so it can handle its own repeat logic.
                 if is_key_repeat && pressed {
                     if sync {
-                        send_sync_reply(
-                            &self.conn, self.xim_proto_atom,
-                            cm.window, im_id, ic_id,
-                        );
+                        send_sync_reply(&self.conn, self.xim_proto_atom, cm.window, im_id, ic_id);
                     }
                     forward_event_passthrough(
-                        &self.conn, self.xim_proto_atom,
-                        cm.window, im_id, ic_id, &data,
+                        &self.conn,
+                        self.xim_proto_atom,
+                        cm.window,
+                        im_id,
+                        ic_id,
+                        &data,
                     );
                     return self.flush_pending_commit(cm.window);
                 }
@@ -548,7 +574,11 @@ impl XimServer {
                     let s = self.shared.lock().unwrap_or_else(|e| e.into_inner());
                     let mods = s.modifier_state;
                     if let Some(ev) = keysym_to_key(keysym.raw()).map(|k| {
-                        if pressed { InputEvent::KeyDown(k, mods) } else { InputEvent::KeyUp(k) }
+                        if pressed {
+                            InputEvent::KeyDown(k, mods)
+                        } else {
+                            InputEvent::KeyUp(k)
+                        }
                     }) {
                         if !mods.ctrl {
                             let _ = self.tx.try_send(ev);
@@ -561,13 +591,7 @@ impl XimServer {
                     }
                 };
                 if sync || consumed {
-                    send_sync_reply(
-                        &self.conn,
-                        self.xim_proto_atom,
-                        cm.window,
-                        im_id,
-                        ic_id,
-                    );
+                    send_sync_reply(&self.conn, self.xim_proto_atom, cm.window, im_id, ic_id);
                 }
                 if !consumed {
                     forward_event_passthrough(
@@ -828,17 +852,17 @@ fn forward_event_passthrough(
 fn keysym_to_key(keysym: u32) -> Option<Key> {
     use xkbcommon::xkb::keysyms;
     match keysym {
-        keysyms::KEY_Escape    => return Some(Key::Escape),
+        keysyms::KEY_Escape => return Some(Key::Escape),
         keysyms::KEY_BackSpace => return Some(Key::Backspace),
-        keysyms::KEY_Tab       => return Some(Key::Tab),
-        keysyms::KEY_Return    => return Some(Key::Return),
-        keysyms::KEY_Home      => return Some(Key::Home),
-        keysyms::KEY_End       => return Some(Key::End),
-        keysyms::KEY_Up        => return Some(Key::Up),
-        keysyms::KEY_Down      => return Some(Key::Down),
-        keysyms::KEY_Left      => return Some(Key::Left),
-        keysyms::KEY_Right     => return Some(Key::Right),
-        keysyms::KEY_Delete    => return Some(Key::Delete),
+        keysyms::KEY_Tab => return Some(Key::Tab),
+        keysyms::KEY_Return => return Some(Key::Return),
+        keysyms::KEY_Home => return Some(Key::Home),
+        keysyms::KEY_End => return Some(Key::End),
+        keysyms::KEY_Up => return Some(Key::Up),
+        keysyms::KEY_Down => return Some(Key::Down),
+        keysyms::KEY_Left => return Some(Key::Left),
+        keysyms::KEY_Right => return Some(Key::Right),
+        keysyms::KEY_Delete => return Some(Key::Delete),
         _ => {}
     }
     let codepoint = xkbcommon::xkb::keysym_to_utf32(xkbcommon::xkb::Keysym::from(keysym));
@@ -870,14 +894,42 @@ fn map_key_to_x11_keycode(key: &Key) -> u8 {
 
 pub(crate) fn char_to_x11_keycode(c: char) -> u8 {
     match c.to_ascii_lowercase() {
-        '1' => 10, '2' => 11, '3' => 12, '4' => 13, '5' => 14,
-        '6' => 15, '7' => 16, '8' => 17, '9' => 18, '0' => 19,
-        'q' => 24, 'w' => 25, 'e' => 26, 'r' => 27, 't' => 28,
-        'y' => 29, 'u' => 30, 'i' => 31, 'o' => 32, 'p' => 33,
-        'a' => 38, 's' => 39, 'd' => 40, 'f' => 41, 'g' => 42,
-        'h' => 43, 'j' => 44, 'k' => 45, 'l' => 46,
-        'z' => 52, 'x' => 53, 'c' => 54, 'v' => 55, 'b' => 56,
-        'n' => 57, 'm' => 58,
+        '1' => 10,
+        '2' => 11,
+        '3' => 12,
+        '4' => 13,
+        '5' => 14,
+        '6' => 15,
+        '7' => 16,
+        '8' => 17,
+        '9' => 18,
+        '0' => 19,
+        'q' => 24,
+        'w' => 25,
+        'e' => 26,
+        'r' => 27,
+        't' => 28,
+        'y' => 29,
+        'u' => 30,
+        'i' => 31,
+        'o' => 32,
+        'p' => 33,
+        'a' => 38,
+        's' => 39,
+        'd' => 40,
+        'f' => 41,
+        'g' => 42,
+        'h' => 43,
+        'j' => 44,
+        'k' => 45,
+        'l' => 46,
+        'z' => 52,
+        'x' => 53,
+        'c' => 54,
+        'v' => 55,
+        'b' => 56,
+        'n' => 57,
+        'm' => 58,
         ' ' => 65,
         _ => 0,
     }
@@ -885,11 +937,21 @@ pub(crate) fn char_to_x11_keycode(c: char) -> u8 {
 
 fn mods_to_x11_state(mods: Modifiers) -> u16 {
     let mut s = 0u16;
-    if mods.shift { s |= 0x0001; }    // ShiftMask
-    if mods.caps_lock { s |= 0x0002; } // LockMask
-    if mods.ctrl { s |= 0x0004; }     // ControlMask
-    if mods.alt { s |= 0x0008; }      // Mod1Mask
-    if mods.super_key { s |= 0x0040; } // Mod4Mask
+    if mods.shift {
+        s |= 0x0001;
+    } // ShiftMask
+    if mods.caps_lock {
+        s |= 0x0002;
+    } // LockMask
+    if mods.ctrl {
+        s |= 0x0004;
+    } // ControlMask
+    if mods.alt {
+        s |= 0x0008;
+    } // Mod1Mask
+    if mods.super_key {
+        s |= 0x0040;
+    } // Mod4Mask
     s
 }
 
@@ -908,10 +970,10 @@ fn update_modifier_state(
     xkb_state.update_key(xkbcommon::xkb::Keycode::new(keycode as u32), direction);
     let mut s = shared.lock().unwrap_or_else(|e| e.into_inner());
     match keycode {
-        50 | 62 => s.modifier_state.shift = pressed,     // Shift L/R
-        37 | 105 => s.modifier_state.ctrl = pressed,     // Ctrl L/R
-        64 | 108 => s.modifier_state.alt = pressed,      // Alt L/R
-        66 => s.modifier_state.caps_lock = pressed,      // CapsLock
+        50 | 62 => s.modifier_state.shift = pressed, // Shift L/R
+        37 | 105 => s.modifier_state.ctrl = pressed, // Ctrl L/R
+        64 | 108 => s.modifier_state.alt = pressed,  // Alt L/R
+        66 => s.modifier_state.caps_lock = pressed,  // CapsLock
         133 | 134 => s.modifier_state.super_key = pressed, // Super L/R
         _ => {}
     }
@@ -980,8 +1042,7 @@ fn init_randr(
         warn!("X11 RandR: randr_select_input failed");
     }
 
-    *monitor_map.lock().unwrap_or_else(|e| e.into_inner()) =
-        build_monitor_map(conn, root);
+    *monitor_map.lock().unwrap_or_else(|e| e.into_inner()) = build_monitor_map(conn, root);
 
     let count = monitor_map.lock().unwrap_or_else(|e| e.into_inner()).len();
     info!("X11 RandR: found {count} monitor(s) on screen {screen_num}");
@@ -1059,8 +1120,8 @@ impl X11Backend {
     ///
     /// The event loop runs in a background `tokio::task::spawn_blocking` task.
     pub fn connect(rt: tokio::runtime::Handle, tx: mpsc::Sender<InputEvent>) -> Result<Self> {
-        let display = std::env::var("DISPLAY")
-            .map_err(|_| PlatformError::X11("DISPLAY not set".into()))?;
+        let display =
+            std::env::var("DISPLAY").map_err(|_| PlatformError::X11("DISPLAY not set".into()))?;
 
         let (conn, screen_num) = RustConnection::connect(Some(&display))
             .map_err(|e| PlatformError::X11(e.to_string()))?;
@@ -1098,9 +1159,7 @@ impl X11Backend {
                                 if let Some(ic_id) = focused_ic {
                                     for ics in server.contexts.values() {
                                         if let Some(ic) = ics.get(&ic_id) {
-                                            *dest_win2
-                                                .lock()
-                                                .unwrap_or_else(|e| e.into_inner()) =
+                                            *dest_win2.lock().unwrap_or_else(|e| e.into_inner()) =
                                                 Some(ic.client_win);
                                             break;
                                         }
@@ -1136,12 +1195,7 @@ impl X11Backend {
     pub fn cursor_monitor(&self, cx: i32, cy: i32) -> Option<MonitorInfo> {
         let map = self.monitor_map.lock().unwrap_or_else(|e| e.into_inner());
         map.iter()
-            .find(|m| {
-                cx >= m.x
-                    && cx < m.x + m.width
-                    && cy >= m.y
-                    && cy < m.y + m.height
-            })
+            .find(|m| cx >= m.x && cx < m.x + m.width && cy >= m.y && cy < m.y + m.height)
             .or_else(|| map.first())
             .cloned()
     }
@@ -1220,13 +1274,25 @@ impl X11Backend {
             .build()
             .map_err(|e| PlatformError::X11(e.to_string()))?;
         let handle = rt.handle().clone();
-        let backend = X11Backend { rt: handle, shared, conn, dest_win, xim_proto_atom, monitor_map, wine_bridge };
+        let backend = X11Backend {
+            rt: handle,
+            shared,
+            conn,
+            dest_win,
+            xim_proto_atom,
+            monitor_map,
+            wine_bridge,
+        };
         Ok((backend, rt))
     }
 
     /// Returns a snapshot of the current shadow buffer. For regression tests.
     pub fn shadow_buf_snapshot(&self) -> String {
-        self.shared.lock().unwrap_or_else(|e| e.into_inner()).shadow_buf.clone()
+        self.shared
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .shadow_buf
+            .clone()
     }
 
     /// Overrides the destination window for commit/backspace delivery. For regression tests.
@@ -1236,7 +1302,10 @@ impl X11Backend {
 
     /// Overrides the fullscreen_mode flag. For regression tests.
     pub fn set_fullscreen_for_test(&self, v: bool) {
-        self.shared.lock().unwrap_or_else(|e| e.into_inner()).fullscreen_mode = v;
+        self.shared
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .fullscreen_mode = v;
     }
 
     /// Property-based XIM_COMMIT for strings that exceed the 14-byte Data8 limit.
@@ -1288,7 +1357,11 @@ impl X11Backend {
 
 impl ImeBackend for X11Backend {
     fn commit(&self, text: &NfcString) -> Result<()> {
-        let is_wine = self.shared.lock().unwrap_or_else(|e| e.into_inner()).is_wine_window;
+        let is_wine = self
+            .shared
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .is_wine_window;
         let dest = *self.dest_win.lock().unwrap_or_else(|e| e.into_inner());
         if let Some(win) = dest {
             if is_wine {
@@ -1464,13 +1537,19 @@ mod tests {
 
     #[test]
     fn mods_to_x11_state_shift() {
-        let m = Modifiers { shift: true, ..Default::default() };
+        let m = Modifiers {
+            shift: true,
+            ..Default::default()
+        };
         assert_eq!(mods_to_x11_state(m) & 0x0001, 0x0001);
     }
 
     #[test]
     fn mods_to_x11_state_ctrl() {
-        let m = Modifiers { ctrl: true, ..Default::default() };
+        let m = Modifiers {
+            ctrl: true,
+            ..Default::default()
+        };
         assert_eq!(mods_to_x11_state(m) & 0x0004, 0x0004);
     }
 
@@ -1492,7 +1571,10 @@ mod tests {
     #[test]
     fn parse_surrounding_text_attr_empty() {
         let value = build_surrounding_attr("", 0);
-        assert_eq!(parse_surrounding_text_attr(&value), Some(("".to_owned(), 0)));
+        assert_eq!(
+            parse_surrounding_text_attr(&value),
+            Some(("".to_owned(), 0))
+        );
     }
 
     #[test]

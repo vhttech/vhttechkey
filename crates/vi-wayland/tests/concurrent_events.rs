@@ -34,7 +34,10 @@ fn concurrent_activate_deactivate_no_stale_preedit() {
                 s.active = true;
                 s.serial = 0;
                 s.pending_preedit = None;
-                assert!(s.pending_preedit.is_none(), "stale preedit must be cleared on Activate");
+                assert!(
+                    s.pending_preedit.is_none(),
+                    "stale preedit must be cleared on Activate"
+                );
             } else {
                 // Deactivate: flush pending preedit.
                 s.active = false;
@@ -55,7 +58,9 @@ fn concurrent_activate_deactivate_no_stale_preedit() {
         }
     });
 
-    thread_a.join().expect("activate/deactivate thread panicked");
+    thread_a
+        .join()
+        .expect("activate/deactivate thread panicked");
     thread_b.join().expect("Done/preedit thread panicked");
 
     // After a final simulated Activate, preedit must be cleared.
@@ -64,7 +69,10 @@ fn concurrent_activate_deactivate_no_stale_preedit() {
         s.active = true;
         s.serial = 0;
         s.pending_preedit = None;
-        assert!(s.pending_preedit.is_none(), "stale preedit leaked into new focus session");
+        assert!(
+            s.pending_preedit.is_none(),
+            "stale preedit leaked into new focus session"
+        );
     }
 }
 

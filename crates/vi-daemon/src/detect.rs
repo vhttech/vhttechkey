@@ -79,7 +79,15 @@ pub async fn detect_and_connect(
         let backend = tokio::task::spawn_blocking({
             let rt = rt.clone();
             let engine = Arc::clone(&engine);
-            move || vi_ibus::IbusBackend::connect(rt, engine, force_preedit_mode, force_chrome_direct, default_commit_mode)
+            move || {
+                vi_ibus::IbusBackend::connect(
+                    rt,
+                    engine,
+                    force_preedit_mode,
+                    force_chrome_direct,
+                    default_commit_mode,
+                )
+            }
         })
         .await
         .map_err(|e| PlatformError::DBus(e.to_string()))??;
@@ -101,7 +109,10 @@ pub async fn detect_and_connect(
     if probe_fcitx5().await {
         info!("Backend: detected Fcitx5");
         let socket_path = vi_fcitx5::engine_socket_path();
-        let backend = Arc::new(vi_fcitx5::FcitxShimBackend::new(socket_path, Arc::clone(&engine)));
+        let backend = Arc::new(vi_fcitx5::FcitxShimBackend::new(
+            socket_path,
+            Arc::clone(&engine),
+        ));
         tokio::spawn({
             let b = Arc::clone(&backend);
             async move {
@@ -198,7 +209,10 @@ pub fn detect_in(proc_root: &std::path::Path) -> Vec<SandboxedApp> {
                 .map(str::to_owned)
         });
         if let Some(name) = resolved_snap {
-            apps.push(SandboxedApp::Snap { pid, snap_name: name });
+            apps.push(SandboxedApp::Snap {
+                pid,
+                snap_name: name,
+            });
             continue;
         }
 
@@ -275,9 +289,10 @@ fn probe_wayland_input_method() -> bool {
         Ok(r) => r,
         Err(_) => return false,
     };
-    globals
-        .contents()
-        .with_list(|list| list.iter().any(|g| g.interface == "zwp_input_method_manager_v2"))
+    globals.contents().with_list(|list| {
+        list.iter()
+            .any(|g| g.interface == "zwp_input_method_manager_v2")
+    })
 }
 
 /// Return true if IBus is available (address resolves or daemon is on D-Bus).

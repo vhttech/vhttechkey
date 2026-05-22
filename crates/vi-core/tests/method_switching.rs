@@ -18,7 +18,10 @@ fn type_str(engine: &mut StandardEngine, s: &str) {
 }
 
 fn commit_str(engine: &mut StandardEngine) -> String {
-    match engine.process(&InputEvent::KeyDown(Key::Return, Modifiers::none())).unwrap() {
+    match engine
+        .process(&InputEvent::KeyDown(Key::Return, Modifiers::none()))
+        .unwrap()
+    {
         StateTransition::CommitAndClear(c) | StateTransition::Commit(c) => c.as_str().to_owned(),
         StateTransition::PassThrough => String::new(),
         other => panic!("unexpected transition on Return: {other:?}"),
@@ -51,7 +54,10 @@ fn assert_clean_switch(
     let mut to_engine = StandardEngine::new(to);
     type_str(&mut to_engine, to_keys);
     let committed = commit_str(&mut to_engine);
-    assert_eq!(committed, expected, "wrong output after {from:?}→{to:?} switch");
+    assert_eq!(
+        committed, expected,
+        "wrong output after {from:?}→{to:?} switch"
+    );
 }
 
 #[test]
@@ -120,7 +126,10 @@ fn reset_event_clears_without_commit() {
             matches!(r, StateTransition::Cleared),
             "Reset event must return Cleared for {method:?}, got {r:?}"
         );
-        assert!(engine.preedit().is_empty(), "preedit not cleared after Reset event for {method:?}");
+        assert!(
+            engine.preedit().is_empty(),
+            "preedit not cleared after Reset event for {method:?}"
+        );
     }
 }
 

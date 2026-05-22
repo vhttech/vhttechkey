@@ -72,7 +72,10 @@ async fn preedit_delivered_per_keystroke_over_socket() {
     let engine = Arc::new(Mutex::new(StandardEngine::new(InputMethod::Telex)));
 
     // Run the shim handler on the server end of the socket pair.
-    tokio::spawn(vi_fcitx5::handle_shim_connection(server, Arc::clone(&engine)));
+    tokio::spawn(vi_fcitx5::handle_shim_connection(
+        server,
+        Arc::clone(&engine),
+    ));
 
     let (read_half, mut write_half) = client.into_split();
     let mut lines = BufReader::new(read_half).lines();

@@ -41,18 +41,18 @@ pub struct GoldenCase {
 pub fn all_216() -> Vec<GoldenCase> {
     // (vowel_char, telex_vowel, vni_vowel, viqr_vowel)
     let vowels: &[(&str, &str, &str, &str)] = &[
-        ("a",  "a",   "a",   "a"),
-        ("ă",  "aw",  "a8",  "a("),
-        ("â",  "aa",  "a6",  "a^"),
-        ("e",  "e",   "e",   "e"),
-        ("ê",  "ee",  "e6",  "e^"),
-        ("i",  "i",   "i",   "i"),
-        ("o",  "o",   "o",   "o"),
-        ("ô",  "oo",  "o6",  "o^"),
-        ("ơ",  "ow",  "o7",  "o+"),
-        ("u",  "u",   "u",   "u"),
-        ("ư",  "uw",  "u7",  "u+"),
-        ("y",  "y",   "y",   "y"),
+        ("a", "a", "a", "a"),
+        ("ă", "aw", "a8", "a("),
+        ("â", "aa", "a6", "a^"),
+        ("e", "e", "e", "e"),
+        ("ê", "ee", "e6", "e^"),
+        ("i", "i", "i", "i"),
+        ("o", "o", "o", "o"),
+        ("ô", "oo", "o6", "o^"),
+        ("ơ", "ow", "o7", "o+"),
+        ("u", "u", "u", "u"),
+        ("ư", "uw", "u7", "u+"),
+        ("y", "y", "y", "y"),
     ];
 
     struct ToneSpec {

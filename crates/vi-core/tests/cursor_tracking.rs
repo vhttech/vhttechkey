@@ -8,7 +8,9 @@
 //! 3. For pure ASCII preedit the byte offset equals both byte length and char
 //!    count (regression guard).
 
-use vi_core::{CompositionEngine, InputEvent, InputMethod, Key, Modifiers, StandardEngine, StateTransition};
+use vi_core::{
+    CompositionEngine, InputEvent, InputMethod, Key, Modifiers, StandardEngine, StateTransition,
+};
 
 fn telex() -> StandardEngine {
     StandardEngine::new(InputMethod::Telex)
@@ -40,7 +42,10 @@ fn viet_telex_cursor_byte_offset_tracks_nfc_end() {
                 cursor,
                 s.len(),
                 "after '{}': cursor_byte_offset={} but NFC byte length={} for preedit '{}'",
-                ch, cursor, s.len(), s,
+                ch,
+                cursor,
+                s.len(),
+                s,
             );
 
             // For multi-byte codepoints (Vietnamese), byte length > char count.
@@ -52,7 +57,9 @@ fn viet_telex_cursor_byte_offset_tracks_nfc_end() {
                     s.chars().count(),
                     "multi-byte preedit '{}': cursor_byte_offset ({}) must differ \
                      from char count ({}) — byte offset is correct, char count is not",
-                    s, cursor, s.chars().count(),
+                    s,
+                    cursor,
+                    s.chars().count(),
                 );
             }
         }
@@ -76,7 +83,9 @@ fn ascii_cursor_byte_offset_equals_byte_len() {
                 p.cursor_byte_offset,
                 s.len(),
                 "ASCII step {}: cursor_byte_offset={} len={}",
-                i, p.cursor_byte_offset, s.len(),
+                i,
+                p.cursor_byte_offset,
+                s.len(),
             );
             assert_eq!(
                 p.cursor_byte_offset,

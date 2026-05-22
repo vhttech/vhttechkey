@@ -40,9 +40,11 @@ async fn test_ipc_unknown_method_returns_error() {
 
     let mut stream = UnixStream::connect(&path).await.expect("connect");
 
-    let req_json =
-        serde_json::to_string(&Request::SetMethod { method: "bogus".into() }).expect("serialize")
-            + "\n";
+    let req_json = serde_json::to_string(&Request::SetMethod {
+        method: "bogus".into(),
+    })
+    .expect("serialize")
+        + "\n";
     stream.write_all(req_json.as_bytes()).await.expect("write");
 
     let (reader, _writer) = stream.into_split();

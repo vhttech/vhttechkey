@@ -3,7 +3,7 @@
 //! These tests verify the Fcitx5 backend's key mapping, capability
 //! negotiation, and graceful recovery when fcitx5 restarts.
 
-use vi_core::{Key, Modifiers, InputEvent};
+use vi_core::{InputEvent, Key, Modifiers};
 
 #[test]
 fn test_fcitx5_key_to_xkb_basic() {
@@ -37,18 +37,35 @@ fn test_fcitx5_key_to_xkb_basic() {
 fn test_fcitx5_mods_to_xkb() {
     fn mods_to_xkb(mods: &Modifiers) -> u32 {
         let mut m = 0u32;
-        if mods.shift { m |= 1; }
-        if mods.caps_lock { m |= 2; }
-        if mods.ctrl { m |= 4; }
-        if mods.alt { m |= 8; }
-        if mods.super_key { m |= 1 << 26; }
+        if mods.shift {
+            m |= 1;
+        }
+        if mods.caps_lock {
+            m |= 2;
+        }
+        if mods.ctrl {
+            m |= 4;
+        }
+        if mods.alt {
+            m |= 8;
+        }
+        if mods.super_key {
+            m |= 1 << 26;
+        }
         m
     }
 
-    let ctrl_shift = Modifiers { shift: true, ctrl: true, ..Default::default() };
+    let ctrl_shift = Modifiers {
+        shift: true,
+        ctrl: true,
+        ..Default::default()
+    };
     assert_eq!(mods_to_xkb(&ctrl_shift), 1 | 4);
 
-    let alt = Modifiers { alt: true, ..Default::default() };
+    let alt = Modifiers {
+        alt: true,
+        ..Default::default()
+    };
     assert_eq!(mods_to_xkb(&alt), 8);
 
     let none = Modifiers::none();
@@ -87,9 +104,7 @@ fn test_fcitx5_input_event_passthrough() {
     // KeyUp events should be marked as is_release=true.
     fn to_fcitx(event: &InputEvent) -> (u32, u32, u32, bool) {
         match event {
-            InputEvent::KeyDown(_, _) | InputEvent::KeyRepeat(_, _) => {
-                ('a' as u32, 0, 0, false)
-            }
+            InputEvent::KeyDown(_, _) | InputEvent::KeyRepeat(_, _) => ('a' as u32, 0, 0, false),
             InputEvent::KeyUp(_) => (0, 0, 0, true),
             _ => (0, 0, 0, false),
         }
@@ -123,7 +138,11 @@ fn test_fcitx5_deactivate_commits_nonempty_buffer() {
     on_deactivate(&mut preedit_cache, &mut committed);
 
     assert!(preedit_cache.is_empty(), "preedit cache must be cleared");
-    assert_eq!(committed, vec!["nước"], "non-empty preedit must be committed on deactivation");
+    assert_eq!(
+        committed,
+        vec!["nước"],
+        "non-empty preedit must be committed on deactivation"
+    );
 }
 
 /// InputContextDeactivated with an empty buffer must be a no-op: no spurious
@@ -143,7 +162,10 @@ fn test_fcitx5_deactivate_discards_empty_buffer() {
     on_deactivate(&mut preedit_cache, &mut committed);
 
     assert!(preedit_cache.is_empty());
-    assert!(committed.is_empty(), "empty preedit must not produce a spurious commit");
+    assert!(
+        committed.is_empty(),
+        "empty preedit must not produce a spurious commit"
+    );
 }
 
 #[tokio::test]
@@ -169,27 +191,44 @@ async fn test_fcitx5_preedit_cache() {
 /// Type "viet" in Telex → expect preedit "việt" then commit on Return.
 #[tokio::test]
 async fn test_fcitx5_full_typing_flow_viet() {
-    use vi_core::{CompositionEngine, InputEvent, InputMethod, Key, Modifiers, StandardEngine, StateTransition};
+    use vi_core::{
+        CompositionEngine, InputEvent, InputMethod, Key, Modifiers, StandardEngine, StateTransition,
+    };
 
     let mut engine = StandardEngine::new(InputMethod::Telex);
     let mut committed: Vec<String> = Vec::new();
 
     for ch in "viet".chars() {
-        match engine.process(&InputEvent::KeyDown(Key::Char(ch), Modifiers::none())).expect("ok") {
-            StateTransition::Commit(c) | StateTransition::CommitAndClear(c) => committed.push(c.as_str().to_owned()),
+        match engine
+            .process(&InputEvent::KeyDown(Key::Char(ch), Modifiers::none()))
+            .expect("ok")
+        {
+            StateTransition::Commit(c) | StateTransition::CommitAndClear(c) => {
+                committed.push(c.as_str().to_owned())
+            }
             _ => {}
         }
     }
 
     // "f" adds fall tone: "việt", or may commit if the engine decides to.
-    match engine.process(&InputEvent::KeyDown(Key::Char('f'), Modifiers::none())).expect("ok") {
-        StateTransition::Commit(c) | StateTransition::CommitAndClear(c) => committed.push(c.as_str().to_owned()),
+    match engine
+        .process(&InputEvent::KeyDown(Key::Char('f'), Modifiers::none()))
+        .expect("ok")
+    {
+        StateTransition::Commit(c) | StateTransition::CommitAndClear(c) => {
+            committed.push(c.as_str().to_owned())
+        }
         _ => {}
     }
 
     // Return commits whatever remains in preedit (may be empty if 'f' already committed).
-    match engine.process(&InputEvent::KeyDown(Key::Return, Modifiers::none())).expect("ok") {
-        StateTransition::CommitAndClear(c) | StateTransition::Commit(c) => committed.push(c.as_str().to_owned()),
+    match engine
+        .process(&InputEvent::KeyDown(Key::Return, Modifiers::none()))
+        .expect("ok")
+    {
+        StateTransition::CommitAndClear(c) | StateTransition::Commit(c) => {
+            committed.push(c.as_str().to_owned())
+        }
         StateTransition::Cleared | StateTransition::Consumed | StateTransition::PassThrough => {}
         other => panic!("unexpected result on Return: {other:?}"),
     }
@@ -198,7 +237,10 @@ async fn test_fcitx5_full_typing_flow_viet() {
     // "viet" + "f" applies huyền to 'e' → 'è' (U+00E8); accept any Vietnamese
     // composition or raw passthrough.
     let has_vietnamese = all.chars().any(|c| c as u32 > 0x7F);
-    assert!(has_vietnamese || all.contains("viet"), "committed text must contain composed Vietnamese or raw; got {all:?}");
+    assert!(
+        has_vietnamese || all.contains("viet"),
+        "committed text must contain composed Vietnamese or raw; got {all:?}"
+    );
 }
 
 /// ForwardKey signals: non-consumed keys forwarded by Fcitx5 must be sent as InputEvent.
@@ -208,13 +250,22 @@ fn test_fcitx5_forward_key_maps_to_input_event() {
 
     // 'a' key-down with no modifiers → InputEvent::KeyDown('a')
     let event = map_fcitx5_key(b'a' as u32, 0, false).expect("'a' must produce event");
-    assert_eq!(event, InputEvent::KeyDown(Key::Char('a'), Modifiers::none()));
+    assert_eq!(
+        event,
+        InputEvent::KeyDown(Key::Char('a'), Modifiers::none())
+    );
 
     // Key-up must be filtered out.
-    assert!(map_fcitx5_key(b'a' as u32, 0, true).is_none(), "key-up must be None");
+    assert!(
+        map_fcitx5_key(b'a' as u32, 0, true).is_none(),
+        "key-up must be None"
+    );
 
     // Ctrl+c must be filtered out.
-    assert!(map_fcitx5_key(b'c' as u32, 4, false).is_none(), "ctrl+c must be None");
+    assert!(
+        map_fcitx5_key(b'c' as u32, 4, false).is_none(),
+        "ctrl+c must be None"
+    );
 }
 
 /// Capability flags: SURROUNDING_TEXT is bit 2, PREEDIT is bit 6.
@@ -279,20 +330,29 @@ fn test_fcitx5_update_formatted_preedit_extracts_text() {
 /// initialised — no stale preedit or dangling cursor.
 #[tokio::test]
 async fn test_fcitx5_hot_switch_mid_composition() {
-    use vi_core::{CompositionEngine, InputEvent, InputMethod, Key, Modifiers, StandardEngine, StateTransition};
+    use vi_core::{
+        CompositionEngine, InputEvent, InputMethod, Key, Modifiers, StandardEngine, StateTransition,
+    };
 
     let mut engine = StandardEngine::new(InputMethod::Telex);
     let mut committed: Vec<String> = Vec::new();
 
     // Begin a composition: type "vi" → preedit is non-empty.
     for ch in "vi".chars() {
-        engine.process(&InputEvent::KeyDown(Key::Char(ch), Modifiers::none())).ok();
+        engine
+            .process(&InputEvent::KeyDown(Key::Char(ch), Modifiers::none()))
+            .ok();
         let _ = engine.process(&InputEvent::KeyUp(Key::Char(ch)));
     }
-    assert!(!engine.preedit().is_empty(), "preedit must be non-empty before hot-switch away");
+    assert!(
+        !engine.preedit().is_empty(),
+        "preedit must be non-empty before hot-switch away"
+    );
 
     // Switch away (InputContextDeactivated / FocusOut): preedit must be reset.
-    let switch_away = engine.process(&InputEvent::FocusOut).expect("switch-away must not error");
+    let switch_away = engine
+        .process(&InputEvent::FocusOut)
+        .expect("switch-away must not error");
     match switch_away {
         StateTransition::CommitAndClear(c) | StateTransition::Commit(c) => {
             committed.push(c.as_str().to_owned());
@@ -300,15 +360,24 @@ async fn test_fcitx5_hot_switch_mid_composition() {
         StateTransition::Cleared | StateTransition::Consumed | StateTransition::PassThrough => {}
         other => panic!("switch-away must produce commit or clear, got {other:?}"),
     }
-    assert!(engine.preedit().is_empty(), "preedit must be reset after switch-away");
+    assert!(
+        engine.preedit().is_empty(),
+        "preedit must be reset after switch-away"
+    );
 
     // Switch back (InputContextActivated / FocusIn): clean initialisation.
     engine.process(&InputEvent::FocusIn).ok();
-    assert!(engine.preedit().is_empty(), "preedit must be empty on switch-back (clean init)");
+    assert!(
+        engine.preedit().is_empty(),
+        "preedit must be empty on switch-back (clean init)"
+    );
 
     // Resume composition after switch-back: must work correctly.
     for ch in "aa".chars() {
-        match engine.process(&InputEvent::KeyDown(Key::Char(ch), Modifiers::none())).expect("ok") {
+        match engine
+            .process(&InputEvent::KeyDown(Key::Char(ch), Modifiers::none()))
+            .expect("ok")
+        {
             StateTransition::Commit(c) | StateTransition::CommitAndClear(c) => {
                 committed.push(c.as_str().to_owned());
             }
@@ -332,7 +401,9 @@ async fn test_fcitx5_hot_switch_mid_composition() {
 /// Vietnamese composition.
 #[test]
 fn test_daemon_emits_preedit_not_commit_for_intermediate_chars() {
-    use vi_core::{CompositionEngine, InputEvent, InputMethod, Key, Modifiers, StandardEngine, StateTransition};
+    use vi_core::{
+        CompositionEngine, InputEvent, InputMethod, Key, Modifiers, StandardEngine, StateTransition,
+    };
 
     let mut engine = StandardEngine::new(InputMethod::Telex);
 
@@ -361,11 +432,13 @@ fn test_daemon_emits_preedit_not_commit_for_intermediate_chars() {
 fn test_fcitx5_reconnect_backoff_sequence() {
     let mut delay = std::time::Duration::from_millis(100);
     let max = std::time::Duration::from_secs(30);
-    let steps: Vec<u64> = (0..10).map(|_| {
-        let ms = delay.as_millis() as u64;
-        delay = (delay * 2).min(max);
-        ms
-    }).collect();
+    let steps: Vec<u64> = (0..10)
+        .map(|_| {
+            let ms = delay.as_millis() as u64;
+            delay = (delay * 2).min(max);
+            ms
+        })
+        .collect();
     assert_eq!(steps[0], 100);
     assert_eq!(steps[1], 200);
     assert_eq!(steps[9], 30_000);

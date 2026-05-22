@@ -82,7 +82,9 @@ fn ibus_attr_list_value(char_len: u32) -> Value<'static> {
     let attr_variant: Value<'static> = Value::Value(Box::new(Value::Structure(attr.build())));
 
     let mut attrs = Array::new(Signature::from_str_unchecked("v"));
-    attrs.append(attr_variant).expect("IBusAttribute variant matches array signature");
+    attrs
+        .append(attr_variant)
+        .expect("IBusAttribute variant matches array signature");
 
     let name: Value<'static> = Value::Str("IBusAttrList".to_string().into());
     let props: Value<'static> = Value::Dict(Dict::new(
@@ -142,8 +144,7 @@ fn ibus_text_value(text: &str, with_preedit_placeholder_attrs: bool) -> Value<'s
 
 /// Build an IBusText `OwnedValue` for use in CommitText signals.
 fn ibus_text_owned(text: &str) -> OwnedValue {
-    OwnedValue::try_from(ibus_text_value(text, false))
-        .expect("IBusText structure is well-formed")
+    OwnedValue::try_from(ibus_text_value(text, false)).expect("IBusText structure is well-formed")
 }
 
 /// Build an IBusText `OwnedValue` for use in UpdatePreeditText signals.
@@ -152,8 +153,7 @@ fn ibus_text_owned(text: &str) -> OwnedValue {
 /// Chrome/Electron still renders the preedit inline because the IBusAttrList
 /// is non-empty; an empty list would suppress inline rendering in Chrome.
 fn ibus_preedit_text_owned(text: &str) -> OwnedValue {
-    OwnedValue::try_from(ibus_text_value(text, true))
-        .expect("IBusText structure is well-formed")
+    OwnedValue::try_from(ibus_text_value(text, true)).expect("IBusText structure is well-formed")
 }
 
 /// Build an IBusEngineDesc GVariant `(sa{sv}sssssssuuuuuussssss)`.
@@ -184,10 +184,10 @@ fn ibus_engine_desc_value(engine_name: &str) -> Value<'static> {
     s.push_value(Value::Str(String::new().into())); // keymap
     s.push_value(Value::Str(String::new().into())); // symbol
     s.push_value(Value::Str(setup.into())); // setup — opens vi-ui preferences
-    s.push_value(Value::Str(String::new().into()));            // layout_variant
-    s.push_value(Value::Str(String::new().into()));            // layout_option
-    s.push_value(Value::Str(String::new().into()));            // version
-    s.push_value(Value::Str(String::new().into()));            // textdomain
+    s.push_value(Value::Str(String::new().into())); // layout_variant
+    s.push_value(Value::Str(String::new().into())); // layout_option
+    s.push_value(Value::Str(String::new().into())); // version
+    s.push_value(Value::Str(String::new().into())); // textdomain
     Value::Structure(s.build())
 }
 
@@ -201,13 +201,17 @@ fn ibus_component_value(engine_name: &str) -> Value<'static> {
     let engine_desc_variant: Value<'static> =
         Value::Value(Box::new(ibus_engine_desc_value(engine_name)));
     let mut engines = Array::new(Signature::from_str_unchecked("v"));
-    engines.append(engine_desc_variant).expect("IBusEngineDesc variant matches array signature");
+    engines
+        .append(engine_desc_variant)
+        .expect("IBusEngineDesc variant matches array signature");
     let observed_paths = Array::new(Signature::from_str_unchecked("v"));
 
     let mut s = StructureBuilder::new();
     s.push_value(Value::Str("IBusComponent".to_string().into()));
     s.push_value(empty_props);
-    s.push_value(Value::Str(format!("org.freedesktop.IBus.{engine_name}").into())); // name
+    s.push_value(Value::Str(
+        format!("org.freedesktop.IBus.{engine_name}").into(),
+    )); // name
     s.push_value(Value::Str(String::new().into())); // description
     s.push_value(Value::Str(String::new().into())); // version
     s.push_value(Value::Str(String::new().into())); // license
@@ -261,7 +265,11 @@ struct SharedState {
 }
 
 impl SharedState {
-    fn new(force_preedit_mode: bool, force_chrome_direct: bool, default_commit_mode: IbusCommitMode) -> Self {
+    fn new(
+        force_preedit_mode: bool,
+        force_chrome_direct: bool,
+        default_commit_mode: IbusCommitMode,
+    ) -> Self {
         Self {
             surrounding: None,
             caps_raw: 0,
@@ -355,7 +363,9 @@ impl IbusEngineIface {
                     let mut eng = self.engine.lock().unwrap_or_else(|e| e.into_inner());
                     eng.process(&InputEvent::FocusOut)
                 };
-                if let Ok(StateTransition::CommitAndClear(c)) | Ok(StateTransition::Commit(c)) = &transition {
+                if let Ok(StateTransition::CommitAndClear(c)) | Ok(StateTransition::Commit(c)) =
+                    &transition
+                {
                     Self::commit_text_then_hide_preedit(&ctx, c.as_str(), "").await;
                 }
             }
@@ -398,7 +408,11 @@ impl IbusEngineIface {
         let (use_forward_key, use_surrounding_commit, use_backspace_commit) = {
             let mut s = self.state.lock().unwrap_or_else(|e| e.into_inner());
             s.shadow_buf.clear();
-            (s.use_forward_key, s.use_surrounding_commit, s.use_backspace_commit)
+            (
+                s.use_forward_key,
+                s.use_surrounding_commit,
+                s.use_backspace_commit,
+            )
         };
         let transition = {
             let mut eng = self.engine.lock().unwrap_or_else(|e| e.into_inner());
@@ -417,9 +431,7 @@ impl IbusEngineIface {
             Ok(StateTransition::CommitAndClear(c)) | Ok(StateTransition::Commit(c)) => {
                 Some(c.as_str().to_owned())
             }
-            Ok(StateTransition::PreeditUpdated(p)) if !p.is_empty() => {
-                Some(p.as_str().to_owned())
-            }
+            Ok(StateTransition::PreeditUpdated(p)) if !p.is_empty() => Some(p.as_str().to_owned()),
             _ => None,
         };
         if let Some(text) = commit_text {
@@ -436,10 +448,22 @@ impl IbusEngineIface {
     async fn reset(&self, #[zbus(signal_context)] ctx: SignalContext<'_>) {
         let _handler_guard = self.handler_lock.lock().await;
         info!("IBus: Reset");
-        let (use_surrounding_commit, use_forward_key, chrome_direct_mode, use_backspace_commit, shadow) = {
+        let (
+            use_surrounding_commit,
+            use_forward_key,
+            chrome_direct_mode,
+            use_backspace_commit,
+            shadow,
+        ) = {
             let mut s = self.state.lock().unwrap_or_else(|e| e.into_inner());
             let shadow = mem::take(&mut s.shadow_buf);
-            (s.use_surrounding_commit, s.use_forward_key, s.chrome_direct_mode, s.use_backspace_commit, shadow)
+            (
+                s.use_surrounding_commit,
+                s.use_forward_key,
+                s.chrome_direct_mode,
+                s.use_backspace_commit,
+                shadow,
+            )
         };
         {
             let mut eng = self.engine.lock().unwrap_or_else(|e| e.into_inner());
@@ -479,7 +503,7 @@ impl IbusEngineIface {
 
     async fn set_capabilities(&self, caps: u32) {
         let mut s = self.state.lock().unwrap_or_else(|e| e.into_inner());
-        let has_preedit     = (caps & IBUS_CAP_PREEDIT_TEXT)    != 0;
+        let has_preedit = (caps & IBUS_CAP_PREEDIT_TEXT) != 0;
         let has_surrounding = (caps & IBUS_CAP_SURROUNDING_TEXT) != 0;
 
         // Mode selection: ALL apps use preedit (UpdatePreeditText) — vhttechkey mode.
@@ -497,7 +521,7 @@ impl IbusEngineIface {
         let _ = has_preedit;
         let _ = has_surrounding;
         let mut new_surrounding_commit = false;
-        let mut new_forward_key        = false;
+        let mut new_forward_key = false;
         // force_chrome_direct config: use UpdatePreeditTextWithMode unconditionally,
         // overriding surrounding-commit or forward-key.  Useful for apps that
         // advertise surprising capability bits but handle preedit correctly.
@@ -515,7 +539,8 @@ impl IbusEngineIface {
         }
         // backspace_commit: derived from global commit_mode config.
         // force_chrome_direct and force_preedit_mode both override it.
-        let mut new_backspace_commit = matches!(s.default_commit_mode, IbusCommitMode::BackspaceCommit);
+        let mut new_backspace_commit =
+            matches!(s.default_commit_mode, IbusCommitMode::BackspaceCommit);
         if new_chrome_direct || s.force_preedit_mode {
             new_backspace_commit = false;
         }
@@ -555,19 +580,12 @@ impl IbusEngineIface {
         );
     }
 
-    async fn set_surrounding_text(
-        &self,
-        text: OwnedValue,
-        cursor_pos: u32,
-        anchor_pos: u32,
-    ) {
+    async fn set_surrounding_text(&self, text: OwnedValue, cursor_pos: u32, anchor_pos: u32) {
         let text_str = extract_ibus_string(&text).unwrap_or_else(|e| {
             warn!("IBus: {e}");
             String::new()
         });
-        debug!(
-            "IBus: SetSurroundingText cursor={cursor_pos} anchor={anchor_pos}"
-        );
+        debug!("IBus: SetSurroundingText cursor={cursor_pos} anchor={anchor_pos}");
         let mut s = self.state.lock().unwrap_or_else(|e| e.into_inner());
         s.surrounding = Some(SurroundingText {
             text: text_str,
@@ -672,15 +690,15 @@ fn compute_forward_key_ops(shadow: &str, new_preedit: &str) -> (usize, String) {
 
 fn transition_kind_str(t: &vi_core::TransitionResult) -> &'static str {
     match t {
-        Ok(StateTransition::PreeditUpdated(_))        => "PreeditUpdated",
-        Ok(StateTransition::Commit(_))                => "Commit",
-        Ok(StateTransition::CommitAndClear(_))        => "CommitAndClear",
-        Ok(StateTransition::CommitThenPreedit(..))    => "CommitThenPreedit",
+        Ok(StateTransition::PreeditUpdated(_)) => "PreeditUpdated",
+        Ok(StateTransition::Commit(_)) => "Commit",
+        Ok(StateTransition::CommitAndClear(_)) => "CommitAndClear",
+        Ok(StateTransition::CommitThenPreedit(..)) => "CommitThenPreedit",
         Ok(StateTransition::CommitThenPassThrough(_)) => "CommitThenPassThrough",
-        Ok(StateTransition::Consumed)                 => "Consumed",
-        Ok(StateTransition::PassThrough)              => "PassThrough",
-        Ok(StateTransition::Cleared)                  => "Cleared",
-        Err(_)                                        => "Err",
+        Ok(StateTransition::Consumed) => "Consumed",
+        Ok(StateTransition::PassThrough) => "PassThrough",
+        Ok(StateTransition::Cleared) => "Cleared",
+        Err(_) => "Err",
     }
 }
 
@@ -824,11 +842,7 @@ impl IbusEngineIface {
     /// - `BackSpace` (keysym `0xff08`) works in every app including Electron.
     /// - `CommitText` handles all Unicode without keysym encoding — fixes the
     ///   `forward_key` bug where chars > U+00FF were silently dropped in Electron.
-    async fn dispatch_backspace_commit(
-        &self,
-        ctx: &SignalContext<'_>,
-        new_preedit: &str,
-    ) -> bool {
+    async fn dispatch_backspace_commit(&self, ctx: &SignalContext<'_>, new_preedit: &str) -> bool {
         let shadow = {
             let s = self.state.lock().unwrap_or_else(|e| e.into_inner());
             s.shadow_buf.clone()
@@ -854,18 +868,22 @@ impl IbusEngineIface {
     /// Chrome preedit override: emit `UpdatePreeditText` (force_chrome_direct=true config).
     /// Uses the same standard signal as the regular preedit path; kept separate so
     /// chrome_direct can be toggled independently via config.
-    async fn dispatch_chrome_direct(
-        &self,
-        ctx: &SignalContext<'_>,
-        new_preedit: &str,
-    ) -> bool {
+    async fn dispatch_chrome_direct(&self, ctx: &SignalContext<'_>, new_preedit: &str) -> bool {
         if new_preedit.is_empty() {
             let _ = Self::hide_preedit_text(ctx).await;
         }
         let cursor_pos = new_preedit.chars().count() as u32;
         let val = ibus_preedit_text_owned(new_preedit);
         info!("IBus: UpdatePreeditText (chrome_direct) preedit={new_preedit:?} cursor={cursor_pos} visible=true mode={IBUS_ENGINE_PREEDIT_COMMIT}");
-        if let Err(e) = Self::update_preedit_text_with_mode(ctx, val, cursor_pos, true, IBUS_ENGINE_PREEDIT_COMMIT).await {
+        if let Err(e) = Self::update_preedit_text_with_mode(
+            ctx,
+            val,
+            cursor_pos,
+            true,
+            IBUS_ENGINE_PREEDIT_COMMIT,
+        )
+        .await
+        {
             warn!("IBus: UpdatePreeditText failed (chrome_direct): {e}");
         }
         {
@@ -888,7 +906,12 @@ impl IbusEngineIface {
     ) -> bool {
         let (use_forward_key, use_surrounding_commit, chrome_direct_mode, use_backspace_commit) = {
             let s = self.state.lock().unwrap_or_else(|e| e.into_inner());
-            (s.use_forward_key, s.use_surrounding_commit, s.chrome_direct_mode, s.use_backspace_commit)
+            (
+                s.use_forward_key,
+                s.use_surrounding_commit,
+                s.chrome_direct_mode,
+                s.use_backspace_commit,
+            )
         };
 
         debug!(
@@ -934,7 +957,15 @@ impl IbusEngineIface {
                     let cursor_pos = p.as_str().chars().count() as u32;
                     let val = ibus_preedit_text_owned(p.as_str());
                     info!("IBus: UpdatePreeditText preedit={:?} cursor={cursor_pos} visible=true mode={IBUS_ENGINE_PREEDIT_COMMIT}", p.as_str());
-                    if let Err(e) = Self::update_preedit_text_with_mode(ctx, val, cursor_pos, true, IBUS_ENGINE_PREEDIT_COMMIT).await {
+                    if let Err(e) = Self::update_preedit_text_with_mode(
+                        ctx,
+                        val,
+                        cursor_pos,
+                        true,
+                        IBUS_ENGINE_PREEDIT_COMMIT,
+                    )
+                    .await
+                    {
                         warn!("IBus: UpdatePreeditText failed: {e}");
                     }
                     true
@@ -980,8 +1011,8 @@ impl IbusEngineIface {
                 // focus-next) fires after the Vietnamese text is committed.
                 let fwd_keyval: Option<u32> = match trigger {
                     Key::Return => Some(0xff0d),
-                    Key::Tab    => Some(0xff09),
-                    _           => None,
+                    Key::Tab => Some(0xff09),
+                    _ => None,
                 };
                 if let Some(kv) = fwd_keyval {
                     if let Err(e) = Self::forward_key_event(ctx, kv, 0, 0).await {
@@ -1056,7 +1087,15 @@ impl IbusEngineIface {
                 let cursor_pos = p.as_str().chars().count() as u32;
                 let pval = ibus_preedit_text_owned(p.as_str());
                 info!("IBus: UpdatePreeditText (commit-then-preedit) preedit={:?} cursor={cursor_pos} visible=true mode={IBUS_ENGINE_PREEDIT_COMMIT}", p.as_str());
-                if let Err(e) = Self::update_preedit_text_with_mode(ctx, pval, cursor_pos, true, IBUS_ENGINE_PREEDIT_COMMIT).await {
+                if let Err(e) = Self::update_preedit_text_with_mode(
+                    ctx,
+                    pval,
+                    cursor_pos,
+                    true,
+                    IBUS_ENGINE_PREEDIT_COMMIT,
+                )
+                .await
+                {
                     warn!("IBus: UpdatePreeditText failed (commit-then-preedit): {e}");
                 }
                 true
@@ -1090,16 +1129,15 @@ impl IbusEngineIface {
                             if delete_count > 0 {
                                 let offset = -(delete_count as i32);
                                 if let Err(e) =
-                                    Self::delete_surrounding_text(ctx, offset, delete_count as u32).await
+                                    Self::delete_surrounding_text(ctx, offset, delete_count as u32)
+                                        .await
                                 {
                                     warn!("IBus: DeleteSurroundingText on clear failed: {e}");
                                 }
                             }
                         } else {
                             for _ in 0..shadow_len {
-                                if let Err(e) =
-                                    Self::forward_key_event(ctx, 0xff08, 0, 0).await
-                                {
+                                if let Err(e) = Self::forward_key_event(ctx, 0xff08, 0, 0).await {
                                     warn!("IBus: ForwardKeyEvent BackSpace on clear failed: {e}");
                                 }
                             }
@@ -1200,7 +1238,13 @@ impl IbusBackend {
         force_chrome_direct: bool,
         default_commit_mode: IbusCommitMode,
     ) -> Result<Self> {
-        rt.block_on(connect_loop(rt.clone(), engine, force_preedit_mode, force_chrome_direct, default_commit_mode))
+        rt.block_on(connect_loop(
+            rt.clone(),
+            engine,
+            force_preedit_mode,
+            force_chrome_direct,
+            default_commit_mode,
+        ))
     }
 
     /// Return the most-recently reported cursor position from
@@ -1364,7 +1408,14 @@ async fn connect_loop(
 
     loop {
         attempt += 1;
-        match try_connect(Arc::clone(&engine), force_preedit_mode, force_chrome_direct, default_commit_mode).await {
+        match try_connect(
+            Arc::clone(&engine),
+            force_preedit_mode,
+            force_chrome_direct,
+            default_commit_mode,
+        )
+        .await
+        {
             Ok((conn, state)) => {
                 let object_path = OwnedObjectPath::try_from(ENGINE_PATH)
                     .expect("engine path is a valid object path");
@@ -1378,9 +1429,7 @@ async fn connect_loop(
             }
             Err(e) => {
                 if attempt >= MAX_CONNECT_ATTEMPTS {
-                    error!(
-                        "IBus: connect failed after {attempt} attempts ({e}); giving up"
-                    );
+                    error!("IBus: connect failed after {attempt} attempts ({e}); giving up");
                     return Err(PlatformError::DBus(format!(
                         "ibus-daemon unreachable after {MAX_CONNECT_ATTEMPTS} attempts: {e}"
                     )));
@@ -1439,7 +1488,10 @@ async fn try_connect(
     {
         Ok(ibus_proxy) => {
             let component = ibus_component_value("vhttechkey");
-            match ibus_proxy.call_method("RegisterComponent", &(component,)).await {
+            match ibus_proxy
+                .call_method("RegisterComponent", &(component,))
+                .await
+            {
                 Ok(_) => info!("IBus: RegisterComponent succeeded"),
                 Err(e) => warn!("IBus: RegisterComponent failed (non-fatal): {e}"),
             }
@@ -1452,7 +1504,11 @@ async fn try_connect(
         .await
         .map_err(|e| e.to_string())?;
 
-    let state = Arc::new(Mutex::new(SharedState::new(force_preedit_mode, force_chrome_direct, default_commit_mode)));
+    let state = Arc::new(Mutex::new(SharedState::new(
+        force_preedit_mode,
+        force_chrome_direct,
+        default_commit_mode,
+    )));
     let iface = IbusEngineIface {
         engine,
         state: Arc::clone(&state),
@@ -1531,16 +1587,30 @@ fn key_to_ibus_keyval(key: &Key) -> u32 {
 
 fn char_to_x11_keysym(c: char) -> u32 {
     let cp = c as u32;
-    if cp <= 0x00FF { cp } else { 0x01000000 | cp }
+    if cp <= 0x00FF {
+        cp
+    } else {
+        0x01000000 | cp
+    }
 }
 
 fn mods_to_ibus(mods: &Modifiers) -> u32 {
     let mut m = 0u32;
-    if mods.shift { m |= 1; }
-    if mods.caps_lock { m |= 2; }
-    if mods.ctrl { m |= 4; }
-    if mods.alt { m |= 8; }
-    if mods.super_key { m |= 1 << 26; }
+    if mods.shift {
+        m |= 1;
+    }
+    if mods.caps_lock {
+        m |= 2;
+    }
+    if mods.ctrl {
+        m |= 4;
+    }
+    if mods.alt {
+        m |= 8;
+    }
+    if mods.super_key {
+        m |= 1 << 26;
+    }
     m
 }
 
@@ -1551,7 +1621,10 @@ fn extract_ibus_string(val: &OwnedValue) -> std::result::Result<String, IbusErro
     extract_ibus_string_val(val, 0)
 }
 
-fn extract_ibus_string_val(val: &Value<'_>, depth: usize) -> std::result::Result<String, IbusError> {
+fn extract_ibus_string_val(
+    val: &Value<'_>,
+    depth: usize,
+) -> std::result::Result<String, IbusError> {
     if depth > 8 {
         return Err(IbusError::MalformedSurroundingText(
             "variant nesting depth exceeded".to_owned(),
@@ -1571,9 +1644,7 @@ fn extract_ibus_string_val(val: &Value<'_>, depth: usize) -> std::result::Result
             }
             fields
                 .get(IBUS_TEXT_STRING_FIELD)
-                .ok_or_else(|| {
-                    IbusError::MalformedSurroundingText("missing text field".to_owned())
-                })
+                .ok_or_else(|| IbusError::MalformedSurroundingText("missing text field".to_owned()))
                 .and_then(|f| match f {
                     Value::Str(s) => Ok(s.as_str().to_owned()),
                     _ => Err(IbusError::MalformedSurroundingText(
@@ -1603,9 +1674,7 @@ fn map_keyval_to_key(keyval: u32) -> Key {
         0xff50 => Key::Home,
         0xff57 => Key::End,
         0x0020..=0x007e => Key::Char(char::from_u32(keyval).unwrap()),
-        v @ 0x01000000..=0x0110ffff => {
-            Key::Char(char::from_u32(v - 0x01000000).unwrap_or('\0'))
-        }
+        v @ 0x01000000..=0x0110ffff => Key::Char(char::from_u32(v - 0x01000000).unwrap_or('\0')),
         other => Key::Keysym(other),
     }
 }
@@ -1613,11 +1682,11 @@ fn map_keyval_to_key(keyval: u32) -> Key {
 /// Map the IBus/X11 modifier state bitmask to `Modifiers`.
 fn map_ibus_state(state: u32) -> Modifiers {
     Modifiers {
-        shift:     state & 1 != 0,
+        shift: state & 1 != 0,
         caps_lock: state & 2 != 0,
-        ctrl:      state & 4 != 0,
-        alt:       state & 8 != 0,
-        altgr:     state & (1 << 7) != 0,
+        ctrl: state & 4 != 0,
+        alt: state & 8 != 0,
+        altgr: state & (1 << 7) != 0,
         super_key: state & (1 << 26) != 0,
     }
 }
@@ -1626,14 +1695,20 @@ fn map_ibus_state(state: u32) -> Modifiers {
 fn is_modifier_keysym(keyval: u32) -> bool {
     matches!(
         keyval,
-        0xffe1 | 0xffe2
-        | 0xffe3 | 0xffe4
-        | 0xffe5 | 0xffe6
-        | 0xffe7 | 0xffe8
-        | 0xffe9 | 0xffea
-        | 0xffeb | 0xffec
-        | 0xff7f
-        | 0xfe03
+        0xffe1
+            | 0xffe2
+            | 0xffe3
+            | 0xffe4
+            | 0xffe5
+            | 0xffe6
+            | 0xffe7
+            | 0xffe8
+            | 0xffe9
+            | 0xffea
+            | 0xffeb
+            | 0xffec
+            | 0xff7f
+            | 0xfe03
     )
 }
 
@@ -1688,10 +1763,19 @@ mod tests {
         use vi_core::InputMethod;
         // Build preedit by typing "nha" in Telex mode.
         let mut engine = StandardEngine::new(InputMethod::Telex);
-        engine.process(&InputEvent::KeyDown(Key::Char('n'), Modifiers::default())).unwrap();
-        engine.process(&InputEvent::KeyDown(Key::Char('h'), Modifiers::default())).unwrap();
-        engine.process(&InputEvent::KeyDown(Key::Char('a'), Modifiers::default())).unwrap();
-        assert!(!engine.preedit().is_empty(), "expected non-empty preedit after typing");
+        engine
+            .process(&InputEvent::KeyDown(Key::Char('n'), Modifiers::default()))
+            .unwrap();
+        engine
+            .process(&InputEvent::KeyDown(Key::Char('h'), Modifiers::default()))
+            .unwrap();
+        engine
+            .process(&InputEvent::KeyDown(Key::Char('a'), Modifiers::default()))
+            .unwrap();
+        assert!(
+            !engine.preedit().is_empty(),
+            "expected non-empty preedit after typing"
+        );
         // Simulate what the Ctrl+key path now does: trigger FocusOut to commit.
         let transition = engine.process(&InputEvent::FocusOut);
         assert!(
@@ -1701,7 +1785,10 @@ mod tests {
             ),
             "FocusOut with pending preedit must yield a commit transition, got: {transition:?}"
         );
-        assert!(engine.preedit().is_empty(), "preedit must be cleared after commit");
+        assert!(
+            engine.preedit().is_empty(),
+            "preedit must be cleared after commit"
+        );
     }
 
     #[test]
@@ -1850,7 +1937,10 @@ mod tests {
         let new_surrounding_commit = !has_preedit && has_surrounding;
         let new_forward_key = !has_preedit && !has_surrounding && caps != 0;
         let new_chrome_direct = false; // force_chrome_direct not set
-        assert!(!new_surrounding_commit, "preedit app must not use surrounding-commit");
+        assert!(
+            !new_surrounding_commit,
+            "preedit app must not use surrounding-commit"
+        );
         assert!(!new_forward_key, "preedit app must not use forward-key");
         assert!(!new_chrome_direct, "preedit app must use pure preedit mode");
     }
@@ -1866,7 +1956,10 @@ mod tests {
         let has_surrounding = (caps & IBUS_CAP_SURROUNDING_TEXT) != 0;
         let new_surrounding_commit = !has_preedit && has_surrounding; // false — has_preedit wins
         let new_forward_key = !has_preedit && !has_surrounding && caps != 0;
-        assert!(!new_surrounding_commit, "app with preedit must NOT use surrounding-commit");
+        assert!(
+            !new_surrounding_commit,
+            "app with preedit must NOT use surrounding-commit"
+        );
         assert!(!new_forward_key);
     }
 
@@ -1879,20 +1972,31 @@ mod tests {
 
         // Vietnamese multi-byte text: "việt" is 4 Unicode codepoints.
         let new_preedit2 = "việt";
-        assert_eq!(new_preedit2.chars().count() as u32, 4, "\"việt\" is 4 Unicode chars");
+        assert_eq!(
+            new_preedit2.chars().count() as u32,
+            4,
+            "\"việt\" is 4 Unicode chars"
+        );
 
         // shadow_buf tracks new_preedit after dispatch_chrome_direct runs.
         // (Previous behavior sent BackSpace×shadow.chars().count() + CommitText;
         //  new behavior sends UpdatePreeditTextWithMode with no BackSpaces.)
         let new_preedit3 = "tô";
         let cursor_pos = new_preedit3.chars().count() as u32;
-        assert_eq!(cursor_pos, 2, "\"tô\" is 2 Unicode chars (not 3 UTF-8 bytes)");
+        assert_eq!(
+            cursor_pos, 2,
+            "\"tô\" is 2 Unicode chars (not 3 UTF-8 bytes)"
+        );
     }
 
     #[test]
     fn set_capabilities_never_selects_forward_key_or_surrounding_commit() {
-        for caps in [0u32, IBUS_CAP_PREEDIT_TEXT, IBUS_CAP_SURROUNDING_TEXT,
-                     IBUS_CAP_PREEDIT_TEXT | IBUS_CAP_SURROUNDING_TEXT] {
+        for caps in [
+            0u32,
+            IBUS_CAP_PREEDIT_TEXT,
+            IBUS_CAP_SURROUNDING_TEXT,
+            IBUS_CAP_PREEDIT_TEXT | IBUS_CAP_SURROUNDING_TEXT,
+        ] {
             let use_surrounding_commit = false;
             let use_forward_key = false;
             assert!(!use_surrounding_commit, "caps={caps:#x}");
@@ -1979,7 +2083,10 @@ mod tests {
         let (iface, state) = make_iface_with_commit_mode(IbusCommitMode::BackspaceCommit);
         iface.set_capabilities(IBUS_CAP_PREEDIT_TEXT).await;
         let s = state.lock().unwrap();
-        assert!(s.use_backspace_commit, "backspace_commit config must activate use_backspace_commit");
+        assert!(
+            s.use_backspace_commit,
+            "backspace_commit config must activate use_backspace_commit"
+        );
         assert!(!s.use_surrounding_commit);
         assert!(!s.use_forward_key);
         assert!(!s.chrome_direct_mode);
@@ -1999,7 +2106,10 @@ mod tests {
         };
         iface.set_capabilities(IBUS_CAP_PREEDIT_TEXT).await;
         let s = state_arc.lock().unwrap();
-        assert!(!s.use_backspace_commit, "force_preedit_mode must suppress backspace_commit");
+        assert!(
+            !s.use_backspace_commit,
+            "force_preedit_mode must suppress backspace_commit"
+        );
         assert!(!s.chrome_direct_mode);
     }
 
@@ -2017,8 +2127,14 @@ mod tests {
         };
         iface.set_capabilities(IBUS_CAP_PREEDIT_TEXT).await;
         let s = state_arc.lock().unwrap();
-        assert!(!s.use_backspace_commit, "force_chrome_direct must suppress backspace_commit");
-        assert!(s.chrome_direct_mode, "force_chrome_direct must activate chrome_direct_mode");
+        assert!(
+            !s.use_backspace_commit,
+            "force_chrome_direct must suppress backspace_commit"
+        );
+        assert!(
+            s.chrome_direct_mode,
+            "force_chrome_direct must activate chrome_direct_mode"
+        );
     }
 
     /// Default `commit_mode = preedit` must NOT activate backspace_commit.
@@ -2027,7 +2143,10 @@ mod tests {
         let (iface, state) = make_iface_with_commit_mode(IbusCommitMode::Preedit);
         iface.set_capabilities(IBUS_CAP_PREEDIT_TEXT).await;
         let s = state.lock().unwrap();
-        assert!(!s.use_backspace_commit, "default preedit mode must not activate backspace_commit");
+        assert!(
+            !s.use_backspace_commit,
+            "default preedit mode must not activate backspace_commit"
+        );
     }
 
     // ── Telex doubling regression ─────────────────────────────────────────────
@@ -2090,8 +2209,9 @@ mod tests {
         assert_eq!(engine.preedit().as_str(), "a");
 
         // KeyRepeat extends the preedit without re-firing the "aa→â" rule.
-        let t =
-            engine.process(&InputEvent::KeyRepeat(Key::Char('a'), Modifiers::default())).unwrap();
+        let t = engine
+            .process(&InputEvent::KeyRepeat(Key::Char('a'), Modifiers::default()))
+            .unwrap();
         assert!(
             matches!(&t, StateTransition::PreeditUpdated(p) if p.as_str() == "aa"),
             "KeyRepeat must produce PreeditUpdated(\"aa\"); got: {t:?}"
@@ -2102,8 +2222,14 @@ mod tests {
         // For shadow="a", new_preedit="aa": delete 1 char, commit "aa".
         // compute_forward_key_ops is still used by dispatch_forward_key_preedit:
         let (backspaces, new_tail) = compute_forward_key_ops("a", "aa");
-        assert_eq!(backspaces, 0, "forward-key mode: no backspaces needed when extending preedit");
-        assert_eq!(new_tail, "a", "forward-key mode: one new character appended");
+        assert_eq!(
+            backspaces, 0,
+            "forward-key mode: no backspaces needed when extending preedit"
+        );
+        assert_eq!(
+            new_tail, "a",
+            "forward-key mode: one new character appended"
+        );
     }
 
     // ── cursor_pos is char count not byte count ───────────────────────────────
@@ -2113,11 +2239,18 @@ mod tests {
         // U+1ED5 'ổ' is 3 bytes in UTF-8 but a single codepoint.
         let text = "ổ";
         let cursor_pos = text.chars().count() as u32;
-        assert_eq!(cursor_pos, 1, "Vietnamese NFC char must count as 1 for cursor_pos");
+        assert_eq!(
+            cursor_pos, 1,
+            "Vietnamese NFC char must count as 1 for cursor_pos"
+        );
         assert!(text.len() > 1, "NFC Vietnamese char is multi-byte in UTF-8");
 
         let text2 = "việt";
-        assert_eq!(text2.chars().count() as u32, 4, "vier NFC chars = cursor_pos 4");
+        assert_eq!(
+            text2.chars().count() as u32,
+            4,
+            "vier NFC chars = cursor_pos 4"
+        );
     }
 
     // ── set_capabilities mode-selection regression tests ──────────────────────
@@ -2146,10 +2279,18 @@ mod tests {
     #[tokio::test]
     async fn test_preedit_and_surrounding_caps_selects_preedit_mode() {
         let (iface, state) = make_iface_for_caps_test(false, false);
-        iface.set_capabilities(IBUS_CAP_PREEDIT_TEXT | IBUS_CAP_SURROUNDING_TEXT).await;
+        iface
+            .set_capabilities(IBUS_CAP_PREEDIT_TEXT | IBUS_CAP_SURROUNDING_TEXT)
+            .await;
         let s = state.lock().unwrap();
-        assert!(!s.use_surrounding_commit, "Chrome/VSCode must NOT use surrounding_commit");
-        assert!(!s.use_forward_key, "Chrome/VSCode must NOT use forward_key (drops Vietnamese chars)");
+        assert!(
+            !s.use_surrounding_commit,
+            "Chrome/VSCode must NOT use surrounding_commit"
+        );
+        assert!(
+            !s.use_forward_key,
+            "Chrome/VSCode must NOT use forward_key (drops Vietnamese chars)"
+        );
         assert!(!s.chrome_direct_mode);
         // use_surrounding_commit=false, use_forward_key=false → default preedit dispatch
     }
@@ -2160,7 +2301,10 @@ mod tests {
         let (iface, state) = make_iface_for_caps_test(true, false);
         iface.set_capabilities(IBUS_CAP_PREEDIT_TEXT).await;
         let s = state.lock().unwrap();
-        assert!(s.chrome_direct_mode, "force_chrome_direct must activate chrome_direct_mode");
+        assert!(
+            s.chrome_direct_mode,
+            "force_chrome_direct must activate chrome_direct_mode"
+        );
         assert!(!s.use_surrounding_commit);
         assert!(!s.use_forward_key);
     }
@@ -2172,7 +2316,10 @@ mod tests {
         let (iface, state) = make_iface_for_caps_test(true, true);
         iface.set_capabilities(IBUS_CAP_PREEDIT_TEXT).await;
         let s = state.lock().unwrap();
-        assert!(!s.chrome_direct_mode, "force_preedit_mode must clear chrome_direct");
+        assert!(
+            !s.chrome_direct_mode,
+            "force_preedit_mode must clear chrome_direct"
+        );
         assert!(!s.use_surrounding_commit);
         assert!(!s.use_forward_key);
     }
@@ -2184,8 +2331,14 @@ mod tests {
         let (iface, state) = make_iface_for_caps_test(false, false);
         iface.set_capabilities(IBUS_CAP_SURROUNDING_TEXT).await;
         let s = state.lock().unwrap();
-        assert!(!s.use_surrounding_commit, "surrounding-only app must NOT use surrounding_commit");
-        assert!(!s.use_forward_key, "surrounding-only app must NOT use forward_key → preedit mode");
+        assert!(
+            !s.use_surrounding_commit,
+            "surrounding-only app must NOT use surrounding_commit"
+        );
+        assert!(
+            !s.use_forward_key,
+            "surrounding-only app must NOT use forward_key → preedit mode"
+        );
         assert!(!s.chrome_direct_mode);
     }
 
@@ -2204,9 +2357,18 @@ mod tests {
             let (iface, state) = make_iface_for_caps_test(false, false);
             iface.set_capabilities(caps).await;
             let s = state.lock().unwrap();
-            assert!(!s.use_forward_key,        "caps={caps:#x}: all apps must use preedit (not forward_key)");
-            assert!(!s.use_surrounding_commit,  "caps={caps:#x}: surrounding_commit must never be auto-selected");
-            assert!(!s.chrome_direct_mode,      "caps={caps:#x}: chrome_direct only via force_chrome_direct=true");
+            assert!(
+                !s.use_forward_key,
+                "caps={caps:#x}: all apps must use preedit (not forward_key)"
+            );
+            assert!(
+                !s.use_surrounding_commit,
+                "caps={caps:#x}: surrounding_commit must never be auto-selected"
+            );
+            assert!(
+                !s.chrome_direct_mode,
+                "caps={caps:#x}: chrome_direct only via force_chrome_direct=true"
+            );
         }
     }
 
@@ -2217,7 +2379,10 @@ mod tests {
         let (iface, state) = make_iface_for_caps_test(false, true);
         iface.set_capabilities(IBUS_CAP_SURROUNDING_TEXT).await;
         let s = state.lock().unwrap();
-        assert!(!s.use_surrounding_commit, "force_preedit_mode must suppress surrounding_commit");
+        assert!(
+            !s.use_surrounding_commit,
+            "force_preedit_mode must suppress surrounding_commit"
+        );
         assert!(!s.use_forward_key);
         assert!(!s.chrome_direct_mode);
     }
@@ -2247,14 +2412,23 @@ mod tests {
         // Signal 1: DeleteSurroundingText(-2, 2)
         let offset = -(backspaces as i32);
         assert_eq!(offset, -2, "delete offset must be -(shadow char count)");
-        assert_eq!(backspaces as u32, 2, "delete count must equal shadow char count");
+        assert_eq!(
+            backspaces as u32, 2,
+            "delete count must equal shadow char count"
+        );
 
         // Signal 2: CommitText("aô") — full new_preedit, emitted after the delete
-        assert_eq!(new_tail, "aô", "committed text must be the full new_preedit");
+        assert_eq!(
+            new_tail, "aô",
+            "committed text must be the full new_preedit"
+        );
 
         // On success, shadow_buf is updated to new_preedit.
         let new_shadow = new_preedit.to_owned();
-        assert_eq!(new_shadow, "aô", "shadow_buf must become new_preedit on success");
+        assert_eq!(
+            new_shadow, "aô",
+            "shadow_buf must become new_preedit on success"
+        );
     }
 
     // ── chrome_direct_mode: signal sequence regression ────────────────────────
@@ -2279,10 +2453,22 @@ mod tests {
         }
 
         let cases = [
-            Case { new_preedit: "tô",  expected_cursor_pos: 2 },
-            Case { new_preedit: "tôi", expected_cursor_pos: 3 },
-            Case { new_preedit: "t",   expected_cursor_pos: 1 },
-            Case { new_preedit: "",    expected_cursor_pos: 0 },
+            Case {
+                new_preedit: "tô",
+                expected_cursor_pos: 2,
+            },
+            Case {
+                new_preedit: "tôi",
+                expected_cursor_pos: 3,
+            },
+            Case {
+                new_preedit: "t",
+                expected_cursor_pos: 1,
+            },
+            Case {
+                new_preedit: "",
+                expected_cursor_pos: 0,
+            },
         ];
 
         for c in &cases {

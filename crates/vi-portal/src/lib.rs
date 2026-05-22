@@ -50,7 +50,11 @@ impl XdgInputMethodPortal {
         let conn = rt
             .block_on(zbus::Connection::session())
             .map_err(|e| PlatformError::DBus(e.to_string()))?;
-        Ok(Self { rt, conn, surrounding: Mutex::new(None) })
+        Ok(Self {
+            rt,
+            conn,
+            surrounding: Mutex::new(None),
+        })
     }
 }
 
@@ -101,7 +105,10 @@ impl ImeBackend for XdgInputMethodPortal {
     }
 
     fn forward_key(&self, key: &InputEvent) -> Result<()> {
-        warn!(?key, "portal: forward_key not supported by portal protocol, dropping");
+        warn!(
+            ?key,
+            "portal: forward_key not supported by portal protocol, dropping"
+        );
         Ok(())
     }
 
@@ -110,6 +117,10 @@ impl ImeBackend for XdgInputMethodPortal {
     }
 
     fn capabilities(&self) -> Capabilities {
-        Capabilities { surrounding_text: false, preedit: true, lookup_table: false }
+        Capabilities {
+            surrounding_text: false,
+            preedit: true,
+            lookup_table: false,
+        }
     }
 }

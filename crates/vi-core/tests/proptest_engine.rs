@@ -87,18 +87,18 @@ proptest! {
 /// (nucleus_display, telex_keys, vni_keys, viqr_keys)
 static NUCLEUS_KEYS: &[(&str, &str, &str, &str)] = &[
     // ── Monophthong nuclei ────────────────────────────────────────────────
-    ("a",  "a",     "a",     "a"),
-    ("ă",  "aw",    "a8",    "a("),
-    ("â",  "aa",    "a6",    "a^"),
-    ("e",  "e",     "e",     "e"),
-    ("ê",  "ee",    "e6",    "e^"),
-    ("i",  "i",     "i",     "i"),
-    ("o",  "o",     "o",     "o"),
-    ("ô",  "oo",    "o6",    "o^"),
-    ("ơ",  "ow",    "o7",    "o+"),
-    ("u",  "u",     "u",     "u"),
-    ("ư",  "uw",    "u7",    "u+"),
-    ("y",  "y",     "y",     "y"),
+    ("a", "a", "a", "a"),
+    ("ă", "aw", "a8", "a("),
+    ("â", "aa", "a6", "a^"),
+    ("e", "e", "e", "e"),
+    ("ê", "ee", "e6", "e^"),
+    ("i", "i", "i", "i"),
+    ("o", "o", "o", "o"),
+    ("ô", "oo", "o6", "o^"),
+    ("ơ", "ow", "o7", "o+"),
+    ("u", "u", "u", "u"),
+    ("ư", "uw", "u7", "u+"),
+    ("y", "y", "y", "y"),
     // ── Multi-vowel nuclei accessible via IME rules ────────────────────────
     // tôi: type t + oo + i; in method variants.  Tone goes on ô, not i.
     ("tôi", "tooi", "to6i", "to^i"),
@@ -111,19 +111,19 @@ static NUCLEUS_KEYS: &[(&str, &str, &str, &str)] = &[
     // ươi: type u + uw + o + w + i = ư + ơ + i.  Tone goes on ơ (last modified).
     ("ươi", "uwowi", "u7o7i", "u+o+i"),
     // oi: no modified vowel; i is glide → tone on o.
-    ("oi",  "oi",   "oi",   "oi"),
+    ("oi", "oi", "oi", "oi"),
     // ai: no modified vowel; i is glide → tone on a.
-    ("ai",  "ai",   "ai",   "ai"),
+    ("ai", "ai", "ai", "ai"),
 ];
 
 /// Tone key suffixes per input method: (telex, vni, viqr).
 /// Index 0 = sắc, 1 = huyền, 2 = hỏi, 3 = ngã, 4 = nặng.
 static TONE_SUFFIXES: &[(&str, &str, &str)] = &[
-    ("s", "1", "'"),   // sắc
-    ("f", "2", "`"),   // huyền
-    ("r", "3", "?"),   // hỏi
-    ("x", "4", "~"),   // ngã
-    ("j", "5", "."),   // nặng
+    ("s", "1", "'"), // sắc
+    ("f", "2", "`"), // huyền
+    ("r", "3", "?"), // hỏi
+    ("x", "4", "~"), // ngã
+    ("j", "5", "."), // nặng
 ];
 
 /// Type `keys` into a fresh engine using `method`, then flush by sending Return.
@@ -209,7 +209,8 @@ fn determinism_same_input_same_output() {
     for _ in 0..3 {
         let mut e = StandardEngine::new(InputMethod::Telex);
         for ch in "tooi".chars() {
-            e.process(&InputEvent::KeyDown(Key::Char(ch), Modifiers::none())).unwrap();
+            e.process(&InputEvent::KeyDown(Key::Char(ch), Modifiers::none()))
+                .unwrap();
             let _ = e.process(&InputEvent::KeyUp(Key::Char(ch)));
         }
         assert_eq!(e.preedit().as_str(), "tôi");
@@ -221,7 +222,9 @@ fn determinism_same_input_same_output() {
 fn focus_out_then_flush_commit_no_double_emit() {
     let mut engine = StandardEngine::new(InputMethod::Telex);
     for ch in "too".chars() {
-        engine.process(&InputEvent::KeyDown(Key::Char(ch), Modifiers::none())).unwrap();
+        engine
+            .process(&InputEvent::KeyDown(Key::Char(ch), Modifiers::none()))
+            .unwrap();
         let _ = engine.process(&InputEvent::KeyUp(Key::Char(ch)));
     }
     // FocusOut commits the preedit.
@@ -287,7 +290,9 @@ proptest! {
 fn flush_commit_then_focus_out_no_double_emit() {
     let mut engine = StandardEngine::new(InputMethod::Telex);
     for ch in "aa".chars() {
-        engine.process(&InputEvent::KeyDown(Key::Char(ch), Modifiers::none())).unwrap();
+        engine
+            .process(&InputEvent::KeyDown(Key::Char(ch), Modifiers::none()))
+            .unwrap();
         let _ = engine.process(&InputEvent::KeyUp(Key::Char(ch)));
     }
     // flush_commit commits via fast-path.

@@ -7,11 +7,13 @@ use crate::{
     methods::InputMethod,
     preedit_buffer::PreeditBuffer,
     spell::SpellOptions,
-    types::{InputEvent, Key, Modifiers, NfcString, PreeditText, StateTransition, TransitionResult},
+    types::{
+        InputEvent, Key, Modifiers, NfcString, PreeditText, StateTransition, TransitionResult,
+    },
     unicode_pipeline::UnicodePipeline,
     vi_engine::{
+        types::{ENGLISH_MODE as VI_ENGLISH, FULL_TEXT as VI_FULL, VIETNAMESE_MODE as VI_MODE},
         ViEngine,
-        types::{VIETNAMESE_MODE as VI_MODE, FULL_TEXT as VI_FULL, ENGLISH_MODE as VI_ENGLISH},
     },
     vietnamese_dict::VietnameseDict,
 };
@@ -51,7 +53,9 @@ struct KeyRepeatGuard {
 
 impl KeyRepeatGuard {
     fn new() -> Self {
-        Self { pending_char_down: None }
+        Self {
+            pending_char_down: None,
+        }
     }
 
     /// Returns `true` if this `KeyDown(Char)` is a ghost duplicate (second Down
@@ -193,8 +197,7 @@ impl StandardEngine {
         // must use EnglishMode so they are appended raw rather than re-triggering Vietnamese
         // transforms. This prevents double-consonant loss (e.g. "process" → "proces") caused
         // by the undo mechanism firing on the second tone key when it should just be a raw append.
-        let composition_is_invalid =
-            !self.vi_engine.is_empty() && !self.vi_engine.is_valid(false);
+        let composition_is_invalid = !self.vi_engine.is_empty() && !self.vi_engine.is_valid(false);
         let vi_mode = if ch.is_uppercase() {
             // Uppercase letters bypass composition rules (tone/mark keys like Shift+S must
             // not trigger sắc). Raw append — ViEngine renders uppercase via is_upper_case flag.
@@ -230,17 +233,16 @@ impl StandardEngine {
         // double-tone undo (e.g. "perr" → "per") whose output is already pure ASCII —
         // without this guard, the next char ('m' in "perrm") would show "perrm" (raw_keys)
         // instead of the correct "perm".
-        let has_vietnamese_out =
-            vn_out.chars().any(crate::composition_gate::is_vietnamese_composed_char);
-        let new_display_str =
-            if has_vietnamese_out
-                && (composition_is_invalid
-                    || (vi_mode == VI_MODE && !self.vi_engine.is_valid(false)))
-            {
-                self.vi_engine.raw_keys_string()
-            } else {
-                vn_out
-            };
+        let has_vietnamese_out = vn_out
+            .chars()
+            .any(crate::composition_gate::is_vietnamese_composed_char);
+        let new_display_str = if has_vietnamese_out
+            && (composition_is_invalid || (vi_mode == VI_MODE && !self.vi_engine.is_valid(false)))
+        {
+            self.vi_engine.raw_keys_string()
+        } else {
+            vn_out
+        };
         let new_display: Vec<char> = new_display_str.chars().collect();
         self.last_rule_fired = vi_mode == VI_MODE;
 
@@ -263,8 +265,11 @@ impl StandardEngine {
                 self.last_rule_fired = false;
                 // Gõ lại ký tự hiện tại vào engine mới.
                 self.vi_engine.process_key(ch, VI_MODE);
-                let first_display: Vec<char> =
-                    self.vi_engine.get_processed_string(VI_FULL).chars().collect();
+                let first_display: Vec<char> = self
+                    .vi_engine
+                    .get_processed_string(VI_FULL)
+                    .chars()
+                    .collect();
                 self.buf.set_display(first_display, ch).unwrap_or_else(|e| {
                     panic!("Post-flush set_display must succeed but failed: {e}. Char: {ch:?}")
                 });
@@ -286,8 +291,11 @@ impl StandardEngine {
                         if is_vietnamese_char(ch) {
                             if let Some(base) = vietnamese_base_char(ch) {
                                 self.vi_engine.process_key(base, VI_MODE);
-                                let disp: Vec<char> =
-                                    self.vi_engine.get_processed_string(VI_FULL).chars().collect();
+                                let disp: Vec<char> = self
+                                    .vi_engine
+                                    .get_processed_string(VI_FULL)
+                                    .chars()
+                                    .collect();
                                 let _ = self.buf.set_display(disp, base);
                                 return Ok(StateTransition::PreeditUpdated(
                                     self.buf.to_preedit_text(),
@@ -407,7 +415,8 @@ fn is_modifier_keysym(sym: u32) -> bool {
         sym,
         // Shift_L/R, Control_L/R, Caps_Lock, Shift_Lock, Meta_L/R,
         // Alt_L/R, Super_L/R, Hyper_L/R
-        0xffe1..=0xffee
+        0xffe1
+            ..=0xffee
         // AltGr — ISO_Level3_Shift
         | 0xfe03
         // Multi_key (Compose)
@@ -459,10 +468,27 @@ impl CompositionEngine for StandardEngine {
             // Exception: VIQR uses some of these characters as tone/form marks, so
             // skip this arm for those characters to let normal composition handle them.
             InputEvent::KeyDown(Key::Char(ch), _)
-                if matches!(*ch, ' ' | ',' | '.' | ';' | ':' | '!' | '?'
-                                | '\'' | '"' | '(' | ')' | '[' | ']'
-                                | '{' | '}' | '/' | '\\' | '-' | '_')
-                && !self.method.is_composition_char(*ch) =>
+                if matches!(
+                    *ch,
+                    ' ' | ','
+                        | '.'
+                        | ';'
+                        | ':'
+                        | '!'
+                        | '?'
+                        | '\''
+                        | '"'
+                        | '('
+                        | ')'
+                        | '['
+                        | ']'
+                        | '{'
+                        | '}'
+                        | '/'
+                        | '\\'
+                        | '-'
+                        | '_'
+                ) && !self.method.is_composition_char(*ch) =>
             {
                 self.last_char = None;
                 self.last_rule_fired = false;
@@ -491,8 +517,11 @@ impl CompositionEngine for StandardEngine {
                     }
                     // No combination: push dead char literally vào vi_engine + buf.
                     self.vi_engine.process_key(dead, VI_MODE);
-                    let dead_disp: Vec<char> =
-                        self.vi_engine.get_processed_string(VI_FULL).chars().collect();
+                    let dead_disp: Vec<char> = self
+                        .vi_engine
+                        .get_processed_string(VI_FULL)
+                        .chars()
+                        .collect();
                     match self.buf.set_display(dead_disp, dead) {
                         Ok(()) => {}
                         Err(_) => {
@@ -503,8 +532,11 @@ impl CompositionEngine for StandardEngine {
                             self.vi_engine.reset();
                             self.last_rule_fired = false;
                             self.vi_engine.process_key(dead, VI_MODE);
-                            let d2: Vec<char> =
-                                self.vi_engine.get_processed_string(VI_FULL).chars().collect();
+                            let d2: Vec<char> = self
+                                .vi_engine
+                                .get_processed_string(VI_FULL)
+                                .chars()
+                                .collect();
                             let _ = self.buf.set_display(d2, dead);
                             // Return the commit; new char will land on the next event.
                             return Ok(StateTransition::CommitThenPreedit(
@@ -544,13 +576,18 @@ impl CompositionEngine for StandardEngine {
                 if let Some(prev) = self.pending_dead_key.replace(*dead_char) {
                     // Previous dead key could not combine; emit it as a literal.
                     self.vi_engine.process_key(prev, VI_MODE);
-                    let prev_disp: Vec<char> =
-                        self.vi_engine.get_processed_string(VI_FULL).chars().collect();
+                    let prev_disp: Vec<char> = self
+                        .vi_engine
+                        .get_processed_string(VI_FULL)
+                        .chars()
+                        .collect();
                     let _ = self.buf.set_display(prev_disp, prev);
                     let combined = format!("{}{}", self.buf.as_string(), dead_char);
                     Ok(StateTransition::PreeditUpdated(PreeditText::new(combined)))
                 } else {
-                    Ok(StateTransition::PreeditUpdated(PreeditText::new(dead_char.to_string())))
+                    Ok(StateTransition::PreeditUpdated(PreeditText::new(
+                        dead_char.to_string(),
+                    )))
                 }
             }
             // Compose key: initiates a compose sequence; pass through without
@@ -667,7 +704,11 @@ impl CompositionEngine for StandardEngine {
         // literal character so it is not silently dropped on focus change.
         if let Some(dead) = self.pending_dead_key.take() {
             self.vi_engine.process_key(dead, VI_MODE);
-            let disp: Vec<char> = self.vi_engine.get_processed_string(VI_FULL).chars().collect();
+            let disp: Vec<char> = self
+                .vi_engine
+                .get_processed_string(VI_FULL)
+                .chars()
+                .collect();
             let _ = self.buf.set_display(disp, dead);
         }
         if self.buf.is_empty() {
@@ -734,7 +775,9 @@ mod tests {
         assert_eq!(e.preedit().as_str(), "tô");
         e.process(&key('i')).unwrap();
         assert_eq!(e.preedit().as_str(), "tôi");
-        let t = e.process(&InputEvent::KeyDown(Key::Return, Modifiers::none())).unwrap();
+        let t = e
+            .process(&InputEvent::KeyDown(Key::Return, Modifiers::none()))
+            .unwrap();
         assert_eq!(committed(t).as_deref(), Some("tôi"));
     }
 
@@ -783,7 +826,8 @@ mod tests {
     fn escape_clears() {
         let mut e = telex();
         process_str(&mut e, "too");
-        e.process(&InputEvent::KeyDown(Key::Escape, Modifiers::none())).unwrap();
+        e.process(&InputEvent::KeyDown(Key::Escape, Modifiers::none()))
+            .unwrap();
         assert!(e.preedit().is_empty());
     }
 
@@ -837,10 +881,12 @@ mod tests {
         process_str(&mut e, "o");
         assert_eq!(e.preedit().as_str(), "o");
         // First repeat: raw push, no rule — should give "oo" not "ô".
-        e.process(&InputEvent::KeyRepeat(Key::Char('o'), Modifiers::none())).unwrap();
+        e.process(&InputEvent::KeyRepeat(Key::Char('o'), Modifiers::none()))
+            .unwrap();
         assert_eq!(e.preedit().as_str(), "oo");
         // Second repeat: "ooo"
-        e.process(&InputEvent::KeyRepeat(Key::Char('o'), Modifiers::none())).unwrap();
+        e.process(&InputEvent::KeyRepeat(Key::Char('o'), Modifiers::none()))
+            .unwrap();
         assert_eq!(e.preedit().as_str(), "ooo");
     }
 
@@ -848,9 +894,11 @@ mod tests {
     fn key_repeat_backspace_deletes_one_per_repeat() {
         let mut e = telex();
         process_str(&mut e, "abc");
-        e.process(&InputEvent::KeyRepeat(Key::Backspace, Modifiers::none())).unwrap();
+        e.process(&InputEvent::KeyRepeat(Key::Backspace, Modifiers::none()))
+            .unwrap();
         assert_eq!(e.preedit().as_str(), "ab");
-        e.process(&InputEvent::KeyRepeat(Key::Backspace, Modifiers::none())).unwrap();
+        e.process(&InputEvent::KeyRepeat(Key::Backspace, Modifiers::none()))
+            .unwrap();
         assert_eq!(e.preedit().as_str(), "a");
     }
 
@@ -862,10 +910,9 @@ mod tests {
         process_str(&mut e, "too"); // preedit = "tô"
         assert_eq!(e.preedit().as_str(), "tô");
         // AltGr + some key: should commit "tô" and return CommitAndClear.
-        let t = e.process(&InputEvent::KeyDown(
-            Key::Char('e'),
-            Modifiers::altgr(),
-        )).unwrap();
+        let t = e
+            .process(&InputEvent::KeyDown(Key::Char('e'), Modifiers::altgr()))
+            .unwrap();
         assert_eq!(committed(t).as_deref(), Some("tô"));
         assert!(e.preedit().is_empty());
     }
@@ -873,10 +920,9 @@ mod tests {
     #[test]
     fn altgr_on_empty_preedit_passes_through() {
         let mut e = telex();
-        let t = e.process(&InputEvent::KeyDown(
-            Key::Char('e'),
-            Modifiers::altgr(),
-        )).unwrap();
+        let t = e
+            .process(&InputEvent::KeyDown(Key::Char('e'), Modifiers::altgr()))
+            .unwrap();
         assert_eq!(t, StateTransition::PassThrough);
     }
 
@@ -884,10 +930,9 @@ mod tests {
     fn altgr_on_key_repeat_flushes() {
         let mut e = telex();
         process_str(&mut e, "aa"); // preedit = "â"
-        let t = e.process(&InputEvent::KeyRepeat(
-            Key::Char('e'),
-            Modifiers::altgr(),
-        )).unwrap();
+        let t = e
+            .process(&InputEvent::KeyRepeat(Key::Char('e'), Modifiers::altgr()))
+            .unwrap();
         assert_eq!(committed(t).as_deref(), Some("â"));
     }
 
@@ -920,29 +965,89 @@ mod tests {
     fn telex_72_syllables() {
         let cases: &[(&str, &str)] = &[
             // a × 6 tones
-            ("a", "a"), ("as", "á"), ("af", "à"), ("ar", "ả"), ("ax", "ã"), ("aj", "ạ"),
+            ("a", "a"),
+            ("as", "á"),
+            ("af", "à"),
+            ("ar", "ả"),
+            ("ax", "ã"),
+            ("aj", "ạ"),
             // ă × 6
-            ("aw", "ă"), ("aws", "ắ"), ("awf", "ằ"), ("awr", "ẳ"), ("awx", "ẵ"), ("awj", "ặ"),
+            ("aw", "ă"),
+            ("aws", "ắ"),
+            ("awf", "ằ"),
+            ("awr", "ẳ"),
+            ("awx", "ẵ"),
+            ("awj", "ặ"),
             // â × 6
-            ("aa", "â"), ("aas", "ấ"), ("aaf", "ầ"), ("aar", "ẩ"), ("aax", "ẫ"), ("aaj", "ậ"),
+            ("aa", "â"),
+            ("aas", "ấ"),
+            ("aaf", "ầ"),
+            ("aar", "ẩ"),
+            ("aax", "ẫ"),
+            ("aaj", "ậ"),
             // e × 6
-            ("e", "e"), ("es", "é"), ("ef", "è"), ("er", "ẻ"), ("ex", "ẽ"), ("ej", "ẹ"),
+            ("e", "e"),
+            ("es", "é"),
+            ("ef", "è"),
+            ("er", "ẻ"),
+            ("ex", "ẽ"),
+            ("ej", "ẹ"),
             // ê × 6
-            ("ee", "ê"), ("ees", "ế"), ("eef", "ề"), ("eer", "ể"), ("eex", "ễ"), ("eej", "ệ"),
+            ("ee", "ê"),
+            ("ees", "ế"),
+            ("eef", "ề"),
+            ("eer", "ể"),
+            ("eex", "ễ"),
+            ("eej", "ệ"),
             // i × 6
-            ("i", "i"), ("is", "í"), ("if", "ì"), ("ir", "ỉ"), ("ix", "ĩ"), ("ij", "ị"),
+            ("i", "i"),
+            ("is", "í"),
+            ("if", "ì"),
+            ("ir", "ỉ"),
+            ("ix", "ĩ"),
+            ("ij", "ị"),
             // o × 6
-            ("o", "o"), ("os", "ó"), ("of", "ò"), ("or", "ỏ"), ("ox", "õ"), ("oj", "ọ"),
+            ("o", "o"),
+            ("os", "ó"),
+            ("of", "ò"),
+            ("or", "ỏ"),
+            ("ox", "õ"),
+            ("oj", "ọ"),
             // ô × 6
-            ("oo", "ô"), ("oos", "ố"), ("oof", "ồ"), ("oor", "ổ"), ("oox", "ỗ"), ("ooj", "ộ"),
+            ("oo", "ô"),
+            ("oos", "ố"),
+            ("oof", "ồ"),
+            ("oor", "ổ"),
+            ("oox", "ỗ"),
+            ("ooj", "ộ"),
             // ơ × 6
-            ("ow", "ơ"), ("ows", "ớ"), ("owf", "ờ"), ("owr", "ở"), ("owx", "ỡ"), ("owj", "ợ"),
+            ("ow", "ơ"),
+            ("ows", "ớ"),
+            ("owf", "ờ"),
+            ("owr", "ở"),
+            ("owx", "ỡ"),
+            ("owj", "ợ"),
             // u × 6
-            ("u", "u"), ("us", "ú"), ("uf", "ù"), ("ur", "ủ"), ("ux", "ũ"), ("uj", "ụ"),
+            ("u", "u"),
+            ("us", "ú"),
+            ("uf", "ù"),
+            ("ur", "ủ"),
+            ("ux", "ũ"),
+            ("uj", "ụ"),
             // ư × 6
-            ("uw", "ư"), ("uws", "ứ"), ("uwf", "ừ"), ("uwr", "ử"), ("uwx", "ữ"), ("uwj", "ự"),
+            ("uw", "ư"),
+            ("uws", "ứ"),
+            ("uwf", "ừ"),
+            ("uwr", "ử"),
+            ("uwx", "ữ"),
+            ("uwj", "ự"),
             // y × 6
-            ("y", "y"), ("ys", "ý"), ("yf", "ỳ"), ("yr", "ỷ"), ("yx", "ỹ"), ("yj", "ỵ"),
+            ("y", "y"),
+            ("ys", "ý"),
+            ("yf", "ỳ"),
+            ("yr", "ỷ"),
+            ("yx", "ỹ"),
+            ("yj", "ỵ"),
         ];
         for (input, expected) in cases {
             assert_eq!(
@@ -967,29 +1072,89 @@ mod tests {
     fn vni_72_syllables() {
         let cases: &[(&str, &str)] = &[
             // a × 6 tones
-            ("a", "a"), ("a1", "á"), ("a2", "à"), ("a3", "ả"), ("a4", "ã"), ("a5", "ạ"),
+            ("a", "a"),
+            ("a1", "á"),
+            ("a2", "à"),
+            ("a3", "ả"),
+            ("a4", "ã"),
+            ("a5", "ạ"),
             // ă × 6 (a8 → ă, then tone digit)
-            ("a8", "ă"), ("a81", "ắ"), ("a82", "ằ"), ("a83", "ẳ"), ("a84", "ẵ"), ("a85", "ặ"),
+            ("a8", "ă"),
+            ("a81", "ắ"),
+            ("a82", "ằ"),
+            ("a83", "ẳ"),
+            ("a84", "ẵ"),
+            ("a85", "ặ"),
             // â × 6 (a6 → â, then tone digit)
-            ("a6", "â"), ("a61", "ấ"), ("a62", "ầ"), ("a63", "ẩ"), ("a64", "ẫ"), ("a65", "ậ"),
+            ("a6", "â"),
+            ("a61", "ấ"),
+            ("a62", "ầ"),
+            ("a63", "ẩ"),
+            ("a64", "ẫ"),
+            ("a65", "ậ"),
             // e × 6
-            ("e", "e"), ("e1", "é"), ("e2", "è"), ("e3", "ẻ"), ("e4", "ẽ"), ("e5", "ẹ"),
+            ("e", "e"),
+            ("e1", "é"),
+            ("e2", "è"),
+            ("e3", "ẻ"),
+            ("e4", "ẽ"),
+            ("e5", "ẹ"),
             // ê × 6 (e6 → ê)
-            ("e6", "ê"), ("e61", "ế"), ("e62", "ề"), ("e63", "ể"), ("e64", "ễ"), ("e65", "ệ"),
+            ("e6", "ê"),
+            ("e61", "ế"),
+            ("e62", "ề"),
+            ("e63", "ể"),
+            ("e64", "ễ"),
+            ("e65", "ệ"),
             // i × 6
-            ("i", "i"), ("i1", "í"), ("i2", "ì"), ("i3", "ỉ"), ("i4", "ĩ"), ("i5", "ị"),
+            ("i", "i"),
+            ("i1", "í"),
+            ("i2", "ì"),
+            ("i3", "ỉ"),
+            ("i4", "ĩ"),
+            ("i5", "ị"),
             // o × 6
-            ("o", "o"), ("o1", "ó"), ("o2", "ò"), ("o3", "ỏ"), ("o4", "õ"), ("o5", "ọ"),
+            ("o", "o"),
+            ("o1", "ó"),
+            ("o2", "ò"),
+            ("o3", "ỏ"),
+            ("o4", "õ"),
+            ("o5", "ọ"),
             // ô × 6 (o6 → ô)
-            ("o6", "ô"), ("o61", "ố"), ("o62", "ồ"), ("o63", "ổ"), ("o64", "ỗ"), ("o65", "ộ"),
+            ("o6", "ô"),
+            ("o61", "ố"),
+            ("o62", "ồ"),
+            ("o63", "ổ"),
+            ("o64", "ỗ"),
+            ("o65", "ộ"),
             // ơ × 6 (o7 → ơ)
-            ("o7", "ơ"), ("o71", "ớ"), ("o72", "ờ"), ("o73", "ở"), ("o74", "ỡ"), ("o75", "ợ"),
+            ("o7", "ơ"),
+            ("o71", "ớ"),
+            ("o72", "ờ"),
+            ("o73", "ở"),
+            ("o74", "ỡ"),
+            ("o75", "ợ"),
             // u × 6
-            ("u", "u"), ("u1", "ú"), ("u2", "ù"), ("u3", "ủ"), ("u4", "ũ"), ("u5", "ụ"),
+            ("u", "u"),
+            ("u1", "ú"),
+            ("u2", "ù"),
+            ("u3", "ủ"),
+            ("u4", "ũ"),
+            ("u5", "ụ"),
             // ư × 6 (u7 → ư)
-            ("u7", "ư"), ("u71", "ứ"), ("u72", "ừ"), ("u73", "ử"), ("u74", "ữ"), ("u75", "ự"),
+            ("u7", "ư"),
+            ("u71", "ứ"),
+            ("u72", "ừ"),
+            ("u73", "ử"),
+            ("u74", "ữ"),
+            ("u75", "ự"),
             // y × 6
-            ("y", "y"), ("y1", "ý"), ("y2", "ỳ"), ("y3", "ỷ"), ("y4", "ỹ"), ("y5", "ỵ"),
+            ("y", "y"),
+            ("y1", "ý"),
+            ("y2", "ỳ"),
+            ("y3", "ỷ"),
+            ("y4", "ỹ"),
+            ("y5", "ỵ"),
         ];
         for (input, expected) in cases {
             assert_eq!(
@@ -1018,18 +1183,25 @@ mod tests {
         let mut e = telex();
         process_str(&mut e, "too"); // preedit = "tô"
         assert_eq!(e.preedit().as_str(), "tô");
-        let t = e.process(&InputEvent::KeyDown(
-            Key::Char('c'),
-            Modifiers { ctrl: true, ..Modifiers::none() },
-        ))
-        .unwrap();
+        let t = e
+            .process(&InputEvent::KeyDown(
+                Key::Char('c'),
+                Modifiers {
+                    ctrl: true,
+                    ..Modifiers::none()
+                },
+            ))
+            .unwrap();
         assert_eq!(committed(t).as_deref(), Some("tô"));
         assert!(e.preedit().is_empty());
         // On empty buffer, Ctrl+char returns PassThrough.
         let t2 = e
             .process(&InputEvent::KeyDown(
                 Key::Char('c'),
-                Modifiers { ctrl: true, ..Modifiers::none() },
+                Modifiers {
+                    ctrl: true,
+                    ..Modifiers::none()
+                },
             ))
             .unwrap();
         assert_eq!(t2, StateTransition::PassThrough);
@@ -1040,11 +1212,15 @@ mod tests {
         // Bug 2: Alt (without Ctrl) must commit preedit and not apply vowel rules.
         let mut e = telex();
         e.process(&key('o')).unwrap(); // preedit = "o"
-        let t = e.process(&InputEvent::KeyDown(
-            Key::Char('o'),
-            Modifiers { alt: true, ..Modifiers::none() },
-        ))
-        .unwrap();
+        let t = e
+            .process(&InputEvent::KeyDown(
+                Key::Char('o'),
+                Modifiers {
+                    alt: true,
+                    ..Modifiers::none()
+                },
+            ))
+            .unwrap();
         // Without fix, apply(['o'], 'o') would give "ô". With fix, we commit "o".
         assert_eq!(committed(t).as_deref(), Some("o"));
         assert!(e.preedit().is_empty());
@@ -1057,10 +1233,12 @@ mod tests {
         e.process(&key('o')).unwrap();
         assert_eq!(e.preedit().as_str(), "o");
         // KeyRepeat appends raw char; rule must NOT fire.
-        e.process(&InputEvent::KeyRepeat(Key::Char('o'), Modifiers::none())).unwrap();
+        e.process(&InputEvent::KeyRepeat(Key::Char('o'), Modifiers::none()))
+            .unwrap();
         assert_eq!(e.preedit().as_str(), "oo"); // not "ô"
-        // Another repeat keeps extending raw.
-        e.process(&InputEvent::KeyRepeat(Key::Char('o'), Modifiers::none())).unwrap();
+                                                // Another repeat keeps extending raw.
+        e.process(&InputEvent::KeyRepeat(Key::Char('o'), Modifiers::none()))
+            .unwrap();
         assert_eq!(e.preedit().as_str(), "ooo");
     }
 
@@ -1070,7 +1248,8 @@ mod tests {
         let mut e = telex();
         process_str(&mut e, "oo"); // fires oo→ô, last_rule_fired = true
         assert_eq!(e.preedit().as_str(), "ô");
-        e.process(&InputEvent::KeyRepeat(Key::Char('o'), Modifiers::none())).unwrap();
+        e.process(&InputEvent::KeyRepeat(Key::Char('o'), Modifiers::none()))
+            .unwrap();
         assert_eq!(e.preedit().as_str(), "ôo");
     }
 
@@ -1079,7 +1258,8 @@ mod tests {
         // Bug 4: uppercase 'S' (Shift held) must not trigger the sắc tone rule.
         let mut e = telex();
         e.process(&key('a')).unwrap(); // preedit = "a"
-        e.process(&InputEvent::KeyDown(Key::Char('S'), Modifiers::shift())).unwrap();
+        e.process(&InputEvent::KeyDown(Key::Char('S'), Modifiers::shift()))
+            .unwrap();
         assert_eq!(e.preedit().as_str(), "aS");
     }
 
@@ -1087,29 +1267,89 @@ mod tests {
     fn viqr_72_syllables() {
         let cases: &[(&str, &str)] = &[
             // a × 6 tones
-            ("a", "a"), ("a'", "á"), ("a`", "à"), ("a?", "ả"), ("a~", "ã"), ("a.", "ạ"),
+            ("a", "a"),
+            ("a'", "á"),
+            ("a`", "à"),
+            ("a?", "ả"),
+            ("a~", "ã"),
+            ("a.", "ạ"),
             // ă × 6 (a( → ă)
-            ("a(", "ă"), ("a('", "ắ"), ("a(`", "ằ"), ("a(?", "ẳ"), ("a(~", "ẵ"), ("a(.", "ặ"),
+            ("a(", "ă"),
+            ("a('", "ắ"),
+            ("a(`", "ằ"),
+            ("a(?", "ẳ"),
+            ("a(~", "ẵ"),
+            ("a(.", "ặ"),
             // â × 6 (a^ → â)
-            ("a^", "â"), ("a^'", "ấ"), ("a^`", "ầ"), ("a^?", "ẩ"), ("a^~", "ẫ"), ("a^.", "ậ"),
+            ("a^", "â"),
+            ("a^'", "ấ"),
+            ("a^`", "ầ"),
+            ("a^?", "ẩ"),
+            ("a^~", "ẫ"),
+            ("a^.", "ậ"),
             // e × 6
-            ("e", "e"), ("e'", "é"), ("e`", "è"), ("e?", "ẻ"), ("e~", "ẽ"), ("e.", "ẹ"),
+            ("e", "e"),
+            ("e'", "é"),
+            ("e`", "è"),
+            ("e?", "ẻ"),
+            ("e~", "ẽ"),
+            ("e.", "ẹ"),
             // ê × 6 (e^ → ê)
-            ("e^", "ê"), ("e^'", "ế"), ("e^`", "ề"), ("e^?", "ể"), ("e^~", "ễ"), ("e^.", "ệ"),
+            ("e^", "ê"),
+            ("e^'", "ế"),
+            ("e^`", "ề"),
+            ("e^?", "ể"),
+            ("e^~", "ễ"),
+            ("e^.", "ệ"),
             // i × 6
-            ("i", "i"), ("i'", "í"), ("i`", "ì"), ("i?", "ỉ"), ("i~", "ĩ"), ("i.", "ị"),
+            ("i", "i"),
+            ("i'", "í"),
+            ("i`", "ì"),
+            ("i?", "ỉ"),
+            ("i~", "ĩ"),
+            ("i.", "ị"),
             // o × 6
-            ("o", "o"), ("o'", "ó"), ("o`", "ò"), ("o?", "ỏ"), ("o~", "õ"), ("o.", "ọ"),
+            ("o", "o"),
+            ("o'", "ó"),
+            ("o`", "ò"),
+            ("o?", "ỏ"),
+            ("o~", "õ"),
+            ("o.", "ọ"),
             // ô × 6 (o^ → ô)
-            ("o^", "ô"), ("o^'", "ố"), ("o^`", "ồ"), ("o^?", "ổ"), ("o^~", "ỗ"), ("o^.", "ộ"),
+            ("o^", "ô"),
+            ("o^'", "ố"),
+            ("o^`", "ồ"),
+            ("o^?", "ổ"),
+            ("o^~", "ỗ"),
+            ("o^.", "ộ"),
             // ơ × 6 (o+ → ơ)
-            ("o+", "ơ"), ("o+'", "ớ"), ("o+`", "ờ"), ("o+?", "ở"), ("o+~", "ỡ"), ("o+.", "ợ"),
+            ("o+", "ơ"),
+            ("o+'", "ớ"),
+            ("o+`", "ờ"),
+            ("o+?", "ở"),
+            ("o+~", "ỡ"),
+            ("o+.", "ợ"),
             // u × 6
-            ("u", "u"), ("u'", "ú"), ("u`", "ù"), ("u?", "ủ"), ("u~", "ũ"), ("u.", "ụ"),
+            ("u", "u"),
+            ("u'", "ú"),
+            ("u`", "ù"),
+            ("u?", "ủ"),
+            ("u~", "ũ"),
+            ("u.", "ụ"),
             // ư × 6 (u+ → ư)
-            ("u+", "ư"), ("u+'", "ứ"), ("u+`", "ừ"), ("u+?", "ử"), ("u+~", "ữ"), ("u+.", "ự"),
+            ("u+", "ư"),
+            ("u+'", "ứ"),
+            ("u+`", "ừ"),
+            ("u+?", "ử"),
+            ("u+~", "ữ"),
+            ("u+.", "ự"),
             // y × 6
-            ("y", "y"), ("y'", "ý"), ("y`", "ỳ"), ("y?", "ỷ"), ("y~", "ỹ"), ("y.", "ỵ"),
+            ("y", "y"),
+            ("y'", "ý"),
+            ("y`", "ỳ"),
+            ("y?", "ỷ"),
+            ("y~", "ỹ"),
+            ("y.", "ỵ"),
         ];
         for (input, expected) in cases {
             assert_eq!(
@@ -1129,7 +1369,9 @@ mod tests {
         let mut e = telex();
         process_str(&mut e, "viet");
         assert_eq!(e.preedit().as_str(), "viet");
-        let t = e.process(&InputEvent::KeyDown(Key::Char(' '), Modifiers::none())).unwrap();
+        let t = e
+            .process(&InputEvent::KeyDown(Key::Char(' '), Modifiers::none()))
+            .unwrap();
         assert!(
             matches!(t, StateTransition::CommitThenPassThrough(_)),
             "space must return CommitThenPassThrough, got {t:?}"
@@ -1164,16 +1406,23 @@ mod tests {
         // e.g. "toi gox" would show "tooigox" as preedit for the second word.
         let mut e = telex();
         process_str(&mut e, "tooi");
-        e.process(&InputEvent::KeyDown(Key::Char(' '), Modifiers::none())).unwrap();
+        e.process(&InputEvent::KeyDown(Key::Char(' '), Modifiers::none()))
+            .unwrap();
         // Start second word — vi_engine must be clean
         process_str(&mut e, "gox");
-        assert_eq!(e.preedit().as_str(), "gõ", "vi_engine must reset after space commit");
+        assert_eq!(
+            e.preedit().as_str(),
+            "gõ",
+            "vi_engine must reset after space commit"
+        );
     }
 
     #[test]
     fn space_on_empty_buffer_is_passthrough() {
         let mut e = telex();
-        let t = e.process(&InputEvent::KeyDown(Key::Char(' '), Modifiers::none())).unwrap();
+        let t = e
+            .process(&InputEvent::KeyDown(Key::Char(' '), Modifiers::none()))
+            .unwrap();
         assert_eq!(t, StateTransition::PassThrough);
     }
 
@@ -1181,7 +1430,9 @@ mod tests {
     fn comma_triggers_commit() {
         let mut e = telex();
         process_str(&mut e, "xin");
-        let t = e.process(&InputEvent::KeyDown(Key::Char(','), Modifiers::none())).unwrap();
+        let t = e
+            .process(&InputEvent::KeyDown(Key::Char(','), Modifiers::none()))
+            .unwrap();
         assert!(matches!(t, StateTransition::CommitThenPassThrough(_)));
     }
 
@@ -1224,7 +1475,10 @@ mod tests {
         let _ = eng.process(&InputEvent::KeyDown(Key::DeadKey('^'), mods));
         let result = eng.process(&InputEvent::KeyDown(Key::Char('a'), mods));
         if let Ok(StateTransition::PreeditUpdated(ref p)) = result {
-            assert!(!p.is_empty(), "Dead key + char PreeditUpdated must not be empty");
+            assert!(
+                !p.is_empty(),
+                "Dead key + char PreeditUpdated must not be empty"
+            );
         }
     }
 
@@ -1232,7 +1486,9 @@ mod tests {
     fn dead_key_shows_preedit() {
         let mut eng = StandardEngine::new(InputMethod::Telex);
         let mods = Modifiers::none();
-        let result = eng.process(&InputEvent::KeyDown(Key::DeadKey('^'), mods)).unwrap();
+        let result = eng
+            .process(&InputEvent::KeyDown(Key::DeadKey('^'), mods))
+            .unwrap();
         assert!(
             matches!(&result, StateTransition::PreeditUpdated(p) if p.as_str() == "^"),
             "single dead key must return PreeditUpdated(\"^\"), got {result:?}",
@@ -1243,10 +1499,13 @@ mod tests {
     fn two_non_combining_dead_keys_preedit() {
         let mut eng = StandardEngine::new(InputMethod::Telex);
         let mods = Modifiers::none();
-        eng.process(&InputEvent::KeyDown(Key::DeadKey('^'), mods)).unwrap();
+        eng.process(&InputEvent::KeyDown(Key::DeadKey('^'), mods))
+            .unwrap();
         // '(' cannot combine with '^' as a dead-key pair, so '^' is pushed to
         // the buffer as a literal and '(' becomes the new pending dead key.
-        let result = eng.process(&InputEvent::KeyDown(Key::DeadKey('('), mods)).unwrap();
+        let result = eng
+            .process(&InputEvent::KeyDown(Key::DeadKey('('), mods))
+            .unwrap();
         assert!(
             matches!(&result, StateTransition::PreeditUpdated(p) if p.as_str() == "^("),
             "second non-combining dead key must return PreeditUpdated(\"^(\"), got {result:?}",
@@ -1268,7 +1527,9 @@ mod tests {
     fn telex_toas_space_commits_toa_acute() {
         let mut e = telex();
         process_str(&mut e, "toas");
-        let t = e.process(&InputEvent::KeyDown(Key::Char(' '), Modifiers::none())).unwrap();
+        let t = e
+            .process(&InputEvent::KeyDown(Key::Char(' '), Modifiers::none()))
+            .unwrap();
         assert_eq!(committed(t).as_deref(), Some("tóa"));
     }
 
@@ -1277,7 +1538,9 @@ mod tests {
         // Với phụ âm cuối 'n', tone di chuyển sang nguyên âm cuối ('a') → "toán".
         let mut e = telex();
         process_str(&mut e, "toasn");
-        let t = e.process(&InputEvent::KeyDown(Key::Return, Modifiers::none())).unwrap();
+        let t = e
+            .process(&InputEvent::KeyDown(Key::Return, Modifiers::none()))
+            .unwrap();
         assert_eq!(committed(t).as_deref(), Some("toán"));
     }
 
@@ -1409,7 +1672,8 @@ mod tests {
         let mut e = telex();
         let text = "ă".to_owned(); // U+0103, 2 UTF-8 bytes
         let cursor = text.len();
-        e.process(&InputEvent::SurroundingText { text, cursor }).unwrap();
+        e.process(&InputEvent::SurroundingText { text, cursor })
+            .unwrap();
         let t = e.process(&backspace()).unwrap();
         assert_eq!(t, StateTransition::PassThrough);
     }

@@ -86,7 +86,11 @@ async fn try_serve(
     input_method: String,
     backend: String,
 ) -> zbus::Result<()> {
-    let iface = ImeDiagnostics { electron_pids, input_method: input_method.clone(), backend: backend.clone() };
+    let iface = ImeDiagnostics {
+        electron_pids,
+        input_method: input_method.clone(),
+        backend: backend.clone(),
+    };
     let _conn = zbus::ConnectionBuilder::session()?
         .name("org.freedesktop.vime")?
         .serve_at("/org/freedesktop/vime/Diagnostics", iface)?

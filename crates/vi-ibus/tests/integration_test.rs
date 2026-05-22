@@ -52,10 +52,7 @@ impl MockIbusConsumer {
     }
 
     async fn record_reset(&self) {
-        self.log
-            .lock()
-            .unwrap_or_else(|e| e.into_inner())
-            .resets += 1;
+        self.log.lock().unwrap_or_else(|e| e.into_inner()).resets += 1;
     }
 }
 
@@ -63,7 +60,7 @@ impl MockIbusConsumer {
 
 #[tokio::test]
 async fn test_ibus_key_mapping_passthrough() {
-    use vi_core::{Key, Modifiers, InputEvent};
+    use vi_core::{InputEvent, Key, Modifiers};
 
     // Non-composition keys should not be consumed by the engine.
     let event = InputEvent::KeyDown(Key::Left, Modifiers::none());
@@ -106,7 +103,10 @@ async fn test_ibus_rapid_focus_in_out() {
         }
     }
 
-    assert!(preedit.is_empty(), "preedit must be empty after final FocusOut");
+    assert!(
+        preedit.is_empty(),
+        "preedit must be empty after final FocusOut"
+    );
 }
 
 #[tokio::test]
@@ -150,8 +150,7 @@ async fn test_ibus_surrounding_text_extraction() {
     text_builder.push_value(Value::Value(Box::new(attr_list)));
     let text_struct = Value::Structure(text_builder.build());
 
-    let owned =
-        OwnedValue::try_from(Value::Value(Box::new(text_struct))).expect("valid structure");
+    let owned = OwnedValue::try_from(Value::Value(Box::new(text_struct))).expect("valid structure");
 
     // The string is at index 2 of the inner structure.
     fn extract(val: &Value<'_>) -> Option<String> {
@@ -192,11 +191,19 @@ async fn test_ibus_focus_out_commits_preedit_mid_word() {
     focus_out(&mut preedit, &mut committed);
 
     assert!(preedit.is_empty(), "preedit must be cleared after FocusOut");
-    assert_eq!(committed, vec!["viê"], "preedit must be committed, not discarded");
+    assert_eq!(
+        committed,
+        vec!["viê"],
+        "preedit must be committed, not discarded"
+    );
 
     // Second Alt+Tab with empty preedit: must be a no-op (no spurious commit).
     focus_out(&mut preedit, &mut committed);
-    assert_eq!(committed.len(), 1, "empty preedit must not produce an extra commit");
+    assert_eq!(
+        committed.len(),
+        1,
+        "empty preedit must not produce an extra commit"
+    );
 }
 
 #[tokio::test]
@@ -215,7 +222,9 @@ async fn test_ibus_caps_parsing() {
 /// Type "tooi" in Telex → should produce preedit "tô" then commit "tô" on Return.
 #[tokio::test]
 async fn test_ibus_full_typing_flow_telex() {
-    use vi_core::{CompositionEngine, InputEvent, InputMethod, Key, Modifiers, StandardEngine, StateTransition};
+    use vi_core::{
+        CompositionEngine, InputEvent, InputMethod, Key, Modifiers, StandardEngine, StateTransition,
+    };
 
     let mut engine = StandardEngine::new(InputMethod::Telex);
     let mut preedit_history: Vec<String> = Vec::new();
@@ -225,18 +234,26 @@ async fn test_ibus_full_typing_flow_telex() {
         let ev = InputEvent::KeyDown(Key::Char(ch), Modifiers::none());
         match engine.process(&ev).expect("engine ok") {
             StateTransition::PreeditUpdated(p) => preedit_history.push(p.as_str().to_owned()),
-            StateTransition::Commit(c) | StateTransition::CommitAndClear(c) => committed.push(c.as_str().to_owned()),
+            StateTransition::Commit(c) | StateTransition::CommitAndClear(c) => {
+                committed.push(c.as_str().to_owned())
+            }
             _ => {}
         }
         let _ = engine.process(&InputEvent::KeyUp(Key::Char(ch)));
     }
 
-    assert_eq!(engine.preedit().as_str(), "tô", "preedit after 'too' must be tô");
+    assert_eq!(
+        engine.preedit().as_str(),
+        "tô",
+        "preedit after 'too' must be tô"
+    );
 
     // Return commits whatever is in preedit.
     let ret = InputEvent::KeyDown(Key::Return, Modifiers::none());
     match engine.process(&ret).expect("return ok") {
-        StateTransition::CommitAndClear(c) | StateTransition::Commit(c) => committed.push(c.as_str().to_owned()),
+        StateTransition::CommitAndClear(c) | StateTransition::Commit(c) => {
+            committed.push(c.as_str().to_owned())
+        }
         StateTransition::Cleared | StateTransition::Consumed | StateTransition::PassThrough => {}
         other => panic!("unexpected on Return: {other:?}"),
     }
@@ -252,20 +269,28 @@ async fn test_ibus_backspace_during_composition() {
     let mut engine = StandardEngine::new(InputMethod::Telex);
 
     for ch in "vi".chars() {
-        engine.process(&InputEvent::KeyDown(Key::Char(ch), Modifiers::none())).ok();
+        engine
+            .process(&InputEvent::KeyDown(Key::Char(ch), Modifiers::none()))
+            .ok();
         let _ = engine.process(&InputEvent::KeyUp(Key::Char(ch)));
     }
     assert_eq!(engine.preedit().as_str(), "vi");
 
     let bs = InputEvent::KeyDown(Key::Backspace, Modifiers::none());
     engine.process(&bs).ok();
-    assert_eq!(engine.preedit().as_str(), "v", "backspace must erase last character");
+    assert_eq!(
+        engine.preedit().as_str(),
+        "v",
+        "backspace must erase last character"
+    );
 }
 
 /// Multiple words in sequence — each word committed separately.
 #[tokio::test]
 async fn test_ibus_multi_word_sequence() {
-    use vi_core::{CompositionEngine, InputEvent, InputMethod, Key, Modifiers, StandardEngine, StateTransition};
+    use vi_core::{
+        CompositionEngine, InputEvent, InputMethod, Key, Modifiers, StandardEngine, StateTransition,
+    };
 
     let mut engine = StandardEngine::new(InputMethod::Telex);
     let mut committed: Vec<String> = Vec::new();
@@ -279,33 +304,50 @@ async fn test_ibus_multi_word_sequence() {
         InputEvent::KeyDown(Key::Return, Modifiers::none()),
     ] {
         match engine.process(&ev).expect("ok") {
-            StateTransition::Commit(c) | StateTransition::CommitAndClear(c) => committed.push(c.as_str().to_owned()),
+            StateTransition::Commit(c) | StateTransition::CommitAndClear(c) => {
+                committed.push(c.as_str().to_owned())
+            }
             StateTransition::CommitThenPreedit(c, _) => committed.push(c.as_str().to_owned()),
             _ => {}
         }
     }
 
-    assert!(committed.iter().any(|s| s.contains('â')), "â must be committed; got {committed:?}");
+    assert!(
+        committed.iter().any(|s| s.contains('â')),
+        "â must be committed; got {committed:?}"
+    );
 }
 
 /// FocusOut with active preedit must produce a CommitAndClear so text is not lost.
 #[tokio::test]
 async fn test_ibus_focus_out_commits_mid_word() {
-    use vi_core::{CompositionEngine, InputEvent, InputMethod, Key, Modifiers, StandardEngine, StateTransition};
+    use vi_core::{
+        CompositionEngine, InputEvent, InputMethod, Key, Modifiers, StandardEngine, StateTransition,
+    };
 
     let mut engine = StandardEngine::new(InputMethod::Telex);
 
     // Build up preedit "nuw" (Telex start of "nước").
     for ch in "nu".chars() {
-        engine.process(&InputEvent::KeyDown(Key::Char(ch), Modifiers::none())).ok();
+        engine
+            .process(&InputEvent::KeyDown(Key::Char(ch), Modifiers::none()))
+            .ok();
     }
-    assert!(!engine.preedit().is_empty(), "preedit must be non-empty before FocusOut");
+    assert!(
+        !engine.preedit().is_empty(),
+        "preedit must be non-empty before FocusOut"
+    );
 
     match engine.process(&InputEvent::FocusOut).expect("FocusOut ok") {
-        StateTransition::CommitAndClear(_) | StateTransition::Commit(_) | StateTransition::Cleared => {}
+        StateTransition::CommitAndClear(_)
+        | StateTransition::Commit(_)
+        | StateTransition::Cleared => {}
         other => panic!("FocusOut must clear preedit, got {other:?}"),
     }
-    assert!(engine.preedit().is_empty(), "preedit must be empty after FocusOut");
+    assert!(
+        engine.preedit().is_empty(),
+        "preedit must be empty after FocusOut"
+    );
 }
 
 /// `HidePreeditText` signal is the correct way to hide preedit on clear.
@@ -339,7 +381,9 @@ fn test_ibus_preedit_commit_mode_constant() {
 /// dangling text in the application buffer.
 #[tokio::test]
 async fn test_ibus_daemon_restart_mid_composition() {
-    use vi_core::{CompositionEngine, InputEvent, InputMethod, Key, Modifiers, StandardEngine, StateTransition};
+    use vi_core::{
+        CompositionEngine, InputEvent, InputMethod, Key, Modifiers, StandardEngine, StateTransition,
+    };
 
     // (a) Start mock IBus session — engine represents the live composition state.
     let mut engine = StandardEngine::new(InputMethod::Telex);
@@ -347,16 +391,23 @@ async fn test_ibus_daemon_restart_mid_composition() {
 
     // (b) Begin a composition: type "vie" to produce a non-empty preedit.
     for ch in "vie".chars() {
-        engine.process(&InputEvent::KeyDown(Key::Char(ch), Modifiers::none())).ok();
+        engine
+            .process(&InputEvent::KeyDown(Key::Char(ch), Modifiers::none()))
+            .ok();
         let _ = engine.process(&InputEvent::KeyUp(Key::Char(ch)));
     }
     let preedit_before = engine.preedit().as_str().to_owned();
-    assert!(!preedit_before.is_empty(), "preedit must be non-empty before simulated restart");
+    assert!(
+        !preedit_before.is_empty(),
+        "preedit must be non-empty before simulated restart"
+    );
 
     // (c) Simulate daemon restart: the IBus reconnect logic issues FocusOut on
     //     the old engine instance before tearing down the D-Bus connection so
     //     in-flight text is preserved via IBUS_ENGINE_PREEDIT_COMMIT.
-    let restart_result = engine.process(&InputEvent::FocusOut).expect("FocusOut must not error");
+    let restart_result = engine
+        .process(&InputEvent::FocusOut)
+        .expect("FocusOut must not error");
 
     match &restart_result {
         StateTransition::CommitAndClear(c) | StateTransition::Commit(c) => {
@@ -369,7 +420,10 @@ async fn test_ibus_daemon_restart_mid_composition() {
     // (d) The preedit must not be silently lost: either a commit was issued or
     //     the engine cleanly reset.  A non-empty preedit after FocusOut is the
     //     failure mode we are guarding against.
-    assert!(engine.preedit().is_empty(), "preedit must be empty after simulated daemon restart");
+    assert!(
+        engine.preedit().is_empty(),
+        "preedit must be empty after simulated daemon restart"
+    );
     if let StateTransition::CommitAndClear(_) | StateTransition::Commit(_) = restart_result {
         assert!(
             !committed.is_empty() && committed.iter().all(|s| !s.is_empty()),
@@ -397,8 +451,7 @@ async fn test_ibus_daemon_restart_mid_composition() {
 #[test]
 fn test_ibus_preedit_updated_uses_update_preedit_text_with_mode() {
     use vi_core::{
-        CompositionEngine, InputEvent, InputMethod, Key, Modifiers, StandardEngine,
-        StateTransition,
+        CompositionEngine, InputEvent, InputMethod, Key, Modifiers, StandardEngine, StateTransition,
     };
 
     // IBUS_ENGINE_PREEDIT_COMMIT = 1 (ibustypes.h).
@@ -565,17 +618,19 @@ async fn focus_out_and_key_event_signals_do_not_interleave() {
         assert_eq!(log.len(), 4, "each handler emits exactly 2 entries");
 
         let fo_begin = log.iter().position(|&s| s == "fo:begin").unwrap();
-        let fo_end   = log.iter().position(|&s| s == "fo:end").unwrap();
+        let fo_end = log.iter().position(|&s| s == "fo:end").unwrap();
         let ke_begin = log.iter().position(|&s| s == "ke:begin").unwrap();
-        let ke_end   = log.iter().position(|&s| s == "ke:end").unwrap();
+        let ke_end = log.iter().position(|&s| s == "ke:end").unwrap();
 
         // begin and end for each handler must be adjacent (no interleaving).
         assert_eq!(
-            fo_end, fo_begin + 1,
+            fo_end,
+            fo_begin + 1,
             "focus_out signals must not be split by key_event signals: {log:?}"
         );
         assert_eq!(
-            ke_end, ke_begin + 1,
+            ke_end,
+            ke_begin + 1,
             "key_event signals must not be split by focus_out signals: {log:?}"
         );
     }
@@ -598,10 +653,17 @@ fn test_chrome_direct_shadow_buf_backspace_passthrough_desync() {
 
     // PassThrough for Backspace: Chrome ate one committed char → trim last char.
     if !shadow_buf.is_empty() {
-        let new_len = shadow_buf.char_indices().next_back().map(|(i, _)| i).unwrap_or(0);
+        let new_len = shadow_buf
+            .char_indices()
+            .next_back()
+            .map(|(i, _)| i)
+            .unwrap_or(0);
         shadow_buf.truncate(new_len);
     }
-    assert_eq!(shadow_buf, "nữ", "after Backspace PassThrough: last char removed");
+    assert_eq!(
+        shadow_buf, "nữ",
+        "after Backspace PassThrough: last char removed"
+    );
     assert_eq!(shadow_buf.chars().count(), 2);
 
     // Next PreeditUpdated("nữab"): BackSpace count == shadow_buf.chars().count() == 2.
@@ -621,7 +683,11 @@ fn test_chrome_direct_shadow_buf_backspace_passthrough_desync() {
 #[test]
 fn test_chrome_direct_shadow_buf_trim_ascii() {
     let mut shadow_buf = String::from("abc");
-    let new_len = shadow_buf.char_indices().next_back().map(|(i, _)| i).unwrap_or(0);
+    let new_len = shadow_buf
+        .char_indices()
+        .next_back()
+        .map(|(i, _)| i)
+        .unwrap_or(0);
     shadow_buf.truncate(new_len);
     assert_eq!(shadow_buf, "ab");
 }
@@ -630,7 +696,11 @@ fn test_chrome_direct_shadow_buf_trim_ascii() {
 #[test]
 fn test_chrome_direct_shadow_buf_trim_single_char() {
     let mut shadow_buf = String::from("ữ");
-    let new_len = shadow_buf.char_indices().next_back().map(|(i, _)| i).unwrap_or(0);
+    let new_len = shadow_buf
+        .char_indices()
+        .next_back()
+        .map(|(i, _)| i)
+        .unwrap_or(0);
     shadow_buf.truncate(new_len);
     assert!(shadow_buf.is_empty());
 }
@@ -652,8 +722,7 @@ fn test_chrome_direct_shadow_buf_trim_single_char() {
 #[test]
 fn test_preedit_mode_selected_for_caps_zero_one_three() {
     use vi_core::{
-        CompositionEngine, InputEvent, InputMethod, Key, Modifiers, StandardEngine,
-        StateTransition,
+        CompositionEngine, InputEvent, InputMethod, Key, Modifiers, StandardEngine, StateTransition,
     };
 
     const IBUS_ENGINE_PREEDIT_COMMIT: u32 = 1;
@@ -750,7 +819,10 @@ fn test_set_capabilities_surrounding_only_stays_on_plain_preedit() {
         let has_surrounding = (caps & IBUS_CAP_SURROUNDING_TEXT) != 0;
         !has_preedit && has_surrounding
     };
-    assert!(naive_surrounding_commit, "naive formula would pick surrounding-commit");
+    assert!(
+        naive_surrounding_commit,
+        "naive formula would pick surrounding-commit"
+    );
 
     let production_surrounding_commit = false;
     let production_forward_key = false;
@@ -780,7 +852,10 @@ fn test_set_capabilities_force_chrome_direct_override() {
         let new_forward_key = false;
         let new_chrome_direct = force_chrome_direct;
 
-        assert!(new_chrome_direct, "caps={caps:#x}: force_chrome_direct must win");
+        assert!(
+            new_chrome_direct,
+            "caps={caps:#x}: force_chrome_direct must win"
+        );
         assert!(!new_surrounding_commit, "caps={caps:#x}");
         assert!(!new_forward_key, "caps={caps:#x}");
     }
@@ -861,20 +936,14 @@ fn sim_surrounding_commit(preedit: &str, shadow_buf: &mut String) -> Vec<Recorde
 #[test]
 fn chrome_direct_preedit_no_hide_before_update() {
     use vi_core::{
-        CompositionEngine, InputEvent, InputMethod, Key, Modifiers, StandardEngine,
-        StateTransition,
+        CompositionEngine, InputEvent, InputMethod, Key, Modifiers, StandardEngine, StateTransition,
     };
 
     let mut engine = StandardEngine::new(InputMethod::Telex);
     let mut shadow_buf = String::new();
 
     // Expected preedit at each step: Telex "oo" → "ô" fires on the second 'o'.
-    let steps: &[(char, &str)] = &[
-        ('t', "t"),
-        ('o', "to"),
-        ('o', "tô"),
-        ('i', "tôi"),
-    ];
+    let steps: &[(char, &str)] = &[('t', "t"), ('o', "to"), ('o', "tô"), ('i', "tôi")];
 
     for &(ch, expected_preedit) in steps {
         let transition = engine
@@ -937,7 +1006,10 @@ fn chrome_direct_hide_only_on_clear() {
         "HidePreeditText must precede UpdatePreeditTextWithMode on empty preedit; \
          got {signals:?}"
     );
-    assert_eq!(shadow_buf, "", "shadow_buf must be cleared after empty-preedit dispatch");
+    assert_eq!(
+        shadow_buf, "",
+        "shadow_buf must be cleared after empty-preedit dispatch"
+    );
 
     // Case 2: Cleared arm in preedit/chrome_direct mode (e.g. Escape key).
     // dispatch_transition's Cleared else-branch: hide_preedit_text always fires.
@@ -960,8 +1032,7 @@ fn chrome_direct_hide_only_on_clear() {
 #[test]
 fn standard_preedit_update_per_keystroke() {
     use vi_core::{
-        CompositionEngine, InputEvent, InputMethod, Key, Modifiers, StandardEngine,
-        StateTransition,
+        CompositionEngine, InputEvent, InputMethod, Key, Modifiers, StandardEngine, StateTransition,
     };
 
     let mut engine = StandardEngine::new(InputMethod::Telex);
@@ -1012,8 +1083,7 @@ fn standard_preedit_update_per_keystroke() {
 #[test]
 fn surrounding_commit_commit_per_char() {
     use vi_core::{
-        CompositionEngine, InputEvent, InputMethod, Key, Modifiers, StandardEngine,
-        StateTransition,
+        CompositionEngine, InputEvent, InputMethod, Key, Modifiers, StandardEngine, StateTransition,
     };
 
     let mut engine = StandardEngine::new(InputMethod::Telex);
@@ -1033,7 +1103,9 @@ fn surrounding_commit_commit_per_char() {
         let signals = sim_surrounding_commit(&preedit, &mut shadow_buf);
 
         assert!(
-            signals.iter().any(|s| matches!(s, RecordedSignal::CommitText(_))),
+            signals
+                .iter()
+                .any(|s| matches!(s, RecordedSignal::CommitText(_))),
             "'{ch}' (preedit={preedit:?}): surrounding-commit must emit CommitText \
              for the new character tail; got {signals:?}"
         );

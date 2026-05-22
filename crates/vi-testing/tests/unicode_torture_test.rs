@@ -8,7 +8,11 @@ use vi_testing::unicode_torture;
 fn all_torture_cases_pass() {
     let cases = unicode_torture::cases();
     assert!(!cases.is_empty(), "torture case list must not be empty");
-    assert!(cases.len() >= 20, "need at least 20 cases, got {}", cases.len());
+    assert!(
+        cases.len() >= 20,
+        "need at least 20 cases, got {}",
+        cases.len()
+    );
 
     let mut failures: Vec<String> = Vec::new();
 
@@ -20,7 +24,10 @@ fn all_torture_cases_pass() {
                 if nfc.as_str() != expected {
                     failures.push(format!(
                         "WRONG OUTPUT [{}]: input={:?} expected={:?} got={:?}",
-                        case.description, case.raw_input, expected, nfc.as_str(),
+                        case.description,
+                        case.raw_input,
+                        expected,
+                        nfc.as_str(),
                     ));
                 }
             }
@@ -30,7 +37,9 @@ fn all_torture_cases_pass() {
             (Ok(nfc), None) => {
                 failures.push(format!(
                     "SHOULD HAVE ERRORED [{}]: input={:?} but got Ok({:?})",
-                    case.description, case.raw_input, nfc.as_str(),
+                    case.description,
+                    case.raw_input,
+                    nfc.as_str(),
                 ));
             }
             (Err(e), Some(expected)) => {
@@ -43,6 +52,10 @@ fn all_torture_cases_pass() {
     }
 
     if !failures.is_empty() {
-        panic!("{} torture case(s) failed:\n{}", failures.len(), failures.join("\n"));
+        panic!(
+            "{} torture case(s) failed:\n{}",
+            failures.len(),
+            failures.join("\n")
+        );
     }
 }

@@ -5,7 +5,9 @@
 //! treated 'u' after 'q' (the "qu" onset) and 'i' after 'g' before a vowel
 //! (the "gi" onset) as vowel nucleus candidates.
 
-use vi_core::{CompositionEngine, InputEvent, InputMethod, Key, Modifiers, StandardEngine, StateTransition};
+use vi_core::{
+    CompositionEngine, InputEvent, InputMethod, Key, Modifiers, StandardEngine, StateTransition,
+};
 
 fn telex() -> StandardEngine {
     StandardEngine::new(InputMethod::Telex)

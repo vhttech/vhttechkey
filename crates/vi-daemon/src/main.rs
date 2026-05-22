@@ -26,9 +26,7 @@ use tracing::{error, info, warn};
 use vi_config::Config;
 use vi_core::{CompositionEngine, InputEvent, InputMethod, StandardEngine};
 use vi_daemon::{
-    dbus_service,
-    detect,
-    event_loop,
+    dbus_service, detect, event_loop,
     ipc::{self, Request, Response},
     signal::{save_snapshot, wait_for_sigterm, PreeditSnapshot},
     watchdog,
@@ -42,9 +40,7 @@ use vi_daemon::{
 fn load_startup_config() -> Config {
     let path = std::env::var_os("XDG_CONFIG_HOME")
         .map(std::path::PathBuf::from)
-        .or_else(|| {
-            std::env::var_os("HOME").map(|h| std::path::PathBuf::from(h).join(".config"))
-        })
+        .or_else(|| std::env::var_os("HOME").map(|h| std::path::PathBuf::from(h).join(".config")))
         .map(|base| base.join("vime").join("config.toml"));
 
     if let Some(p) = path {
@@ -106,12 +102,11 @@ async fn main() {
     // If RUST_LOG is set (e.g. via systemd debug.conf override), honour it
     // directly so crate-level debug directives aren't masked by the hard-coded
     // info fallbacks below.
-    let log_filter = tracing_subscriber::EnvFilter::try_from_default_env()
-        .unwrap_or_else(|_| {
-            tracing_subscriber::EnvFilter::new(
-                "vi_daemon=info,vi_ibus=info,vi_fcitx5=info,vi_wayland=info,vi_x11=info",
-            )
-        });
+    let log_filter = tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| {
+        tracing_subscriber::EnvFilter::new(
+            "vi_daemon=info,vi_ibus=info,vi_fcitx5=info,vi_wayland=info,vi_x11=info",
+        )
+    });
     tracing_subscriber::fmt().with_env_filter(log_filter).init();
 
     info!("vi-daemon starting");
@@ -136,8 +131,10 @@ async fn main() {
     let dict_arc = dictionary::load_dictionary_arc();
     let spell_opts = dictionary::spell_options_from_config(&startup_config, Some(dict_arc));
 
-    let engine: Arc<Mutex<StandardEngine>> =
-        Arc::new(Mutex::new(StandardEngine::with_spell(initial_method, spell_opts)));
+    let engine: Arc<Mutex<StandardEngine>> = Arc::new(Mutex::new(StandardEngine::with_spell(
+        initial_method,
+        spell_opts,
+    )));
 
     // Channel: backends push InputEvents here; the event loop drains them.
     let (tx, rx) = mpsc::channel::<InputEvent>(256);
@@ -151,7 +148,16 @@ async fn main() {
     let default_commit_mode = startup_config.ibus.commit_mode;
 
     // Auto-detect and connect the backend.
-    let (kind, backend) = match detect::detect_and_connect(rt, tx.clone(), engine.clone(), force_preedit_mode, force_chrome_direct, default_commit_mode).await {
+    let (kind, backend) = match detect::detect_and_connect(
+        rt,
+        tx.clone(),
+        engine.clone(),
+        force_preedit_mode,
+        force_chrome_direct,
+        default_commit_mode,
+    )
+    .await
+    {
         Ok(pair) => pair,
         Err(e) => {
             error!("No IME backend available: {e}");
@@ -270,9 +276,7 @@ async fn main() {
                     message: format!("Unknown method: {method}"),
                 },
             },
-            Request::SetKeyBindings { bindings } => {
-                ipc::apply_key_bindings(&config_ipc, bindings)
-            }
+            Request::SetKeyBindings { bindings } => ipc::apply_key_bindings(&config_ipc, bindings),
             Request::Shutdown => {
                 info!("Shutdown requested via IPC");
                 std::process::exit(0);
@@ -281,7 +285,11 @@ async fn main() {
     };
 
     let socket_path = ipc::socket_path();
-    let ipc_handle = tokio::spawn(ipc::serve(socket_path, ipc_handler, Duration::from_secs(30)));
+    let ipc_handle = tokio::spawn(ipc::serve(
+        socket_path,
+        ipc_handler,
+        Duration::from_secs(30),
+    ));
 
     // Notify systemd and start watchdog.
     watchdog::notify_ready();
@@ -307,7 +315,11 @@ async fn main() {
         (preedit, method)
     };
     let cursor = preedit.chars().count();
-    let snap = PreeditSnapshot { preedit, cursor, method };
+    let snap = PreeditSnapshot {
+        preedit,
+        cursor,
+        method,
+    };
     save_snapshot(snap).await;
     shutdown_tx.send(()).ok();
 

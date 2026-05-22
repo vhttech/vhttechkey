@@ -8,8 +8,7 @@ use vi_config::Config;
 use vi_core::{SpellOptions, VietnameseDict};
 
 /// The dictionary bundled into the binary at compile time.
-static EMBEDDED_DICT: &[u8] =
-    include_bytes!("../../../data/dictionaries/vietnamese.cm.dict");
+static EMBEDDED_DICT: &[u8] = include_bytes!("../../../data/dictionaries/vietnamese.cm.dict");
 
 /// Load the dictionary.
 ///
@@ -46,12 +45,18 @@ pub fn load_dictionary_arc() -> Arc<VietnameseDict> {
 
     let dict = VietnameseDict::load_from_reader(Cursor::new(EMBEDDED_DICT))
         .expect("embedded dictionary is always valid UTF-8");
-    info!("Loaded embedded Vietnamese dictionary ({} entries)", dict.len());
+    info!(
+        "Loaded embedded Vietnamese dictionary ({} entries)",
+        dict.len()
+    );
     Arc::new(dict)
 }
 
 /// Build [`SpellOptions`] from the active profile and an optionally loaded dictionary.
-pub fn spell_options_from_config(cfg: &Config, dictionary: Option<Arc<VietnameseDict>>) -> SpellOptions {
+pub fn spell_options_from_config(
+    cfg: &Config,
+    dictionary: Option<Arc<VietnameseDict>>,
+) -> SpellOptions {
     let sc = cfg
         .profiles
         .get(&cfg.active_profile)

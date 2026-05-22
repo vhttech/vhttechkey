@@ -15,7 +15,9 @@
 //!   C) Tone-before-consonant-coda: type vowel+tone, then add a consonant coda
 //!      (e.g. a+s+n → "án"); or add the coda first then the tone (a+n+s → "án").
 
-use vi_core::{CompositionEngine, InputEvent, InputMethod, Key, Modifiers, StandardEngine, StateTransition};
+use vi_core::{
+    CompositionEngine, InputEvent, InputMethod, Key, Modifiers, StandardEngine, StateTransition,
+};
 
 fn telex() -> StandardEngine {
     StandardEngine::new(InputMethod::Telex)
@@ -48,29 +50,49 @@ fn type_and_commit(keys: &str) -> String {
 // The tone key is typed AFTER the vowel form is already set.
 
 #[test]
-fn double_vowel_oo_then_sac()   { assert_eq!(type_and_commit("oos"), "ố"); }
+fn double_vowel_oo_then_sac() {
+    assert_eq!(type_and_commit("oos"), "ố");
+}
 #[test]
-fn double_vowel_oo_then_huyen() { assert_eq!(type_and_commit("oof"), "ồ"); }
+fn double_vowel_oo_then_huyen() {
+    assert_eq!(type_and_commit("oof"), "ồ");
+}
 #[test]
-fn double_vowel_oo_then_hoi()   { assert_eq!(type_and_commit("oor"), "ổ"); }
+fn double_vowel_oo_then_hoi() {
+    assert_eq!(type_and_commit("oor"), "ổ");
+}
 #[test]
-fn double_vowel_oo_then_nga()   { assert_eq!(type_and_commit("oox"), "ỗ"); }
+fn double_vowel_oo_then_nga() {
+    assert_eq!(type_and_commit("oox"), "ỗ");
+}
 #[test]
-fn double_vowel_oo_then_nang()  { assert_eq!(type_and_commit("ooj"), "ộ"); }
+fn double_vowel_oo_then_nang() {
+    assert_eq!(type_and_commit("ooj"), "ộ");
+}
 
 #[test]
-fn double_vowel_ee_then_sac()   { assert_eq!(type_and_commit("ees"), "ế"); }
+fn double_vowel_ee_then_sac() {
+    assert_eq!(type_and_commit("ees"), "ế");
+}
 #[test]
-fn double_vowel_ee_then_huyen() { assert_eq!(type_and_commit("eef"), "ề"); }
+fn double_vowel_ee_then_huyen() {
+    assert_eq!(type_and_commit("eef"), "ề");
+}
 
 #[test]
-fn double_vowel_aa_then_sac()   { assert_eq!(type_and_commit("aas"), "ấ"); }
+fn double_vowel_aa_then_sac() {
+    assert_eq!(type_and_commit("aas"), "ấ");
+}
 #[test]
-fn double_vowel_aa_then_huyen() { assert_eq!(type_and_commit("aaf"), "ầ"); }
+fn double_vowel_aa_then_huyen() {
+    assert_eq!(type_and_commit("aaf"), "ầ");
+}
 
 /// uw→ư is a vowel-form doubling (u+w); tone applied after.
 #[test]
-fn double_vowel_uw_then_sac()   { assert_eq!(type_and_commit("uws"), "ứ"); }
+fn double_vowel_uw_then_sac() {
+    assert_eq!(type_and_commit("uws"), "ứ");
+}
 
 // ── B: Tone-before-vowel-cluster ─────────────────────────────────────────────
 //
@@ -79,31 +101,53 @@ fn double_vowel_uw_then_sac()   { assert_eq!(type_and_commit("uws"), "ứ"); }
 // was placed on the pre-form vowel must migrate to the post-form vowel.
 
 #[test]
-fn tone_before_aw_sac()   { assert_eq!(type_and_commit("asw"), "ắ"); }
+fn tone_before_aw_sac() {
+    assert_eq!(type_and_commit("asw"), "ắ");
+}
 #[test]
-fn tone_before_aw_huyen() { assert_eq!(type_and_commit("afw"), "ằ"); }
+fn tone_before_aw_huyen() {
+    assert_eq!(type_and_commit("afw"), "ằ");
+}
 #[test]
-fn tone_before_aw_hoi()   { assert_eq!(type_and_commit("arw"), "ẳ"); }
+fn tone_before_aw_hoi() {
+    assert_eq!(type_and_commit("arw"), "ẳ");
+}
 #[test]
-fn tone_before_aw_nga()   { assert_eq!(type_and_commit("axw"), "ẵ"); }
+fn tone_before_aw_nga() {
+    assert_eq!(type_and_commit("axw"), "ẵ");
+}
 #[test]
-fn tone_before_aw_nang()  { assert_eq!(type_and_commit("ajw"), "ặ"); }
+fn tone_before_aw_nang() {
+    assert_eq!(type_and_commit("ajw"), "ặ");
+}
 
 #[test]
-fn tone_before_ow_sac()   { assert_eq!(type_and_commit("osw"), "ớ"); }
+fn tone_before_ow_sac() {
+    assert_eq!(type_and_commit("osw"), "ớ");
+}
 #[test]
-fn tone_before_ow_huyen() { assert_eq!(type_and_commit("ofw"), "ờ"); }
+fn tone_before_ow_huyen() {
+    assert_eq!(type_and_commit("ofw"), "ờ");
+}
 
 #[test]
-fn tone_before_uw_sac()   { assert_eq!(type_and_commit("usw"), "ứ"); }
+fn tone_before_uw_sac() {
+    assert_eq!(type_and_commit("usw"), "ứ");
+}
 #[test]
-fn tone_before_uw_huyen() { assert_eq!(type_and_commit("ufw"), "ừ"); }
+fn tone_before_uw_huyen() {
+    assert_eq!(type_and_commit("ufw"), "ừ");
+}
 
 /// Second 'e' transforms e→ê; tone typed between the two 'e' presses.
 #[test]
-fn tone_before_ee_cluster_sac()   { assert_eq!(type_and_commit("ese"), "ế"); }
+fn tone_before_ee_cluster_sac() {
+    assert_eq!(type_and_commit("ese"), "ế");
+}
 #[test]
-fn tone_before_ee_cluster_huyen() { assert_eq!(type_and_commit("efe"), "ề"); }
+fn tone_before_ee_cluster_huyen() {
+    assert_eq!(type_and_commit("efe"), "ề");
+}
 
 // ── C: Tone-before-consonant-coda ────────────────────────────────────────────
 //
@@ -217,29 +261,46 @@ fn aw_still_gives_a_breve() {
 // precedes it.
 
 #[test]
-fn thuaw_gives_thua_level() { assert_eq!(type_and_commit("thuaw"), "thưa"); }
+fn thuaw_gives_thua_level() {
+    assert_eq!(type_and_commit("thuaw"), "thưa");
+}
 #[test]
-fn chuawx_gives_chua_nga() { assert_eq!(type_and_commit("chuawx"), "chữa"); }
+fn chuawx_gives_chua_nga() {
+    assert_eq!(type_and_commit("chuawx"), "chữa");
+}
 #[test]
-fn thuaws_gives_thua_sac() { assert_eq!(type_and_commit("thuaws"), "thứa"); }
+fn thuaws_gives_thua_sac() {
+    assert_eq!(type_and_commit("thuaws"), "thứa");
+}
 
 // nuaxw pattern (tone on u BEFORE w transform)
 #[test]
-fn nuaxw_nga_before_w() { assert_eq!(type_and_commit("nuaxw"), "nữa"); }
+fn nuaxw_nga_before_w() {
+    assert_eq!(type_and_commit("nuaxw"), "nữa");
+}
 
 // nướng full word via uow path (u + ow → ươ with consonant onset)
 #[test]
-fn nuowsng_gives_nuong_sac() { assert_eq!(type_and_commit("nuowsng"), "nướng"); }
+fn nuowsng_gives_nuong_sac() {
+    assert_eq!(type_and_commit("nuowsng"), "nướng");
+}
 
 // được (dduwowcj) — same encoding as the existing Telex unit test
 #[test]
-fn duoc_nang() { assert_eq!(type_and_commit("dduwowcj"), "được"); }
+fn duoc_nang() {
+    assert_eq!(type_and_commit("dduwowcj"), "được");
+}
 
 // Common words
 #[test]
-fn mua_level() { assert_eq!(type_and_commit("muaw"), "mưa"); }
+fn mua_level() {
+    assert_eq!(type_and_commit("muaw"), "mưa");
+}
 #[test]
-fn bua_nga() { assert_eq!(type_and_commit("buawx"), "bữa"); }
+fn bua_nga() {
+    assert_eq!(type_and_commit("buawx"), "bữa");
+}
 #[test]
-fn cua_level() { assert_eq!(type_and_commit("cuaw"), "cưa"); }
-
+fn cua_level() {
+    assert_eq!(type_and_commit("cuaw"), "cưa");
+}

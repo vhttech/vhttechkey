@@ -263,7 +263,10 @@ fn preedit_empty_after_space_commit() {
         dispatch(&backend, t, &ev);
         let _ = engine.process(&key_up(ch));
     }
-    assert!(!engine.preedit().is_empty(), "preedit must be non-empty before space");
+    assert!(
+        !engine.preedit().is_empty(),
+        "preedit must be non-empty before space"
+    );
 
     let space = key_down(' ');
     let t = engine.process(&space);
@@ -273,7 +276,11 @@ fn preedit_empty_after_space_commit() {
         engine.preedit().is_empty(),
         "preedit must be empty after space commits the word"
     );
-    assert_eq!(backend.any_commit_count(), 1, "exactly one commit after space");
+    assert_eq!(
+        backend.any_commit_count(),
+        1,
+        "exactly one commit after space"
+    );
 }
 
 /// `update_preedit` is never called for non-composition keystrokes such as
@@ -331,11 +338,7 @@ fn backspace_mid_word_calls_update_preedit_not_commit() {
         preedit_calls_before + 1,
         "backspace on non-empty preedit must call update_preedit once more"
     );
-    assert_eq!(
-        backend.commit_count(),
-        0,
-        "backspace must not call commit"
-    );
+    assert_eq!(backend.commit_count(), 0, "backspace must not call commit");
     assert_eq!(
         backend.commit_replacing_preedit_count(),
         0,

@@ -109,7 +109,11 @@ fn cmd_fixtures() -> ExitCode {
     println!("Built-in fixture sessions: {}", fixtures.len());
     for f in &fixtures {
         let result = replay_session(f);
-        let status = if result == f.expected_commits { "PASS" } else { "FAIL" };
+        let status = if result == f.expected_commits {
+            "PASS"
+        } else {
+            "FAIL"
+        };
         println!("  [{status}] {} ({:?})", f.name, f.method);
     }
     // Check that fixtures round-trip through assert_replay.
@@ -120,5 +124,9 @@ fn cmd_fixtures() -> ExitCode {
             ok = false;
         }
     }
-    if ok { ExitCode::SUCCESS } else { ExitCode::FAILURE }
+    if ok {
+        ExitCode::SUCCESS
+    } else {
+        ExitCode::FAILURE
+    }
 }

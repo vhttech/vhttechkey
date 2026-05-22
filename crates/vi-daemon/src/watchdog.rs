@@ -130,9 +130,12 @@ fn sd_notify_abstract(msg: &str, abstract_name: &str) -> bool {
         warn!("sd_notify: invalid abstract socket name");
         return false;
     };
-    if let Err(e) =
-        socket::sendto(fd.as_raw_fd(), msg.as_bytes(), &addr, socket::MsgFlags::empty())
-    {
+    if let Err(e) = socket::sendto(
+        fd.as_raw_fd(),
+        msg.as_bytes(),
+        &addr,
+        socket::MsgFlags::empty(),
+    ) {
         warn!("sd_notify abstract send failed: {e}");
         false
     } else {

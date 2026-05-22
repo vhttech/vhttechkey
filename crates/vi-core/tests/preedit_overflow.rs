@@ -6,7 +6,9 @@
 //! MAX_CODEPOINTS (64) chars and a composition rule fired — reducing the count —
 //! the old check returned `Overflow` and caused a spurious commit.
 
-use vi_core::{CompositionEngine, InputEvent, InputMethod, Key, Modifiers, StandardEngine, StateTransition};
+use vi_core::{
+    CompositionEngine, InputEvent, InputMethod, Key, Modifiers, StandardEngine, StateTransition,
+};
 
 const MAX: usize = 64;
 
@@ -50,7 +52,10 @@ fn overflow_at_max_buffer_size_is_handled_gracefully() {
     // outcomes depending on whether a rule fires or the composition is invalid.
     // The key invariant: no panic, no data loss, always a valid state transition.
     assert!(
-        matches!(t, StateTransition::CommitThenPreedit(_, _) | StateTransition::PreeditUpdated(_)),
+        matches!(
+            t,
+            StateTransition::CommitThenPreedit(_, _) | StateTransition::PreeditUpdated(_)
+        ),
         "overflow must produce a valid state transition; got {t:?}"
     );
 }
@@ -67,7 +72,10 @@ fn rule_one_below_max_also_works() {
     // Either the rule fires (PreeditUpdated) or overflow commits (CommitThenPreedit);
     // either way the result must be a valid transition.
     assert!(
-        matches!(t, StateTransition::PreeditUpdated(_) | StateTransition::CommitThenPreedit(_, _)),
+        matches!(
+            t,
+            StateTransition::PreeditUpdated(_) | StateTransition::CommitThenPreedit(_, _)
+        ),
         "near-MAX key must produce a valid transition: {t:?}"
     );
 }

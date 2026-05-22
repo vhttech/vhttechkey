@@ -44,9 +44,7 @@ fn main() {
     }
 
     // Measurement.
-    let mut times: Vec<u128> = (0..ITERS)
-        .map(|_| measure_ns(&mut engine, &evs))
-        .collect();
+    let mut times: Vec<u128> = (0..ITERS).map(|_| measure_ns(&mut engine, &evs)).collect();
     times.sort_unstable();
 
     let p50 = times[ITERS * 50 / 100];
@@ -60,15 +58,11 @@ fn main() {
 
     let mut fail = false;
     if p50 > P50_LIMIT_NS {
-        eprintln!(
-            "FAIL: p50 {p50}ns exceeds {P50_LIMIT_NS}ns threshold (1ms)"
-        );
+        eprintln!("FAIL: p50 {p50}ns exceeds {P50_LIMIT_NS}ns threshold (1ms)");
         fail = true;
     }
     if p99 > P99_LIMIT_NS {
-        eprintln!(
-            "FAIL: p99 {p99}ns exceeds {P99_LIMIT_NS}ns threshold (5ms)"
-        );
+        eprintln!("FAIL: p99 {p99}ns exceeds {P99_LIMIT_NS}ns threshold (5ms)");
         fail = true;
     }
     if fail {

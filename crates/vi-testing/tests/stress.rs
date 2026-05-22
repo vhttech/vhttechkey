@@ -16,7 +16,8 @@ struct Lcg(u64);
 
 impl Lcg {
     fn next(&mut self) -> u64 {
-        self.0 = self.0
+        self.0 = self
+            .0
             .wrapping_mul(6_364_136_223_846_793_005)
             .wrapping_add(1_442_695_040_888_963_407);
         self.0
@@ -31,8 +32,9 @@ impl Lcg {
 /// must be valid NFC.
 #[test]
 fn stress_telex_100k_no_panic_always_nfc() {
-    let telex_chars: &[char] =
-        &['a', 'e', 'i', 'o', 'u', 'y', 'd', 's', 'f', 'r', 'x', 'j', 'w', 'z', 'n', 't'];
+    let telex_chars: &[char] = &[
+        'a', 'e', 'i', 'o', 'u', 'y', 'd', 's', 'f', 'r', 'x', 'j', 'w', 'z', 'n', 't',
+    ];
     let mut rng = Lcg(0xDEAD_BEEF_CAFE_BABEu64);
 
     for _ in 0..100_000 {
@@ -68,8 +70,9 @@ fn stress_telex_100k_no_panic_always_nfc() {
 /// 10 000 random VNI sequences — no panics, all output NFC.
 #[test]
 fn stress_vni_10k_no_panic() {
-    let vni_chars: &[char] =
-        &['a', 'e', 'i', 'o', 'u', 'y', 'd', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+    let vni_chars: &[char] = &[
+        'a', 'e', 'i', 'o', 'u', 'y', 'd', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+    ];
     let mut rng = Lcg(0x1234_5678_9ABC_DEF0u64);
 
     for _ in 0..10_000 {
@@ -110,15 +113,15 @@ fn stress_unicode_pipeline_never_panics() {
         "hello",
         "tôi",
         "Việt Nam",
-        "\u{0300}",                         // lone combining grave (rejected, not panic)
-        "a\u{0300}",                         // NFD a + grave
-        "\u{1F600}",                         // emoji
-        "\u{1F468}\u{200D}\u{1F469}",        // ZWJ sequence
-        "中文",                               // CJK
-        "a\u{0302}\u{0323}",                 // multi-combining
-        &"a".repeat(1000),                   // long ASCII
-        "\u{FFFE}",                          // BOM-like
-        "ỡ",                                 // precomposed Vietnamese
+        "\u{0300}",                   // lone combining grave (rejected, not panic)
+        "a\u{0300}",                  // NFD a + grave
+        "\u{1F600}",                  // emoji
+        "\u{1F468}\u{200D}\u{1F469}", // ZWJ sequence
+        "中文",                       // CJK
+        "a\u{0302}\u{0323}",          // multi-combining
+        &"a".repeat(1000),            // long ASCII
+        "\u{FFFE}",                   // BOM-like
+        "ỡ",                          // precomposed Vietnamese
     ];
 
     for s in test_strings {

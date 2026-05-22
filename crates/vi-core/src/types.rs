@@ -54,7 +54,10 @@ impl PreeditText {
             .last()
             .map(|(i, c)| i + c.len_utf8())
             .unwrap_or(0);
-        Self { text, cursor_byte_offset }
+        Self {
+            text,
+            cursor_byte_offset,
+        }
     }
 
     pub fn as_str(&self) -> &str {
@@ -119,11 +122,17 @@ impl Modifiers {
     }
 
     pub fn shift() -> Self {
-        Self { shift: true, ..Default::default() }
+        Self {
+            shift: true,
+            ..Default::default()
+        }
     }
 
     pub fn altgr() -> Self {
-        Self { altgr: true, ..Default::default() }
+        Self {
+            altgr: true,
+            ..Default::default()
+        }
     }
 }
 
@@ -189,7 +198,10 @@ pub enum InputEvent {
     /// `cursor` is a UTF-8 byte offset into `text` indicating the position of
     /// the insertion cursor.  Emitted by backends that support surrounding-text
     /// queries (Wayland text-input-v3, XIM SET_IC_VALUES extension).
-    SurroundingText { text: String, cursor: usize },
+    SurroundingText {
+        text: String,
+        cursor: usize,
+    },
 }
 
 /// What the engine decided to do after processing one event.

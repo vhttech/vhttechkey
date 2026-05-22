@@ -16,7 +16,11 @@ mod tests {
             "char_cursor must return char count (4), not byte length ({})",
             s.len()
         );
-        assert_ne!(s.len(), cursor.0, "sanity: byte length must differ from char count");
+        assert_ne!(
+            s.len(),
+            cursor.0,
+            "sanity: byte length must differ from char count"
+        );
     }
 
     #[test]

@@ -41,7 +41,7 @@ pub fn zwj_sequence_passes() {
 mod tests {
     use super::*;
     use vi_core::{
-        CompositionError, CompositionEngine, InputEvent, InputMethod, Key, Modifiers,
+        CompositionEngine, CompositionError, InputEvent, InputMethod, Key, Modifiers,
         StandardEngine, StateTransition,
     };
 
@@ -66,8 +66,14 @@ mod tests {
     fn fffe_ffff_as_engine_key_no_panic() {
         for method in [InputMethod::Telex, InputMethod::Vni, InputMethod::Viqr] {
             let mut engine = StandardEngine::new(method);
-            let _ = engine.process(&InputEvent::KeyDown(Key::Char('\u{FFFE}'), Modifiers::none()));
-            let _ = engine.process(&InputEvent::KeyDown(Key::Char('\u{FFFF}'), Modifiers::none()));
+            let _ = engine.process(&InputEvent::KeyDown(
+                Key::Char('\u{FFFE}'),
+                Modifiers::none(),
+            ));
+            let _ = engine.process(&InputEvent::KeyDown(
+                Key::Char('\u{FFFF}'),
+                Modifiers::none(),
+            ));
             if let Ok(StateTransition::Commit(c) | StateTransition::CommitAndClear(c)) =
                 engine.process(&InputEvent::FocusOut)
             {
@@ -118,7 +124,13 @@ mod tests {
     /// must remain NFC with no surrogate codepoints.
     #[test]
     fn zwj_sequence_through_engine_nfc_no_surrogates() {
-        let chars = ['\u{1F468}', '\u{200D}', '\u{1F469}', '\u{200D}', '\u{1F467}'];
+        let chars = [
+            '\u{1F468}',
+            '\u{200D}',
+            '\u{1F469}',
+            '\u{200D}',
+            '\u{1F467}',
+        ];
         let mut engine = StandardEngine::new(InputMethod::Telex);
         for ch in chars {
             let _ = engine.process(&InputEvent::KeyDown(Key::Char(ch), Modifiers::none()));
@@ -128,7 +140,10 @@ mod tests {
         assert_eq!(p, nfc, "ZWJ preedit not NFC: {p:?}");
         for ch in p.chars() {
             let cp = ch as u32;
-            assert!(!(0xD800..=0xDFFF).contains(&cp), "surrogate U+{cp:04X} in ZWJ preedit");
+            assert!(
+                !(0xD800..=0xDFFF).contains(&cp),
+                "surrogate U+{cp:04X} in ZWJ preedit"
+            );
         }
     }
 
@@ -136,7 +151,10 @@ mod tests {
     #[test]
     fn fffe_mixed_with_vietnamese_nfc() {
         let mut engine = StandardEngine::new(InputMethod::Telex);
-        let _ = engine.process(&InputEvent::KeyDown(Key::Char('\u{FFFE}'), Modifiers::none()));
+        let _ = engine.process(&InputEvent::KeyDown(
+            Key::Char('\u{FFFE}'),
+            Modifiers::none(),
+        ));
         let _ = engine.process(&InputEvent::KeyDown(Key::Char('t'), Modifiers::none()));
         let _ = engine.process(&InputEvent::KeyDown(Key::Char('o'), Modifiers::none()));
         let _ = engine.process(&InputEvent::KeyDown(Key::Char('o'), Modifiers::none())); // "oo" → "ô"
@@ -146,7 +164,10 @@ mod tests {
         assert_eq!(p, nfc, "mixed FFFE+Vietnamese preedit not NFC: {p:?}");
         for ch in p.chars() {
             let cp = ch as u32;
-            assert!(!(0xD800..=0xDFFF).contains(&cp), "surrogate U+{cp:04X} in preedit");
+            assert!(
+                !(0xD800..=0xDFFF).contains(&cp),
+                "surrogate U+{cp:04X} in preedit"
+            );
         }
     }
 }

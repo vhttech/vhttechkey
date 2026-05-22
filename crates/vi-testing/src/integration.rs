@@ -74,7 +74,11 @@ impl IntegrationHarness {
         // Inject an implicit KeyUp after every KeyDown(Char) so the repeat-dedup
         // guard is cleared between consecutive same-character presses.
         if let InputEvent::KeyDown(Key::Char(ch), _) = event {
-            let _ = self.engine.lock().unwrap().process(&InputEvent::KeyUp(Key::Char(ch)));
+            let _ = self
+                .engine
+                .lock()
+                .unwrap()
+                .process(&InputEvent::KeyUp(Key::Char(ch)));
         }
     }
 

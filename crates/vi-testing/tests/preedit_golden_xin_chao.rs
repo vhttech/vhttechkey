@@ -23,7 +23,9 @@ fn key_up(ch: char) -> InputEvent {
 
 /// Type a character, reset the repeat guard with KeyUp, and return the transition.
 fn type_char(engine: &mut StandardEngine, ch: char) -> StateTransition {
-    let t = engine.process(&key_down(ch)).expect("engine must not error");
+    let t = engine
+        .process(&key_down(ch))
+        .expect("engine must not error");
     let _ = engine.process(&key_up(ch));
     t
 }
@@ -41,7 +43,11 @@ fn golden_x_preedit_is_x() {
         matches!(t, StateTransition::PreeditUpdated(_)),
         "typing 'x' on empty preedit must produce PreeditUpdated; got {t:?}"
     );
-    assert_eq!(engine.preedit().as_str(), "x", "preedit after 'x' must be \"x\"");
+    assert_eq!(
+        engine.preedit().as_str(),
+        "x",
+        "preedit after 'x' must be \"x\""
+    );
 }
 
 #[test]
@@ -54,7 +60,11 @@ fn golden_xi_preedit_is_xi() {
         matches!(t, StateTransition::PreeditUpdated(_)),
         "typing 'i' after 'x' must produce PreeditUpdated; got {t:?}"
     );
-    assert_eq!(engine.preedit().as_str(), "xi", "preedit after 'x','i' must be \"xi\"");
+    assert_eq!(
+        engine.preedit().as_str(),
+        "xi",
+        "preedit after 'x','i' must be \"xi\""
+    );
 }
 
 #[test]
@@ -68,7 +78,11 @@ fn golden_xin_preedit_is_xin() {
         matches!(t, StateTransition::PreeditUpdated(_)),
         "typing 'n' after 'xi' must produce PreeditUpdated; got {t:?}"
     );
-    assert_eq!(engine.preedit().as_str(), "xin", "preedit after 'x','i','n' must be \"xin\"");
+    assert_eq!(
+        engine.preedit().as_str(),
+        "xin",
+        "preedit after 'x','i','n' must be \"xin\""
+    );
 }
 
 // ── Golden: space commits "xin" ───────────────────────────────────────────────
@@ -81,7 +95,9 @@ fn golden_space_commits_xin() {
     type_char(&mut engine, 'n');
 
     let space = InputEvent::KeyDown(Key::Char(' '), Modifiers::none());
-    let t = engine.process(&space).expect("engine must not error on space");
+    let t = engine
+        .process(&space)
+        .expect("engine must not error on space");
 
     assert!(
         matches!(t, StateTransition::CommitThenPassThrough(_)),
@@ -97,7 +113,10 @@ fn golden_space_commits_xin() {
         );
     }
 
-    assert!(engine.preedit().is_empty(), "preedit must be empty after commit on space");
+    assert!(
+        engine.preedit().is_empty(),
+        "preedit must be empty after commit on space"
+    );
 }
 
 // ── Golden: "chao" — second word builds incrementally ────────────────────────
@@ -118,7 +137,11 @@ fn golden_c_preedit_is_c() {
         matches!(t, StateTransition::PreeditUpdated(_)),
         "typing 'c' after space must produce PreeditUpdated; got {t:?}"
     );
-    assert_eq!(engine.preedit().as_str(), "c", "preedit after second-word 'c' must be \"c\"");
+    assert_eq!(
+        engine.preedit().as_str(),
+        "c",
+        "preedit after second-word 'c' must be \"c\""
+    );
 }
 
 #[test]

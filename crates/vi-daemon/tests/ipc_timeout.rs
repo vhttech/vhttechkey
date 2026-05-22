@@ -19,8 +19,12 @@ async fn test_ipc_read_timeout_closes_connection() {
     let server_path = path.clone();
     // Use a 1-second timeout so the test completes quickly.
     tokio::spawn(async move {
-        vi_daemon::ipc::serve(server_path, |_req: Request| Response::Ok, Duration::from_secs(1))
-            .await;
+        vi_daemon::ipc::serve(
+            server_path,
+            |_req: Request| Response::Ok,
+            Duration::from_secs(1),
+        )
+        .await;
     });
 
     tokio::time::sleep(Duration::from_millis(20)).await;
@@ -29,7 +33,10 @@ async fn test_ipc_read_timeout_closes_connection() {
 
     // Send partial JSON without a terminating newline — the server will never
     // see a complete line and must time out.
-    stream.write_all(b"{\"cmd\":\"status\"").await.expect("write partial");
+    stream
+        .write_all(b"{\"cmd\":\"status\"")
+        .await
+        .expect("write partial");
 
     // Hold the write half alive so the client does not send EOF first.
     let (reader, _writer) = stream.into_split();
@@ -41,9 +48,9 @@ async fn test_ipc_read_timeout_closes_connection() {
     match result {
         // EOF (None) or a read error both indicate the server closed its end.
         Ok(Ok(None)) | Ok(Err(_)) => {}
-        Err(_outer_timeout) => panic!(
-            "server did not close the connection within 4 s (read-timeout not enforced)"
-        ),
+        Err(_outer_timeout) => {
+            panic!("server did not close the connection within 4 s (read-timeout not enforced)")
+        }
         Ok(Ok(Some(line))) => panic!("unexpected line from server: {line}"),
     }
 

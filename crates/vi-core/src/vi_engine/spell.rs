@@ -31,16 +31,7 @@ const CV_MATRIX: &[&[usize]] = &[
     &[7],
 ];
 
-const VC_MATRIX: &[&[usize]] = &[
-    &[0, 2],
-    &[0, 1, 2],
-    &[1, 2],
-    &[1, 2],
-    &[],
-    &[],
-    &[3],
-    &[4],
-];
+const VC_MATRIX: &[&[usize]] = &[&[0, 2], &[0, 1, 2], &[1, 2], &[1, 2], &[], &[], &[3], &[4]];
 
 /// CVC lookup (word tokens are space-separated within each row string).
 fn lookup(

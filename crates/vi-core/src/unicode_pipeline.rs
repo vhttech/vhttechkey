@@ -207,7 +207,6 @@ mod tests {
         );
     }
 
-
     #[test]
     fn zwj_sequence_passthrough() {
         // Zero-width joiners in emoji sequences should pass through unchanged.
@@ -254,7 +253,10 @@ mod tests {
     fn latin1_supplement_above_c1_is_not_rejected() {
         // U+00A0 (NBSP) and above are NOT C1 controls; they should pass.
         let input = "\u{00A0}";
-        assert!(UnicodePipeline::process(input).is_ok(), "NBSP must not be rejected");
+        assert!(
+            UnicodePipeline::process(input).is_ok(),
+            "NBSP must not be rejected"
+        );
     }
 
     #[test]

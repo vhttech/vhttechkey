@@ -11,7 +11,11 @@ use zbus::{interface, Connection};
 #[derive(Debug, Clone)]
 pub enum IbusCall {
     CommitText(String),
-    UpdatePreedit { text: String, cursor: u32, visible: bool },
+    UpdatePreedit {
+        text: String,
+        cursor: u32,
+        visible: bool,
+    },
 }
 
 // ── D-Bus interface implementation ───────────────────────────────────────────
@@ -27,10 +31,11 @@ impl MockEngineServer {
     }
 
     fn update_preedit_text(&self, text: String, cursor: u32, visible: bool) {
-        self.calls
-            .lock()
-            .unwrap()
-            .push(IbusCall::UpdatePreedit { text, cursor, visible });
+        self.calls.lock().unwrap().push(IbusCall::UpdatePreedit {
+            text,
+            cursor,
+            visible,
+        });
     }
 }
 
@@ -50,7 +55,10 @@ impl MockIbusDaemon {
     pub async fn start() -> Option<Self> {
         let calls = Arc::new(Mutex::new(Vec::<IbusCall>::new()));
         match Self::make_connection(Arc::clone(&calls)).await {
-            Ok(conn) => Some(Self { calls, conn: Arc::new(Mutex::new(Some(conn))) }),
+            Ok(conn) => Some(Self {
+                calls,
+                conn: Arc::new(Mutex::new(Some(conn))),
+            }),
             Err(e) => {
                 eprintln!("SKIP MockIbusDaemon: {e}");
                 None

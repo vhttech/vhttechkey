@@ -3,15 +3,15 @@
 use crate::vi_engine::compose::{
     self, break_composition, extract_last_syllable, extract_last_word,
     extract_last_word_with_punctuation_marks, find_last_appending_trans,
-    generate_fallback_transformations, generate_transformations, is_valid,
-    new_appending_trans, refresh_last_tone_target, reg_uoh_tail_matches,
+    generate_fallback_transformations, generate_transformations, is_valid, new_appending_trans,
+    refresh_last_tone_target, reg_uoh_tail_matches,
 };
 use crate::vi_engine::flat;
-use crate::vi_engine::rules::{parsed_telex, parsed_vni, parsed_viqr};
+use crate::vi_engine::rules::{parsed_telex, parsed_viqr, parsed_vni};
 use crate::vi_engine::text::can_process_key;
 use crate::vi_engine::types::{
-    EngineMode, EFREE_TONE_MARKING, ENGLISH_MODE, ESTDFLAGS, ESTANDARD_TONE_STYLE, FULL_TEXT,
-    IN_REVERSE_ORDER, LOWERCASE_MODE, ParsedInputMethod, PUNCTUATION_MODE, TONE_LESS, Trans,
+    EngineMode, ParsedInputMethod, Trans, EFREE_TONE_MARKING, ENGLISH_MODE, ESTANDARD_TONE_STYLE,
+    ESTDFLAGS, FULL_TEXT, IN_REVERSE_ORDER, LOWERCASE_MODE, PUNCTUATION_MODE, TONE_LESS,
     VIETNAMESE_MODE,
 };
 
@@ -39,7 +39,12 @@ impl ViEngine {
     }
 
     pub(crate) fn with_method(input_method: ParsedInputMethod, flags: u32) -> Self {
-        Self { composition: Vec::new(), input_method, flags, key_log: Vec::new() }
+        Self {
+            composition: Vec::new(),
+            input_method,
+            flags,
+            key_log: Vec::new(),
+        }
     }
 
     pub fn set_flag(&mut self, flags: u32) {
@@ -108,11 +113,20 @@ impl ViEngine {
         is_upper_case: bool,
     ) -> Vec<Trans> {
         let applicable = self.applicable_rules(lower_key);
-        let mut transformations =
-            generate_transformations(composition, &applicable, self.flags, lower_key, is_upper_case);
+        let mut transformations = generate_transformations(
+            composition,
+            &applicable,
+            self.flags,
+            lower_key,
+            is_upper_case,
+        );
         if transformations.is_empty() {
-            transformations =
-                generate_fallback_transformations(composition, &applicable, lower_key, is_upper_case);
+            transformations = generate_fallback_transformations(
+                composition,
+                &applicable,
+                lower_key,
+                is_upper_case,
+            );
             let mut new_composition = composition.to_vec();
             new_composition.extend(transformations.clone());
             if let Some(vt) = self.apply_uow_shortcut(&new_composition) {
@@ -129,9 +143,18 @@ impl ViEngine {
         transformations
     }
 
-    fn new_composition(&mut self, composition: &[Trans], key: char, is_upper_case: bool) -> Vec<Trans> {
+    fn new_composition(
+        &mut self,
+        composition: &[Trans],
+        key: char,
+        is_upper_case: bool,
+    ) -> Vec<Trans> {
         let (previous_transformations, mut last_syllable) = extract_last_syllable(composition);
-        last_syllable.extend(self.generate_transformations_inner(&last_syllable, key, is_upper_case));
+        last_syllable.extend(self.generate_transformations_inner(
+            &last_syllable,
+            key,
+            is_upper_case,
+        ));
         let mut out = previous_transformations;
         out.extend(last_syllable);
         out
@@ -150,7 +173,10 @@ impl ViEngine {
     }
 
     pub fn can_process_key(&self, key: char) -> bool {
-        can_process_key(key.to_lowercase().next().unwrap_or(key), &self.input_method.keys)
+        can_process_key(
+            key.to_lowercase().next().unwrap_or(key),
+            &self.input_method.keys,
+        )
     }
 
     pub fn is_valid(&self, input_is_full_complete: bool) -> bool {
@@ -199,8 +225,11 @@ impl ViEngine {
             return;
         }
         if !to_vietnamese {
-            self.composition =
-                [previous.as_slice(), break_composition(&last_comb).as_slice()].concat();
+            self.composition = [
+                previous.as_slice(),
+                break_composition(&last_comb).as_slice(),
+            ]
+            .concat();
         } else {
             let mut new_comp: Vec<Trans> = Vec::new();
             for tnx in &last_comb {

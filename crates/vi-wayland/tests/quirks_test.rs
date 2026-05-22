@@ -10,7 +10,10 @@ fn hyprland_sets_buffer_preedit_updates() {
     let globals = [("hyprland_global_shortcuts_manager_v1", 1u32)];
     let q = CompositorQuirks::from_global_pairs(&globals);
     assert_eq!(q.profile, CompositorProfile::Hyprland);
-    assert!(q.buffer_preedit_updates, "Hyprland must enable buffer_preedit_updates");
+    assert!(
+        q.buffer_preedit_updates,
+        "Hyprland must enable buffer_preedit_updates"
+    );
 }
 
 /// Regression: Labwc must set buffer_preedit_updates = true for the same reason.
@@ -19,7 +22,10 @@ fn labwc_sets_buffer_preedit_updates() {
     let globals = [("labwc_options_v1", 1u32)];
     let q = CompositorQuirks::from_global_pairs(&globals);
     assert_eq!(q.profile, CompositorProfile::Labwc);
-    assert!(q.buffer_preedit_updates, "Labwc must enable buffer_preedit_updates");
+    assert!(
+        q.buffer_preedit_updates,
+        "Labwc must enable buffer_preedit_updates"
+    );
 }
 
 /// Standard and GNOME compositors must not get buffer_preedit_updates.
@@ -59,8 +65,8 @@ fn buffer_preedit_updates_path_calls_flush_after_lock_release() {
     if quirks.buffer_preedit_updates {
         ops.push("acquire_wl_lock");
         ops.push("set_preedit_string"); // im.set_preedit_string(s, cb, cb)
-        ops.push("im_commit");          // im.commit(serial)
-        // drop(wl) — must happen before self.flush() acquires wl again
+        ops.push("im_commit"); // im.commit(serial)
+                               // drop(wl) — must happen before self.flush() acquires wl again
         ops.push("drop_wl_lock");
         // self.flush() — was missing in the original bug
         ops.push("flush");
@@ -70,7 +76,10 @@ fn buffer_preedit_updates_path_calls_flush_after_lock_release() {
         ops.push("flush");
     }
 
-    assert!(ops.contains(&"flush"), "buffer_preedit_updates path must call flush(); ops={ops:?}");
+    assert!(
+        ops.contains(&"flush"),
+        "buffer_preedit_updates path must call flush(); ops={ops:?}"
+    );
 
     // Deadlock prevention: wl lock must be released before flush() re-acquires it.
     let drop_pos = ops.iter().position(|&o| o == "drop_wl_lock").unwrap();
@@ -99,11 +108,17 @@ fn with_im_path_releases_lock_before_flush() {
         ops.push("flush"); // self.flush()
     }
 
-    assert!(ops.contains(&"flush"), "with_im path must always flush; ops={ops:?}");
+    assert!(
+        ops.contains(&"flush"),
+        "with_im path must always flush; ops={ops:?}"
+    );
 
     let drop_pos = ops.iter().position(|&o| o == "drop_wl_lock").unwrap();
     let flush_pos = ops.iter().position(|&o| o == "flush").unwrap();
-    assert!(drop_pos < flush_pos, "wl lock must be released before flush()");
+    assert!(
+        drop_pos < flush_pos,
+        "wl lock must be released before flush()"
+    );
 }
 
 // ── KWin cursor-snap tests ────────────────────────────────────────────────────
@@ -171,7 +186,10 @@ fn test_gnome_empty_preedit_flush_sent() {
     assert_eq!(ops.len(), 4);
     assert_eq!(ops[0], "set_preedit_string(\"\", -1, -1)");
     assert_eq!(ops[1], "commit");
-    assert!(ops[2].contains("viê"), "commit_string must carry the preedit text");
+    assert!(
+        ops[2].contains("viê"),
+        "commit_string must carry the preedit text"
+    );
     assert_eq!(ops[3], "commit");
 }
 
@@ -348,27 +366,31 @@ fn buffer_preedit_updates_syncs_sent_commits() {
     sent_commits = shared_serial.wrapping_add(1);
     // Compositor processes preedit, sends Done.
     shared_serial = shared_serial.wrapping_add(1); // 1
-    ti_serial = ti_serial.wrapping_add(1);         // 1
+    ti_serial = ti_serial.wrapping_add(1); // 1
 
     // Call 2: buffer_preedit_updates path uses shared.serial=1,
     // then sets sent_commits = 1.wrapping_add(1) = 2.
     sent_commits = shared_serial.wrapping_add(1);
     // Compositor processes preedit, sends Done.
     shared_serial = shared_serial.wrapping_add(1); // 2
-    ti_serial = ti_serial.wrapping_add(1);         // 2
+    ti_serial = ti_serial.wrapping_add(1); // 2
 
     let _ = shared_serial; // used only for documentation clarity above
 
-    assert_eq!(sent_commits, 2,
-        "sent_commits must be 2 after two buffer-path update_preedit calls");
+    assert_eq!(
+        sent_commits, 2,
+        "sent_commits must be 2 after two buffer-path update_preedit calls"
+    );
 
     // The niri_dual_protocol guard (`sent_commits != ti_serial`) must be false
     // so that the subsequent with_im call (e.g. commit/Enter) is not dropped.
     let niri_dual_protocol = true;
     let guard_fires = niri_dual_protocol && sent_commits != ti_serial;
-    assert!(!guard_fires,
+    assert!(
+        !guard_fires,
         "with_im guard must not fire: sent_commits={sent_commits} ti_serial={ti_serial}; \
-         guard would silently drop Enter/commit");
+         guard would silently drop Enter/commit"
+    );
 }
 
 /// Baseline: without the fix, sent_commits stays at 0 and the guard fires,
@@ -381,8 +403,9 @@ fn buffer_preedit_updates_without_fix_drops_with_im() {
     let sent_commits: u32 = 0; // NOT updated by the unfixed buffer path
 
     let guard_fires = sent_commits != ti_serial;
-    assert!(guard_fires,
+    assert!(
+        guard_fires,
         "without the fix the guard fires ({sent_commits} != {ti_serial}), \
-         silently dropping subsequent with_im calls");
+         silently dropping subsequent with_im calls"
+    );
 }
-

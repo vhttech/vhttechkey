@@ -8,7 +8,7 @@ use std::path::PathBuf;
 use std::time::Duration;
 
 use vi_daemon::{
-    ipc::{Request, Response, socket_path},
+    ipc::{socket_path, Request, Response},
     signal::PreeditSnapshot,
 };
 
@@ -29,8 +29,7 @@ fn test_preedit_snapshot_round_trip() {
     let json = serde_json::to_string(&snap).expect("serialize");
     std::fs::write(&path, &json).expect("write");
     let loaded: PreeditSnapshot =
-        serde_json::from_str(&std::fs::read_to_string(&path).expect("read"))
-            .expect("deserialize");
+        serde_json::from_str(&std::fs::read_to_string(&path).expect("read")).expect("deserialize");
     std::fs::remove_file(&path).ok();
 
     assert_eq!(loaded.preedit, "việt");
@@ -60,7 +59,9 @@ fn test_ipc_request_status_serialises() {
 
 #[test]
 fn test_ipc_request_set_method_serialises() {
-    let req = Request::SetMethod { method: "vni".into() };
+    let req = Request::SetMethod {
+        method: "vni".into(),
+    };
     let json = serde_json::to_string(&req).expect("serialize");
     assert!(json.contains("vni"));
     let back: Request = serde_json::from_str(&json).expect("deserialize");
@@ -81,7 +82,9 @@ fn test_ipc_response_status_serialises() {
 
 #[test]
 fn test_ipc_response_error_serialises() {
-    let resp = Response::Error { message: "oops".into() };
+    let resp = Response::Error {
+        message: "oops".into(),
+    };
     let json = serde_json::to_string(&resp).expect("serialize");
     assert!(json.contains("oops"));
 }
@@ -194,7 +197,10 @@ async fn test_ipc_malformed_json_returns_error_no_panic() {
 
     // Connection must remain open: a valid request after the error should work.
     let valid_req = serde_json::to_string(&Request::Status).expect("serialize") + "\n";
-    writer.write_all(valid_req.as_bytes()).await.expect("write valid");
+    writer
+        .write_all(valid_req.as_bytes())
+        .await
+        .expect("write valid");
 
     let ok_line = lines.next_line().await.expect("read ok").expect("ok line");
     let ok_resp: Response = serde_json::from_str(&ok_line).expect("parse ok response");
@@ -217,7 +223,11 @@ fn test_watchdog_heartbeat_period_is_half_timeout() {
     // Mirrors the calculation in watchdog::spawn_watchdog.
     let watchdog_usec: u64 = 1_000_000; // 1 second
     let period = std::time::Duration::from_micros(watchdog_usec / 2);
-    assert_eq!(period.as_millis(), 500, "heartbeat must fire every 500 ms for a 1 s watchdog");
+    assert_eq!(
+        period.as_millis(),
+        500,
+        "heartbeat must fire every 500 ms for a 1 s watchdog"
+    );
 }
 
 /// Daemon re-registration on restart must not leave duplicate engines.
@@ -242,7 +252,10 @@ fn test_no_duplicate_engine_on_reconnect() {
 
     // Exactly one registration regardless of restart count.
     let count = registered.iter().filter(|p| **p == ENGINE_PATH).count();
-    assert_eq!(count, 1, "reconnect must not produce duplicate engine registrations");
+    assert_eq!(
+        count, 1,
+        "reconnect must not produce duplicate engine registrations"
+    );
 }
 
 // ── Engine switching mid-word ─────────────────────────────────────────────────
@@ -316,7 +329,11 @@ fn test_detect_electron_renderer_by_flag() {
     write_proc_cmdline(
         tmp.path(),
         1234,
-        &["/usr/lib/electron/electron", "--type=renderer", "--no-sandbox"],
+        &[
+            "/usr/lib/electron/electron",
+            "--type=renderer",
+            "--no-sandbox",
+        ],
     );
 
     let apps = vi_daemon::detect::detect_in(tmp.path());
@@ -392,16 +409,8 @@ fn test_detect_ignores_non_pid_entries() {
 fn test_detect_mixed_sandboxed_processes() {
     let tmp = tempfile::TempDir::new().unwrap();
     write_proc_cmdline(tmp.path(), 100, &["/usr/bin/discord"]);
-    write_proc_environ(
-        tmp.path(),
-        200,
-        &[("FLATPAK_ID", "org.gnome.Gedit")],
-    );
-    write_proc_environ(
-        tmp.path(),
-        300,
-        &[("SNAP_NAME", "chromium")],
-    );
+    write_proc_environ(tmp.path(), 200, &[("FLATPAK_ID", "org.gnome.Gedit")]);
+    write_proc_environ(tmp.path(), 300, &[("SNAP_NAME", "chromium")]);
 
     let apps = vi_daemon::detect::detect_in(tmp.path());
     assert_eq!(apps.len(), 3);

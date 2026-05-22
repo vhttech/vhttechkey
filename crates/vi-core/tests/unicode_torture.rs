@@ -104,7 +104,11 @@ fn regression_a_grave_u00e0_vs_u0061_u0300() {
     let nfd = "\u{0061}\u{0300}"; // U+0061 'a' + U+0300 combining grave
     let r = UnicodePipeline::process(nfd).unwrap();
     assert_eq!(r.as_str(), "\u{00E0}", "à: NFD must produce U+00E0");
-    assert_eq!(r.as_str().chars().count(), 1, "must be one precomposed codepoint");
+    assert_eq!(
+        r.as_str().chars().count(),
+        1,
+        "must be one precomposed codepoint"
+    );
 
     // Precomposed form must pass through unchanged.
     let precomposed = "\u{00E0}";
@@ -167,14 +171,22 @@ fn all_nuclei_nfc_passthrough_and_nfd_roundtrip() {
         let r = UnicodePipeline::process(nucleus).unwrap_or_else(|e| {
             panic!("process({nucleus:?}) failed: {e:?}");
         });
-        assert_eq!(r.as_str(), nucleus, "NFC passthrough failed for {nucleus:?}");
+        assert_eq!(
+            r.as_str(),
+            nucleus,
+            "NFC passthrough failed for {nucleus:?}"
+        );
 
         // 2. NFD form must normalize back to the precomposed NFC.
         let nfd: String = nucleus.nfd().collect();
         let r2 = UnicodePipeline::process(&nfd).unwrap_or_else(|e| {
             panic!("process(NFD of {nucleus:?} = {nfd:?}) failed: {e:?}");
         });
-        assert_eq!(r2.as_str(), nucleus, "NFD→NFC roundtrip failed for {nucleus:?}");
+        assert_eq!(
+            r2.as_str(),
+            nucleus,
+            "NFD→NFC roundtrip failed for {nucleus:?}"
+        );
     }
 }
 
@@ -186,7 +198,7 @@ fn surrogate_adjacent_codepoints_pass_through() {
     // first Private Use Area codepoint after it.  Both are valid in UTF-8 and
     // must not be rejected.
     let just_before = "\u{D7FF}"; // Hangul Jamo Extended-B last char
-    let just_after = "\u{E000}";  // Private Use Area start
+    let just_after = "\u{E000}"; // Private Use Area start
 
     let r1 = UnicodePipeline::process(just_before).unwrap_or_else(|e| {
         panic!("U+D7FF rejected unexpectedly: {e:?}");
@@ -378,12 +390,12 @@ fn modified_vowel_tone_matrix_nfc_and_nucleus_position() {
 
     // Vietnamese tone combining marks (level = no mark).
     const TONES: [Option<char>; 6] = [
-        None,               // level   — no diacritic
-        Some('\u{0301}'),   // sắc     — acute accent
-        Some('\u{0300}'),   // huyền   — grave accent
-        Some('\u{0309}'),   // hỏi     — hook above
-        Some('\u{0303}'),   // ngã     — tilde
-        Some('\u{0323}'),   // nặng    — dot below
+        None,             // level   — no diacritic
+        Some('\u{0301}'), // sắc     — acute accent
+        Some('\u{0300}'), // huyền   — grave accent
+        Some('\u{0309}'), // hỏi     — hook above
+        Some('\u{0303}'), // ngã     — tilde
+        Some('\u{0323}'), // nặng    — dot below
     ];
 
     // (base vowel, vowel modifier, [expected NFC for each of the 6 tones])
@@ -452,12 +464,8 @@ fn roundtrip_stability_nfc_nfd_nfc() {
 
     // 36 NFC test vectors: 6 modified vowels × 6 tones.
     let test_vectors: &[&str] = &[
-        "â", "ấ", "ầ", "ẩ", "ẫ", "ậ",
-        "ă", "ắ", "ằ", "ẳ", "ẵ", "ặ",
-        "ê", "ế", "ề", "ể", "ễ", "ệ",
-        "ô", "ố", "ồ", "ổ", "ỗ", "ộ",
-        "ơ", "ớ", "ờ", "ở", "ỡ", "ợ",
-        "ư", "ứ", "ừ", "ử", "ữ", "ự",
+        "â", "ấ", "ầ", "ẩ", "ẫ", "ậ", "ă", "ắ", "ằ", "ẳ", "ẵ", "ặ", "ê", "ế", "ề", "ể", "ễ", "ệ",
+        "ô", "ố", "ồ", "ổ", "ỗ", "ộ", "ơ", "ớ", "ờ", "ở", "ỡ", "ợ", "ư", "ứ", "ừ", "ử", "ữ", "ự",
     ];
 
     for &nfc_original in test_vectors {

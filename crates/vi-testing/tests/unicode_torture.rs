@@ -15,22 +15,13 @@ use vi_core::{
 fn nfc_round_trip_all_toned_vowels() {
     let toned: &[&str] = &[
         // a-family
-        "à", "á", "ả", "ã", "ạ",
-        "ằ", "ắ", "ẳ", "ẵ", "ặ",
-        "ầ", "ấ", "ẩ", "ẫ", "ậ",
+        "à", "á", "ả", "ã", "ạ", "ằ", "ắ", "ẳ", "ẵ", "ặ", "ầ", "ấ", "ẩ", "ẫ", "ậ",
         // e-family
-        "è", "é", "ẻ", "ẽ", "ẹ",
-        "ề", "ế", "ể", "ễ", "ệ",
-        // i-family
-        "ì", "í", "ỉ", "ĩ", "ị",
-        // o-family
-        "ò", "ó", "ỏ", "õ", "ọ",
-        "ồ", "ố", "ổ", "ỗ", "ộ",
-        "ờ", "ớ", "ở", "ỡ", "ợ",
+        "è", "é", "ẻ", "ẽ", "ẹ", "ề", "ế", "ể", "ễ", "ệ", // i-family
+        "ì", "í", "ỉ", "ĩ", "ị", // o-family
+        "ò", "ó", "ỏ", "õ", "ọ", "ồ", "ố", "ổ", "ỗ", "ộ", "ờ", "ớ", "ở", "ỡ", "ợ",
         // u-family
-        "ù", "ú", "ủ", "ũ", "ụ",
-        "ừ", "ứ", "ử", "ữ", "ự",
-        // y-family
+        "ù", "ú", "ủ", "ũ", "ụ", "ừ", "ứ", "ử", "ữ", "ự", // y-family
         "ỳ", "ý", "ỷ", "ỹ", "ỵ",
     ];
 
@@ -72,8 +63,8 @@ fn no_surrogate_codepoints_in_engine_output() {
                 committed.push_str(c.as_str());
             }
         }
-        if let Ok(StateTransition::CommitAndClear(c) | StateTransition::Commit(c)) = engine
-            .process(&InputEvent::KeyDown(Key::Return, Modifiers::none()))
+        if let Ok(StateTransition::CommitAndClear(c) | StateTransition::Commit(c)) =
+            engine.process(&InputEvent::KeyDown(Key::Return, Modifiers::none()))
         {
             committed.push_str(c.as_str());
         }
@@ -112,9 +103,7 @@ fn mixed_emoji_then_vietnamese_telex() {
         .process(&InputEvent::KeyDown(Key::Return, Modifiers::none()))
         .unwrap()
     {
-        StateTransition::CommitAndClear(c) | StateTransition::Commit(c) => {
-            c.as_str().to_owned()
-        }
+        StateTransition::CommitAndClear(c) | StateTransition::Commit(c) => c.as_str().to_owned(),
         StateTransition::PassThrough => String::new(),
         other => panic!("unexpected: {other:?}"),
     };
@@ -144,9 +133,7 @@ fn mixed_cjk_and_vietnamese_vni() {
         .process(&InputEvent::KeyDown(Key::Return, Modifiers::none()))
         .unwrap()
     {
-        StateTransition::CommitAndClear(c) | StateTransition::Commit(c) => {
-            c.as_str().to_owned()
-        }
+        StateTransition::CommitAndClear(c) | StateTransition::Commit(c) => c.as_str().to_owned(),
         StateTransition::PassThrough => String::new(),
         other => panic!("unexpected: {other:?}"),
     };
@@ -270,7 +257,11 @@ fn nfd_round_trip_complex_vowels() {
         );
         // Verify the output is genuinely NFC.
         let renfc: String = result.as_str().nfc().collect();
-        assert_eq!(result.as_str(), renfc.as_str(), "output not NFC for {expected_nfc:?}");
+        assert_eq!(
+            result.as_str(),
+            renfc.as_str(),
+            "output not NFC for {expected_nfc:?}"
+        );
     }
 }
 
@@ -298,7 +289,11 @@ fn same_ccc_wrong_order_produces_nfc_not_intended_char() {
     );
 
     // Must differ from the intended ấ because order was wrong.
-    assert_ne!(result.as_str(), "ấ", "wrong-order marks must not produce the same char as ấ");
+    assert_ne!(
+        result.as_str(),
+        "ấ",
+        "wrong-order marks must not produce the same char as ấ"
+    );
 
     // Correct order for comparison: a + circumflex + acute → ấ
     let correct_order = "a\u{0302}\u{0301}";
@@ -314,11 +309,11 @@ fn same_ccc_wrong_order_produces_nfc_not_intended_char() {
 #[test]
 fn c1_controls_are_rejected_as_legacy_encoding() {
     let c1_samples: &[&str] = &[
-        "\u{0080}",            // first C1 — TCVN3 byte 0x80 as Latin-1
-        "\u{009F}",            // last C1 — TCVN3 byte 0x9F as Latin-1
-        "\u{0090}",            // DCS control — VPS byte 0x90 as Latin-1
-        "vie\u{0081}t",        // C1 mixed with ASCII (common TCVN3 pattern)
-        "\u{0085}t\u{00F4}i",  // C1 + valid Vietnamese NFC char
+        "\u{0080}",           // first C1 — TCVN3 byte 0x80 as Latin-1
+        "\u{009F}",           // last C1 — TCVN3 byte 0x9F as Latin-1
+        "\u{0090}",           // DCS control — VPS byte 0x90 as Latin-1
+        "vie\u{0081}t",       // C1 mixed with ASCII (common TCVN3 pattern)
+        "\u{0085}t\u{00F4}i", // C1 + valid Vietnamese NFC char
     ];
     for &s in c1_samples {
         let result = UnicodePipeline::process(s);

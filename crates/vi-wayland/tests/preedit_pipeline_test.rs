@@ -18,7 +18,11 @@ use vi_wayland::quirks::{CompositorProfile, CompositorQuirks};
 /// A Wayland protocol call sent to the compositor by the IM backend.
 #[derive(Debug, PartialEq)]
 enum WlOp {
-    SetPreeditString { text: String, cursor_begin: i32, cursor_end: i32 },
+    SetPreeditString {
+        text: String,
+        cursor_begin: i32,
+        cursor_end: i32,
+    },
     CommitString(String),
     Commit(u32),
 }
@@ -46,7 +50,11 @@ fn ops_update_preedit(text: &str, cursor_byte: i32, serial: u32) -> Vec<WlOp> {
 ///   im.commit(serial);
 fn ops_commit_replacing_preedit(text: &str, serial: u32) -> Vec<WlOp> {
     vec![
-        WlOp::SetPreeditString { text: String::new(), cursor_begin: -1, cursor_end: -1 },
+        WlOp::SetPreeditString {
+            text: String::new(),
+            cursor_begin: -1,
+            cursor_end: -1,
+        },
         WlOp::CommitString(text.to_owned()),
         WlOp::Commit(serial),
     ]
@@ -138,11 +146,9 @@ fn update_preedit_uses_distinct_serial_on_every_call() {
 
     for window in serials_used.windows(2) {
         assert_ne!(
-            window[0],
-            window[1],
+            window[0], window[1],
             "consecutive update_preedit calls must use distinct serials: {} then {}",
-            window[0],
-            window[1]
+            window[0], window[1]
         );
     }
     assert_eq!(serials_used, vec![0, 1, 2, 3]);
@@ -165,7 +171,11 @@ fn update_preedit_cursor_is_clamped_to_char_boundary() {
 
     let ops = ops_update_preedit(s, clamped, 0);
     match &ops[0] {
-        WlOp::SetPreeditString { cursor_begin, cursor_end, .. } => {
+        WlOp::SetPreeditString {
+            cursor_begin,
+            cursor_end,
+            ..
+        } => {
             assert!(
                 s.is_char_boundary(*cursor_begin as usize),
                 "cursor_begin={cursor_begin} must be a char boundary in {s:?}"
@@ -198,7 +208,11 @@ fn commit_replacing_preedit_emits_clear_preedit_then_commit_string() {
 
     assert_eq!(
         ops[0],
-        WlOp::SetPreeditString { text: String::new(), cursor_begin: -1, cursor_end: -1 },
+        WlOp::SetPreeditString {
+            text: String::new(),
+            cursor_begin: -1,
+            cursor_end: -1
+        },
         "first op must clear the preedit with set_preedit_string(\"\", -1, -1)"
     );
     assert_eq!(ops[1], WlOp::CommitString("viêt".to_owned()));
@@ -232,10 +246,14 @@ fn update_preedit_and_commit_replacing_differ_in_preedit_content() {
     );
 
     // Both must contain a Commit operation.
-    assert!(preedit_ops.iter().any(|o| matches!(o, WlOp::Commit(_))),
-        "update_preedit must include commit()");
-    assert!(commit_ops.iter().any(|o| matches!(o, WlOp::Commit(_))),
-        "commit_replacing_preedit must include commit()");
+    assert!(
+        preedit_ops.iter().any(|o| matches!(o, WlOp::Commit(_))),
+        "update_preedit must include commit()"
+    );
+    assert!(
+        commit_ops.iter().any(|o| matches!(o, WlOp::Commit(_))),
+        "commit_replacing_preedit must include commit()"
+    );
 }
 
 // ── GNOME deactivate-flush path ───────────────────────────────────────────────
@@ -273,7 +291,10 @@ fn gnome_deactivate_flush_is_single_atomic_commit() {
         }
     }
 
-    assert_eq!(serials_committed, 1, "GNOME flush must consume exactly one serial slot");
+    assert_eq!(
+        serials_committed, 1,
+        "GNOME flush must consume exactly one serial slot"
+    );
     assert_eq!(
         ops.len(),
         3,
@@ -302,7 +323,10 @@ fn gnome_deactivate_flush_skipped_when_not_gnome() {
         }
     }
 
-    assert!(ops.is_empty(), "Standard profile must not trigger empty-preedit flush on deactivate");
+    assert!(
+        ops.is_empty(),
+        "Standard profile must not trigger empty-preedit flush on deactivate"
+    );
 }
 
 // ── Serial management across preedit and commit operations ────────────────────
@@ -318,23 +342,36 @@ fn mixed_update_and_commit_operations_use_distinct_serials() {
     // update_preedit("vi")
     let cb1 = clamp_preedit_cursor("vi", 2);
     let ops1 = ops_update_preedit("vi", cb1, sent_commits);
-    serials.push(match ops1.last() { Some(WlOp::Commit(s)) => *s, _ => panic!() });
+    serials.push(match ops1.last() {
+        Some(WlOp::Commit(s)) => *s,
+        _ => panic!(),
+    });
     sent_commits = sent_commits.wrapping_add(1);
 
     // update_preedit("viê")
     let cb2 = clamp_preedit_cursor("viê", 4);
     let ops2 = ops_update_preedit("viê", cb2, sent_commits);
-    serials.push(match ops2.last() { Some(WlOp::Commit(s)) => *s, _ => panic!() });
+    serials.push(match ops2.last() {
+        Some(WlOp::Commit(s)) => *s,
+        _ => panic!(),
+    });
     sent_commits = sent_commits.wrapping_add(1);
 
     // commit_replacing_preedit("viêt")
     let ops3 = ops_commit_replacing_preedit("viêt", sent_commits);
-    serials.push(match ops3.last() { Some(WlOp::Commit(s)) => *s, _ => panic!() });
+    serials.push(match ops3.last() {
+        Some(WlOp::Commit(s)) => *s,
+        _ => panic!(),
+    });
     sent_commits = sent_commits.wrapping_add(1);
 
     let _ = sent_commits;
 
-    assert_eq!(serials, vec![0, 1, 2], "all three operations must use distinct serials");
+    assert_eq!(
+        serials,
+        vec![0, 1, 2],
+        "all three operations must use distinct serials"
+    );
 
     for window in serials.windows(2) {
         assert!(

@@ -15,7 +15,9 @@
 //! | ươi     | ơ (idx 1)    | Rule 1 — last form-marked of ư/ơ is ơ |
 //! | ươu     | ơ (idx 1)    | Rule 1 — last form-marked of ư/ơ is ơ |
 
-use vi_core::{CompositionEngine, InputEvent, InputMethod, Key, Modifiers, StandardEngine, StateTransition};
+use vi_core::{
+    CompositionEngine, InputEvent, InputMethod, Key, Modifiers, StandardEngine, StateTransition,
+};
 
 fn type_and_commit(keys: &str) -> String {
     let mut e = StandardEngine::new(InputMethod::Telex);
@@ -24,7 +26,10 @@ fn type_and_commit(keys: &str) -> String {
             .expect("engine must not fail on valid input");
         let _ = e.process(&InputEvent::KeyUp(Key::Char(ch)));
     }
-    match e.process(&InputEvent::KeyDown(Key::Return, Modifiers::none())).unwrap() {
+    match e
+        .process(&InputEvent::KeyDown(Key::Return, Modifiers::none()))
+        .unwrap()
+    {
         StateTransition::CommitAndClear(c) => c.as_str().to_owned(),
         StateTransition::PassThrough => String::new(),
         other => panic!("unexpected transition on Return: {other:?}"),
@@ -42,47 +47,67 @@ fn type_and_commit(keys: &str) -> String {
 fn triphthong_cases() -> Vec<(&'static str, &'static str, &'static str)> {
     vec![
         // ── iêu — tone falls on ê ────────────────────────────────────────────
-        ("ieeu",  "iêu",  "iêu level"),
-        ("ieeus", "iếu",  "iêu sắc   (s → ế)"),
-        ("ieeuf", "iều",  "iêu huyền (f → ề)"),
-        ("ieeur", "iểu",  "iêu hỏi   (r → ể)"),
-        ("ieeux", "iễu",  "iêu ngã   (x → ễ)"),
-        ("ieeuj", "iệu",  "iêu nặng  (j → ệ)"),
+        ("ieeu", "iêu", "iêu level"),
+        ("ieeus", "iếu", "iêu sắc   (s → ế)"),
+        ("ieeuf", "iều", "iêu huyền (f → ề)"),
+        ("ieeur", "iểu", "iêu hỏi   (r → ể)"),
+        ("ieeux", "iễu", "iêu ngã   (x → ễ)"),
+        ("ieeuj", "iệu", "iêu nặng  (j → ệ)"),
         // Note: 'z' on an already-level-tone syllable triggers the vhttechkey
         // double-tone undo, making the composition invalid → English fallback.
-        ("ieeuz", "ieeuz", "iêu level (z on level tone → invalid → raw keys)"),
+        (
+            "ieeuz",
+            "ieeuz",
+            "iêu level (z on level tone → invalid → raw keys)",
+        ),
         // ── oai — tone falls on a ────────────────────────────────────────────
-        ("oai",   "oai",  "oai level"),
-        ("oais",  "oái",  "oai sắc   (s → á)"),
-        ("oaif",  "oài",  "oai huyền (f → à)"),
-        ("oair",  "oải",  "oai hỏi   (r → ả)"),
-        ("oaix",  "oãi",  "oai ngã   (x → ã)"),
-        ("oaij",  "oại",  "oai nặng  (j → ạ)"),
-        ("oaiz",  "oaiz", "oai level (z on level tone → invalid → raw keys)"),
+        ("oai", "oai", "oai level"),
+        ("oais", "oái", "oai sắc   (s → á)"),
+        ("oaif", "oài", "oai huyền (f → à)"),
+        ("oair", "oải", "oai hỏi   (r → ả)"),
+        ("oaix", "oãi", "oai ngã   (x → ã)"),
+        ("oaij", "oại", "oai nặng  (j → ạ)"),
+        (
+            "oaiz",
+            "oaiz",
+            "oai level (z on level tone → invalid → raw keys)",
+        ),
         // ── uôi — tone falls on ô ────────────────────────────────────────────
-        ("uooi",  "uôi",  "uôi level"),
-        ("uoois", "uối",  "uôi sắc   (s → ố)"),
-        ("uooif", "uồi",  "uôi huyền (f → ồ)"),
-        ("uooir", "uổi",  "uôi hỏi   (r → ổ)"),
-        ("uooix", "uỗi",  "uôi ngã   (x → ỗ)"),
-        ("uooij", "uội",  "uôi nặng  (j → ộ)"),
-        ("uooiz", "uooiz", "uôi level (z on level tone → invalid → raw keys)"),
+        ("uooi", "uôi", "uôi level"),
+        ("uoois", "uối", "uôi sắc   (s → ố)"),
+        ("uooif", "uồi", "uôi huyền (f → ồ)"),
+        ("uooir", "uổi", "uôi hỏi   (r → ổ)"),
+        ("uooix", "uỗi", "uôi ngã   (x → ỗ)"),
+        ("uooij", "uội", "uôi nặng  (j → ộ)"),
+        (
+            "uooiz",
+            "uooiz",
+            "uôi level (z on level tone → invalid → raw keys)",
+        ),
         // ── ươi — tone falls on ơ ────────────────────────────────────────────
-        ("uwowi",  "ươi",  "ươi level"),
-        ("uwowis", "ưới",  "ươi sắc   (s → ớ)"),
-        ("uwowif", "ười",  "ươi huyền (f → ờ)"),
-        ("uwowir", "ưởi",  "ươi hỏi   (r → ở)"),
-        ("uwowix", "ưỡi",  "ươi ngã   (x → ỡ)"),
-        ("uwowij", "ượi",  "ươi nặng  (j → ợ)"),
-        ("uwowiz", "uwowiz", "ươi level (z on level tone → invalid → raw keys)"),
+        ("uwowi", "ươi", "ươi level"),
+        ("uwowis", "ưới", "ươi sắc   (s → ớ)"),
+        ("uwowif", "ười", "ươi huyền (f → ờ)"),
+        ("uwowir", "ưởi", "ươi hỏi   (r → ở)"),
+        ("uwowix", "ưỡi", "ươi ngã   (x → ỡ)"),
+        ("uwowij", "ượi", "ươi nặng  (j → ợ)"),
+        (
+            "uwowiz",
+            "uwowiz",
+            "ươi level (z on level tone → invalid → raw keys)",
+        ),
         // ── ươu — tone falls on ơ ────────────────────────────────────────────
-        ("uwowu",  "ươu",  "ươu level"),
-        ("uwowus", "ướu",  "ươu sắc   (s → ớ)"),
-        ("uwowuf", "ườu",  "ươu huyền (f → ờ)"),
-        ("uwowur", "ưởu",  "ươu hỏi   (r → ở)"),
-        ("uwowux", "ưỡu",  "ươu ngã   (x → ỡ)"),
-        ("uwowuj", "ượu",  "ươu nặng  (j → ợ)"),
-        ("uwowuz", "uwowuz", "ươu level (z on level tone → invalid → raw keys)"),
+        ("uwowu", "ươu", "ươu level"),
+        ("uwowus", "ướu", "ươu sắc   (s → ớ)"),
+        ("uwowuf", "ườu", "ươu huyền (f → ờ)"),
+        ("uwowur", "ưởu", "ươu hỏi   (r → ở)"),
+        ("uwowux", "ưỡu", "ươu ngã   (x → ỡ)"),
+        ("uwowuj", "ượu", "ươu nặng  (j → ợ)"),
+        (
+            "uwowuz",
+            "uwowuz",
+            "ươu level (z on level tone → invalid → raw keys)",
+        ),
     ]
 }
 

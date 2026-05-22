@@ -170,7 +170,9 @@ pub fn all_fixtures() -> Vec<ReplaySession> {
 mod snapshot_tests {
     use super::all_fixtures;
     use crate::replay::replay_session;
-    use vi_core::{InputMethod, StandardEngine, CompositionEngine, StateTransition, Key, InputEvent};
+    use vi_core::{
+        CompositionEngine, InputEvent, InputMethod, Key, StandardEngine, StateTransition,
+    };
 
     /// Golden snapshot for every fixture session.
     ///
@@ -219,10 +221,7 @@ mod snapshot_tests {
                     }
                 }
                 let output = commits.join("|");
-                insta::assert_snapshot!(
-                    format!("cross_{}_{}", method_name, session.name),
-                    output
-                );
+                insta::assert_snapshot!(format!("cross_{}_{}", method_name, session.name), output);
             }
         }
     }
@@ -231,8 +230,7 @@ mod snapshot_tests {
 #[cfg(test)]
 mod fixture_tests {
     use vi_core::{
-        CompositionEngine, InputEvent, InputMethod, Key, Modifiers, StandardEngine,
-        StateTransition,
+        CompositionEngine, InputEvent, InputMethod, Key, Modifiers, StandardEngine, StateTransition,
     };
 
     fn kd(c: char) -> InputEvent {
@@ -336,7 +334,10 @@ mod fixture_tests {
             LIMIT,
             "committed text must be exactly the {LIMIT}-char buffer"
         );
-        assert_eq!(new_preedit, "n", "overflow residual preedit must be the 65th character");
+        assert_eq!(
+            new_preedit, "n",
+            "overflow residual preedit must be the 65th character"
+        );
         assert_eq!(
             engine.preedit().as_str(),
             "n",

@@ -26,7 +26,11 @@ pub fn validate(config: &Config) -> Result<(), ConfigError> {
                 )));
             }
         }
-        validate_key_binding(name, "toggle_input_method", &profile.key_bindings.toggle_input_method)?;
+        validate_key_binding(
+            name,
+            "toggle_input_method",
+            &profile.key_bindings.toggle_input_method,
+        )?;
         validate_key_binding(name, "next_profile", &profile.key_bindings.next_profile)?;
         validate_key_binding(name, "prev_profile", &profile.key_bindings.prev_profile)?;
         validate_key_binding(name, "reset", &profile.key_bindings.reset)?;

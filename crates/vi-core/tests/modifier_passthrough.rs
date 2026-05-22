@@ -58,24 +58,41 @@ fn ctrl_char_commits_preedit() {
     type_str(&mut e, "too"); // preedit = "tô"
     assert_eq!(preedit(&e), "tô");
 
-    let t = e.process(&InputEvent::KeyDown(
-        Key::Char('c'),
-        Modifiers { ctrl: true, ..Modifiers::none() },
-    )).unwrap();
+    let t = e
+        .process(&InputEvent::KeyDown(
+            Key::Char('c'),
+            Modifiers {
+                ctrl: true,
+                ..Modifiers::none()
+            },
+        ))
+        .unwrap();
 
     assert!(is_commit(&t), "Ctrl+char must commit preedit; got {t:?}");
     assert_eq!(committed_text(&t), Some("tô"));
-    assert!(e.preedit().is_empty(), "preedit must be empty after Ctrl+char");
+    assert!(
+        e.preedit().is_empty(),
+        "preedit must be empty after Ctrl+char"
+    );
 }
 
 #[test]
 fn ctrl_char_passthrough_when_preedit_empty() {
     let mut e = telex();
-    let t = e.process(&InputEvent::KeyDown(
-        Key::Char('c'),
-        Modifiers { ctrl: true, ..Modifiers::none() },
-    )).unwrap();
-    assert_eq!(t, StateTransition::PassThrough, "Ctrl+char with empty preedit must PassThrough");
+    let t = e
+        .process(&InputEvent::KeyDown(
+            Key::Char('c'),
+            Modifiers {
+                ctrl: true,
+                ..Modifiers::none()
+            },
+        ))
+        .unwrap();
+    assert_eq!(
+        t,
+        StateTransition::PassThrough,
+        "Ctrl+char with empty preedit must PassThrough"
+    );
 }
 
 // ── Super + char ──────────────────────────────────────────────────────────────
@@ -85,10 +102,15 @@ fn super_char_commits_preedit() {
     let mut e = telex();
     type_str(&mut e, "aa"); // preedit = "â"
 
-    let t = e.process(&InputEvent::KeyDown(
-        Key::Char('l'),
-        Modifiers { super_key: true, ..Modifiers::none() },
-    )).unwrap();
+    let t = e
+        .process(&InputEvent::KeyDown(
+            Key::Char('l'),
+            Modifiers {
+                super_key: true,
+                ..Modifiers::none()
+            },
+        ))
+        .unwrap();
 
     assert!(is_commit(&t), "Super+char must commit preedit; got {t:?}");
     assert_eq!(committed_text(&t), Some("â"));
@@ -98,10 +120,15 @@ fn super_char_commits_preedit() {
 #[test]
 fn super_char_passthrough_when_preedit_empty() {
     let mut e = telex();
-    let t = e.process(&InputEvent::KeyDown(
-        Key::Char('l'),
-        Modifiers { super_key: true, ..Modifiers::none() },
-    )).unwrap();
+    let t = e
+        .process(&InputEvent::KeyDown(
+            Key::Char('l'),
+            Modifiers {
+                super_key: true,
+                ..Modifiers::none()
+            },
+        ))
+        .unwrap();
     assert_eq!(t, StateTransition::PassThrough);
 }
 
@@ -112,10 +139,15 @@ fn alt_char_commits_preedit() {
     let mut e = telex();
     type_str(&mut e, "uw"); // preedit = "ư"
 
-    let t = e.process(&InputEvent::KeyDown(
-        Key::Char('o'),
-        Modifiers { alt: true, ..Modifiers::none() },
-    )).unwrap();
+    let t = e
+        .process(&InputEvent::KeyDown(
+            Key::Char('o'),
+            Modifiers {
+                alt: true,
+                ..Modifiers::none()
+            },
+        ))
+        .unwrap();
 
     assert!(is_commit(&t), "Alt+char must commit preedit; got {t:?}");
     assert_eq!(committed_text(&t), Some("ư"));
@@ -125,10 +157,15 @@ fn alt_char_commits_preedit() {
 #[test]
 fn alt_char_passthrough_when_preedit_empty() {
     let mut e = telex();
-    let t = e.process(&InputEvent::KeyDown(
-        Key::Char('o'),
-        Modifiers { alt: true, ..Modifiers::none() },
-    )).unwrap();
+    let t = e
+        .process(&InputEvent::KeyDown(
+            Key::Char('o'),
+            Modifiers {
+                alt: true,
+                ..Modifiers::none()
+            },
+        ))
+        .unwrap();
     assert_eq!(t, StateTransition::PassThrough);
 }
 
@@ -139,10 +176,9 @@ fn altgr_commits_preedit() {
     let mut e = telex();
     type_str(&mut e, "ee"); // preedit = "ê"
 
-    let t = e.process(&InputEvent::KeyDown(
-        Key::Char('e'),
-        Modifiers::altgr(),
-    )).unwrap();
+    let t = e
+        .process(&InputEvent::KeyDown(Key::Char('e'), Modifiers::altgr()))
+        .unwrap();
 
     assert!(is_commit(&t), "AltGr must commit preedit; got {t:?}");
     assert_eq!(committed_text(&t), Some("ê"));
@@ -152,7 +188,9 @@ fn altgr_commits_preedit() {
 #[test]
 fn altgr_passthrough_when_preedit_empty() {
     let mut e = telex();
-    let t = e.process(&InputEvent::KeyDown(Key::Char('e'), Modifiers::altgr())).unwrap();
+    let t = e
+        .process(&InputEvent::KeyDown(Key::Char('e'), Modifiers::altgr()))
+        .unwrap();
     assert_eq!(t, StateTransition::PassThrough);
 }
 
@@ -162,23 +200,33 @@ fn altgr_passthrough_when_preedit_empty() {
 // (e.g. Shift_L while composing) hit the catch-all KeyDown arm and committed the
 // preedit unexpectedly.
 
-const XK_SHIFT_L:   u32 = 0xffe1;
-const XK_SHIFT_R:   u32 = 0xffe2;
+const XK_SHIFT_L: u32 = 0xffe1;
+const XK_SHIFT_R: u32 = 0xffe2;
 const XK_CONTROL_L: u32 = 0xffe3;
 const XK_CONTROL_R: u32 = 0xffe4;
 const XK_CAPS_LOCK: u32 = 0xffe5;
-const XK_ALT_L:     u32 = 0xffe9;
-const XK_ALT_R:     u32 = 0xffea;
-const XK_SUPER_L:   u32 = 0xffeb;
-const XK_SUPER_R:   u32 = 0xffec;
-const XK_ALTGR:     u32 = 0xfe03; // ISO_Level3_Shift
+const XK_ALT_L: u32 = 0xffe9;
+const XK_ALT_R: u32 = 0xffea;
+const XK_SUPER_L: u32 = 0xffeb;
+const XK_SUPER_R: u32 = 0xffec;
+const XK_ALTGR: u32 = 0xfe03; // ISO_Level3_Shift
 const XK_MULTI_KEY: u32 = 0xff20; // Compose
-const XK_NUM_LOCK:  u32 = 0xff7f;
+const XK_NUM_LOCK: u32 = 0xff7f;
 
 fn modifier_keysyms() -> &'static [u32] {
     &[
-        XK_SHIFT_L, XK_SHIFT_R, XK_CONTROL_L, XK_CONTROL_R, XK_CAPS_LOCK,
-        XK_ALT_L, XK_ALT_R, XK_SUPER_L, XK_SUPER_R, XK_ALTGR, XK_MULTI_KEY, XK_NUM_LOCK,
+        XK_SHIFT_L,
+        XK_SHIFT_R,
+        XK_CONTROL_L,
+        XK_CONTROL_R,
+        XK_CAPS_LOCK,
+        XK_ALT_L,
+        XK_ALT_R,
+        XK_SUPER_L,
+        XK_SUPER_R,
+        XK_ALTGR,
+        XK_MULTI_KEY,
+        XK_NUM_LOCK,
     ]
 }
 
@@ -190,7 +238,9 @@ fn bare_modifier_keysym_does_not_commit_preedit() {
         let pre = preedit(&e);
         assert_eq!(pre, "tô");
 
-        let t = e.process(&InputEvent::KeyDown(Key::Keysym(sym), Modifiers::none())).unwrap();
+        let t = e
+            .process(&InputEvent::KeyDown(Key::Keysym(sym), Modifiers::none()))
+            .unwrap();
 
         assert_eq!(
             t,
@@ -198,7 +248,8 @@ fn bare_modifier_keysym_does_not_commit_preedit() {
             "bare modifier keysym {sym:#010x} must PassThrough, got {t:?}"
         );
         assert_eq!(
-            preedit(&e), "tô",
+            preedit(&e),
+            "tô",
             "bare modifier keysym {sym:#010x} must not alter preedit"
         );
     }
@@ -215,19 +266,30 @@ fn bare_modifier_keysym_does_not_reset_last_char_state() {
     assert_eq!(preedit(&e), "ô");
 
     // Bare Shift_L (e.g. user holding Shift before pressing another key).
-    e.process(&InputEvent::KeyDown(Key::Keysym(XK_SHIFT_L), Modifiers::none())).unwrap();
+    e.process(&InputEvent::KeyDown(
+        Key::Keysym(XK_SHIFT_L),
+        Modifiers::none(),
+    ))
+    .unwrap();
     assert_eq!(preedit(&e), "ô", "modifier key must not clear preedit");
 
     // KeyRepeat of 'o' should append raw 'o', not re-fire oo→ô.
-    e.process(&InputEvent::KeyRepeat(Key::Char('o'), Modifiers::none())).unwrap();
-    assert_eq!(preedit(&e), "ôo", "KeyRepeat after modifier must extend preedit raw");
+    e.process(&InputEvent::KeyRepeat(Key::Char('o'), Modifiers::none()))
+        .unwrap();
+    assert_eq!(
+        preedit(&e),
+        "ôo",
+        "KeyRepeat after modifier must extend preedit raw"
+    );
 }
 
 #[test]
 fn bare_modifier_keysym_passthrough_when_preedit_empty() {
     for &sym in modifier_keysyms() {
         let mut e = telex();
-        let t = e.process(&InputEvent::KeyDown(Key::Keysym(sym), Modifiers::none())).unwrap();
+        let t = e
+            .process(&InputEvent::KeyDown(Key::Keysym(sym), Modifiers::none()))
+            .unwrap();
         assert_eq!(
             t,
             StateTransition::PassThrough,
@@ -242,7 +304,9 @@ fn bare_modifier_keysym_passthrough_when_preedit_empty() {
 fn left_arrow_commits_preedit() {
     let mut e = telex();
     type_str(&mut e, "as"); // "á"
-    let t = e.process(&InputEvent::KeyDown(Key::Left, Modifiers::none())).unwrap();
+    let t = e
+        .process(&InputEvent::KeyDown(Key::Left, Modifiers::none()))
+        .unwrap();
     assert!(is_commit(&t), "Left arrow must commit preedit; got {t:?}");
     assert_eq!(committed_text(&t), Some("á"));
     assert!(e.preedit().is_empty());
@@ -252,7 +316,9 @@ fn left_arrow_commits_preedit() {
 fn right_arrow_commits_preedit() {
     let mut e = telex();
     type_str(&mut e, "oo");
-    let t = e.process(&InputEvent::KeyDown(Key::Right, Modifiers::none())).unwrap();
+    let t = e
+        .process(&InputEvent::KeyDown(Key::Right, Modifiers::none()))
+        .unwrap();
     assert!(is_commit(&t), "Right arrow must commit preedit; got {t:?}");
     assert_eq!(committed_text(&t), Some("ô"));
 }
@@ -261,7 +327,9 @@ fn right_arrow_commits_preedit() {
 fn delete_key_commits_preedit() {
     let mut e = telex();
     type_str(&mut e, "uw"); // "ư"
-    let t = e.process(&InputEvent::KeyDown(Key::Delete, Modifiers::none())).unwrap();
+    let t = e
+        .process(&InputEvent::KeyDown(Key::Delete, Modifiers::none()))
+        .unwrap();
     assert!(is_commit(&t), "Delete must commit preedit; got {t:?}");
     assert_eq!(committed_text(&t), Some("ư"));
 }
@@ -270,7 +338,9 @@ fn delete_key_commits_preedit() {
 fn home_key_commits_preedit() {
     let mut e = telex();
     type_str(&mut e, "ee"); // "ê"
-    let t = e.process(&InputEvent::KeyDown(Key::Home, Modifiers::none())).unwrap();
+    let t = e
+        .process(&InputEvent::KeyDown(Key::Home, Modifiers::none()))
+        .unwrap();
     assert!(is_commit(&t), "Home must commit preedit; got {t:?}");
     assert_eq!(committed_text(&t), Some("ê"));
 }
@@ -281,7 +351,9 @@ fn non_modifier_keysym_commits_preedit() {
     const XK_F1: u32 = 0xffbe;
     let mut e = telex();
     type_str(&mut e, "aa"); // "â"
-    let t = e.process(&InputEvent::KeyDown(Key::Keysym(XK_F1), Modifiers::none())).unwrap();
+    let t = e
+        .process(&InputEvent::KeyDown(Key::Keysym(XK_F1), Modifiers::none()))
+        .unwrap();
     assert!(is_commit(&t), "F1 Keysym must commit preedit; got {t:?}");
     assert_eq!(committed_text(&t), Some("â"));
 }
@@ -290,7 +362,9 @@ fn non_modifier_keysym_commits_preedit() {
 fn non_modifier_keysym_passthrough_when_preedit_empty() {
     const XK_F1: u32 = 0xffbe;
     let mut e = telex();
-    let t = e.process(&InputEvent::KeyDown(Key::Keysym(XK_F1), Modifiers::none())).unwrap();
+    let t = e
+        .process(&InputEvent::KeyDown(Key::Keysym(XK_F1), Modifiers::none()))
+        .unwrap();
     assert_eq!(t, StateTransition::PassThrough);
 }
 
@@ -301,16 +375,31 @@ fn ctrl_char_behaviour_all_methods() {
     for method in [InputMethod::Telex, InputMethod::Vni, InputMethod::Viqr] {
         let mut e = StandardEngine::new(method);
         // 'a' is safe for all methods.
-        e.process(&InputEvent::KeyDown(Key::Char('a'), Modifiers::none())).unwrap();
-        assert!(!e.preedit().is_empty(), "{method:?}: preedit must be non-empty after 'a'");
+        e.process(&InputEvent::KeyDown(Key::Char('a'), Modifiers::none()))
+            .unwrap();
+        assert!(
+            !e.preedit().is_empty(),
+            "{method:?}: preedit must be non-empty after 'a'"
+        );
 
-        let t = e.process(&InputEvent::KeyDown(
-            Key::Char('c'),
-            Modifiers { ctrl: true, ..Modifiers::none() },
-        )).unwrap();
+        let t = e
+            .process(&InputEvent::KeyDown(
+                Key::Char('c'),
+                Modifiers {
+                    ctrl: true,
+                    ..Modifiers::none()
+                },
+            ))
+            .unwrap();
 
-        assert!(is_commit(&t), "{method:?}: Ctrl+c must commit preedit; got {t:?}");
-        assert!(e.preedit().is_empty(), "{method:?}: preedit must be empty after Ctrl+c");
+        assert!(
+            is_commit(&t),
+            "{method:?}: Ctrl+c must commit preedit; got {t:?}"
+        );
+        assert!(
+            e.preedit().is_empty(),
+            "{method:?}: preedit must be empty after Ctrl+c"
+        );
     }
 }
 
@@ -318,18 +407,24 @@ fn ctrl_char_behaviour_all_methods() {
 fn bare_modifier_behaviour_all_methods() {
     for method in [InputMethod::Telex, InputMethod::Vni, InputMethod::Viqr] {
         let mut e = StandardEngine::new(method);
-        e.process(&InputEvent::KeyDown(Key::Char('a'), Modifiers::none())).unwrap();
+        e.process(&InputEvent::KeyDown(Key::Char('a'), Modifiers::none()))
+            .unwrap();
 
-        let t = e.process(&InputEvent::KeyDown(
-            Key::Keysym(XK_SHIFT_L),
-            Modifiers::none(),
-        )).unwrap();
+        let t = e
+            .process(&InputEvent::KeyDown(
+                Key::Keysym(XK_SHIFT_L),
+                Modifiers::none(),
+            ))
+            .unwrap();
 
         assert_eq!(
             t,
             StateTransition::PassThrough,
             "{method:?}: bare Shift_L must PassThrough during composition"
         );
-        assert!(!e.preedit().is_empty(), "{method:?}: preedit must survive a bare modifier key");
+        assert!(
+            !e.preedit().is_empty(),
+            "{method:?}: preedit must survive a bare modifier key"
+        );
     }
 }

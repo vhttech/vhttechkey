@@ -79,5 +79,9 @@ fn bench_single_key_throughput(c: &mut Criterion) {
     group.finish();
 }
 
-criterion_group!(benches, bench_single_key_p99_under_100us, bench_single_key_throughput);
+criterion_group!(
+    benches,
+    bench_single_key_p99_under_100us,
+    bench_single_key_throughput
+);
 criterion_main!(benches);

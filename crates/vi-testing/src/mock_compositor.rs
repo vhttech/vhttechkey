@@ -35,9 +35,10 @@ impl CompositorProfile {
             Self::Sway => &["zwp_text_input_manager_v3"],
             Self::Minimal => &[],
             // Advertises the Hyprland-specific shortcut manager protocol.
-            Self::Hyprland => {
-                &["zwp_text_input_manager_v3", "hyprland_global_shortcuts_manager_v1"]
-            }
+            Self::Hyprland => &[
+                "zwp_text_input_manager_v3",
+                "hyprland_global_shortcuts_manager_v1",
+            ],
             // Advertises the Niri IPC protocol.
             Self::Niri => &["zwp_text_input_manager_v3", "niri_ipc"],
         }
@@ -65,15 +66,13 @@ impl MockCompositor {
     /// Spawn the mock compositor, bind a socket, and start accepting connections.
     pub fn start(profile: CompositorProfile) -> Self {
         let socket_dir = std::env::temp_dir().to_string_lossy().into_owned();
-        let socket_name =
-            format!("wayland-mock-{}", std::process::id());
+        let socket_name = format!("wayland-mock-{}", std::process::id());
         let socket_path = format!("{socket_dir}/{socket_name}");
 
         // Remove any leftover socket from a previous run.
         let _ = std::fs::remove_file(&socket_path);
 
-        let listener =
-            UnixListener::bind(&socket_path).expect("bind mock Wayland socket");
+        let listener = UnixListener::bind(&socket_path).expect("bind mock Wayland socket");
 
         let commits = Arc::new(Mutex::new(Vec::<String>::new()));
         let preedit_updates = Arc::new(Mutex::new(Vec::<PreeditUpdate>::new()));
@@ -91,7 +90,13 @@ impl MockCompositor {
             }
         });
 
-        Self { socket_name, socket_dir, profile, commits, preedit_updates }
+        Self {
+            socket_name,
+            socket_dir,
+            profile,
+            commits,
+            preedit_updates,
+        }
     }
 
     /// Set `WAYLAND_DISPLAY` and `XDG_RUNTIME_DIR` so clients connect here.

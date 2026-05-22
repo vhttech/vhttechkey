@@ -286,9 +286,7 @@ impl CompositorQuirks {
         {
             return Self {
                 profile: CompositorProfile::Gnome,
-                version: CompositorVersion(
-                    version_of("zwp_text_input_manager_v3").unwrap_or(0),
-                ),
+                version: CompositorVersion(version_of("zwp_text_input_manager_v3").unwrap_or(0)),
                 empty_preedit_before_commit: true,
                 ..Default::default()
             };
@@ -296,8 +294,16 @@ impl CompositorQuirks {
 
         let score_sig = |sig: &CompositorSignature| -> i32 {
             let w = sig.weight as i32;
-            let present = sig.required.iter().filter(|g| global_set.contains(*g)).count() as i32;
-            let penalty = sig.absent.iter().filter(|g| global_set.contains(*g)).count() as i32;
+            let present = sig
+                .required
+                .iter()
+                .filter(|g| global_set.contains(*g))
+                .count() as i32;
+            let penalty = sig
+                .absent
+                .iter()
+                .filter(|g| global_set.contains(*g))
+                .count() as i32;
             (present - penalty) * w
         };
 
@@ -305,13 +311,21 @@ impl CompositorQuirks {
             .iter()
             .filter_map(|(profile, sig)| {
                 let s = score_sig(sig);
-                if s >= MIN_SCORE { Some((profile, sig, s)) } else { None }
+                if s >= MIN_SCORE {
+                    Some((profile, sig, s))
+                } else {
+                    None
+                }
             })
             .max_by_key(|(_, _, s)| *s);
 
         let (profile, version) = match best {
             Some((profile, sig, _)) => {
-                let ver = sig.required.first().and_then(|g| version_of(g)).unwrap_or(0);
+                let ver = sig
+                    .required
+                    .first()
+                    .and_then(|g| version_of(g))
+                    .unwrap_or(0);
                 (*profile, CompositorVersion(ver))
             }
             None => {
@@ -459,7 +473,11 @@ mod tests {
     #[test]
     fn detect_labwc() {
         // labwc_options_v1 is present from Labwc 0.7+; the early-return path is definitive.
-        let g = globals(&["wp_cursor_shape_manager_v1", "xdg_wm_base", "labwc_options_v1"]);
+        let g = globals(&[
+            "wp_cursor_shape_manager_v1",
+            "xdg_wm_base",
+            "labwc_options_v1",
+        ]);
         let q = CompositorQuirks::from_global_pairs(&g);
         assert_eq!(q.profile, CompositorProfile::Labwc);
         assert!(q.suppress_candidate_position);
@@ -576,10 +594,14 @@ mod tests {
         for &(val, expected) in cases {
             // SAFETY: single-threaded under ENV_LOCK; variable is removed before next iteration.
             #[allow(unused_unsafe)]
-            unsafe { std::env::set_var("VIME_COMPOSITOR_PROFILE", val) }
+            unsafe {
+                std::env::set_var("VIME_COMPOSITOR_PROFILE", val)
+            }
             let q = CompositorQuirks::from_global_pairs(&kwin_globals);
             #[allow(unused_unsafe)]
-            unsafe { std::env::remove_var("VIME_COMPOSITOR_PROFILE") }
+            unsafe {
+                std::env::remove_var("VIME_COMPOSITOR_PROFILE")
+            }
             assert_eq!(q.profile, expected, "env={val}");
         }
     }
@@ -589,10 +611,14 @@ mod tests {
         let kwin_globals = globals(&["kde_output_management_v2"]);
         let _guard = ENV_LOCK.lock();
         #[allow(unused_unsafe)]
-        unsafe { std::env::set_var("VIME_COMPOSITOR_PROFILE", "bogus_compositor") }
+        unsafe {
+            std::env::set_var("VIME_COMPOSITOR_PROFILE", "bogus_compositor")
+        }
         let q = CompositorQuirks::from_global_pairs(&kwin_globals);
         #[allow(unused_unsafe)]
-        unsafe { std::env::remove_var("VIME_COMPOSITOR_PROFILE") }
+        unsafe {
+            std::env::remove_var("VIME_COMPOSITOR_PROFILE")
+        }
         assert_eq!(q.profile, CompositorProfile::KWin);
     }
 

@@ -70,7 +70,8 @@ impl FullscreenGuard {
     /// Called by the Wayland backend when `xdg_toplevel::State::Fullscreen`
     /// changes for the focused surface.
     pub fn set_wayland_fullscreen(&self, fullscreen: bool, wm_class: &str) {
-        self.wayland_fullscreen.store(fullscreen, std::sync::atomic::Ordering::Relaxed);
+        self.wayland_fullscreen
+            .store(fullscreen, std::sync::atomic::Ordering::Relaxed);
         if let Ok(mut guard) = self.wayland_wm_class.lock() {
             guard.clear();
             guard.push_str(wm_class);
@@ -88,10 +89,18 @@ impl FullscreenGuard {
     }
 
     fn check_wayland(&self) -> bool {
-        if !self.wayland_fullscreen.load(std::sync::atomic::Ordering::Relaxed) {
+        if !self
+            .wayland_fullscreen
+            .load(std::sync::atomic::Ordering::Relaxed)
+        {
             return false;
         }
-        let class = self.wayland_wm_class.lock().ok().map(|g| g.clone()).unwrap_or_default();
+        let class = self
+            .wayland_wm_class
+            .lock()
+            .ok()
+            .map(|g| g.clone())
+            .unwrap_or_default();
         self.matches_any(&class)
     }
 
@@ -153,7 +162,10 @@ impl FullscreenGuard {
         // WM_CLASS is two null-terminated strings: "instance\0class\0".
         // We match against the class (second field).
         let raw = String::from_utf8_lossy(&wm_class_reply.value);
-        let wm_class = raw.split('\0').nth(1).unwrap_or_else(|| raw.split('\0').next().unwrap_or(""));
+        let wm_class = raw
+            .split('\0')
+            .nth(1)
+            .unwrap_or_else(|| raw.split('\0').next().unwrap_or(""));
 
         debug!(wm_class, "fullscreen window detected, checking game list");
         Some(self.matches_any(wm_class))

@@ -18,9 +18,7 @@ fn main() -> eframe::Result<()> {
     }
 
     Err(last_err.unwrap_or_else(|| {
-        eframe::Error::AppCreation(Box::new(std::io::Error::other(
-            "no renderer available",
-        )))
+        eframe::Error::AppCreation(Box::new(std::io::Error::other("no renderer available")))
     }))
 }
 
@@ -39,10 +37,8 @@ fn create_app(
 
     fonts.font_data.insert(
         "NotoSans".into(),
-        egui::FontData::from_static(include_bytes!(
-            "../../../data/fonts/NotoSans-Regular.ttf"
-        ))
-        .into(),
+        egui::FontData::from_static(include_bytes!("../../../data/fonts/NotoSans-Regular.ttf"))
+            .into(),
     );
 
     let proportional = fonts

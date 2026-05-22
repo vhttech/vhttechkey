@@ -12,8 +12,11 @@ fn bench_telex_toi(c: &mut Criterion) {
             for ch in "tooi".chars() {
                 e.process(black_box(&make_key(ch))).ok();
             }
-            e.process(black_box(&InputEvent::KeyDown(Key::Return, Modifiers::none())))
-                .ok()
+            e.process(black_box(&InputEvent::KeyDown(
+                Key::Return,
+                Modifiers::none(),
+            )))
+            .ok()
         })
     });
 }
@@ -25,8 +28,11 @@ fn bench_telex_duoc(c: &mut Criterion) {
             for ch in "dduwowcj".chars() {
                 e.process(black_box(&make_key(ch))).ok();
             }
-            e.process(black_box(&InputEvent::KeyDown(Key::Return, Modifiers::none())))
-                .ok()
+            e.process(black_box(&InputEvent::KeyDown(
+                Key::Return,
+                Modifiers::none(),
+            )))
+            .ok()
         })
     });
 }
@@ -38,8 +44,11 @@ fn bench_vni_toi(c: &mut Criterion) {
             for ch in "to6i".chars() {
                 e.process(black_box(&make_key(ch))).ok();
             }
-            e.process(black_box(&InputEvent::KeyDown(Key::Return, Modifiers::none())))
-                .ok()
+            e.process(black_box(&InputEvent::KeyDown(
+                Key::Return,
+                Modifiers::none(),
+            )))
+            .ok()
         })
     });
 }
@@ -51,8 +60,11 @@ fn bench_vni_duoc(c: &mut Criterion) {
             for ch in "d9u7o7c5".chars() {
                 e.process(black_box(&make_key(ch))).ok();
             }
-            e.process(black_box(&InputEvent::KeyDown(Key::Return, Modifiers::none())))
-                .ok()
+            e.process(black_box(&InputEvent::KeyDown(
+                Key::Return,
+                Modifiers::none(),
+            )))
+            .ok()
         })
     });
 }
@@ -64,8 +76,11 @@ fn bench_viqr_toi(c: &mut Criterion) {
             for ch in "to^i".chars() {
                 e.process(black_box(&make_key(ch))).ok();
             }
-            e.process(black_box(&InputEvent::KeyDown(Key::Return, Modifiers::none())))
-                .ok()
+            e.process(black_box(&InputEvent::KeyDown(
+                Key::Return,
+                Modifiers::none(),
+            )))
+            .ok()
         })
     });
 }
@@ -81,9 +96,10 @@ fn bench_telex_throughput_1k_syllables(c: &mut Criterion) {
                     for ch in syl.chars() {
                         e.process(black_box(&make_key(ch))).ok();
                     }
-                    if let Ok(t) =
-                        e.process(black_box(&InputEvent::KeyDown(Key::Return, Modifiers::none())))
-                    {
+                    if let Ok(t) = e.process(black_box(&InputEvent::KeyDown(
+                        Key::Return,
+                        Modifiers::none(),
+                    ))) {
                         total += 1;
                         black_box(t);
                     }

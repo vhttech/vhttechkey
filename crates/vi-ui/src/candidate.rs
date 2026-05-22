@@ -25,10 +25,7 @@ pub struct MonitorInfo {
 
 impl MonitorInfo {
     fn contains(&self, cx: i32, cy: i32) -> bool {
-        cx >= self.x
-            && cx < self.x + self.width
-            && cy >= self.y
-            && cy < self.y + self.height
+        cx >= self.x && cx < self.x + self.width && cy >= self.y && cy < self.y + self.height
     }
 }
 
@@ -38,11 +35,7 @@ impl MonitorInfo {
 /// monitor in the list when the point is outside every monitor's rectangle.
 ///
 /// Returns `None` only if `monitors` is empty.
-pub fn cursor_monitor(
-    monitors: &[MonitorInfo],
-    cx: i32,
-    cy: i32,
-) -> Option<&MonitorInfo> {
+pub fn cursor_monitor(monitors: &[MonitorInfo], cx: i32, cy: i32) -> Option<&MonitorInfo> {
     monitors
         .iter()
         .find(|m| m.contains(cx, cy))
@@ -64,9 +57,7 @@ pub fn compute_placement(
     let gap = (16.0 * monitor.scale_factor) as i32;
     let w = w.max(1);
     let h = h.max(1);
-    let x = cursor_x
-        .max(monitor.x)
-        .min(monitor.x + monitor.width - w);
+    let x = cursor_x.max(monitor.x).min(monitor.x + monitor.width - w);
     let y = (cursor_y + gap)
         .max(monitor.y)
         .min(monitor.y + monitor.height - h);

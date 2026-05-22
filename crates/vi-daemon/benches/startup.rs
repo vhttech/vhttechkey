@@ -17,9 +17,7 @@ fn bench_socket_startup(c: &mut Criterion) {
                 let dir = tempfile::tempdir().unwrap();
                 let path = dir.path().join("vi-daemon.sock");
                 let t = Instant::now();
-                let _listener = black_box(
-                    std::os::unix::net::UnixListener::bind(&path).unwrap(),
-                );
+                let _listener = black_box(std::os::unix::net::UnixListener::bind(&path).unwrap());
                 total += t.elapsed();
             }
             total

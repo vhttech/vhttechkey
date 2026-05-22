@@ -254,7 +254,11 @@ fn nuawx_backspace_removes_a() {
     assert_eq!(preedit(&e), "nữa");
 
     e.process(&bs()).unwrap();
-    assert_eq!(preedit(&e), "nu", "BS: remove last char (a + ư modification)");
+    assert_eq!(
+        preedit(&e),
+        "nu",
+        "BS: remove last char (a + ư modification)"
+    );
 }
 
 // asw → "ắ" (1 char); one backspace empties the buffer entirely.

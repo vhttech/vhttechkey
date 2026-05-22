@@ -18,7 +18,10 @@ fn kr(c: char) -> InputEvent {
 }
 
 fn is_commit(t: &StateTransition) -> bool {
-    matches!(t, StateTransition::Commit(_) | StateTransition::CommitAndClear(_))
+    matches!(
+        t,
+        StateTransition::Commit(_) | StateTransition::CommitAndClear(_)
+    )
 }
 
 /// Holding a non-rule character for 50 repeats must not commit; the single
@@ -34,7 +37,11 @@ fn plain_char_repeat_no_spurious_commit() {
             let r = engine.process(&kr('n')).unwrap();
             assert!(!is_commit(&r), "KeyRepeat must not commit for {method:?}");
         }
-        if is_commit(&engine.process(&InputEvent::KeyDown(Key::Return, Modifiers::none())).unwrap()) {
+        if is_commit(
+            &engine
+                .process(&InputEvent::KeyDown(Key::Return, Modifiers::none()))
+                .unwrap(),
+        ) {
             commits += 1;
         }
         assert_eq!(commits, 1, "expected exactly one commit for {method:?}");
@@ -48,7 +55,9 @@ fn return_repeat_does_not_double_commit() {
     let mut engine = StandardEngine::new(InputMethod::Telex);
     engine.process(&kd('a')).unwrap();
 
-    let first = engine.process(&InputEvent::KeyDown(Key::Return, Modifiers::none())).unwrap();
+    let first = engine
+        .process(&InputEvent::KeyDown(Key::Return, Modifiers::none()))
+        .unwrap();
     assert!(is_commit(&first), "first Return must commit");
 
     for _ in 0..REPEATS {
@@ -77,7 +86,10 @@ fn backspace_repeat_drains_preedit_cleanly() {
     for _ in 0..REPEATS {
         let _ = engine.process(&InputEvent::KeyRepeat(Key::Backspace, Modifiers::none()));
     }
-    assert!(engine.preedit().is_empty(), "preedit must be empty after excess backspace repeats");
+    assert!(
+        engine.preedit().is_empty(),
+        "preedit must be empty after excess backspace repeats"
+    );
 }
 
 /// Holding a Telex tone-key ('s' = sắc) for 50 repeats keeps preedit NFC and

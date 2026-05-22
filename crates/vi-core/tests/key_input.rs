@@ -193,7 +193,7 @@ fn dead_horn_b_emits_literal_then_b() {
 fn two_consecutive_dead_keys_emits_first_literal() {
     let mut e = telex();
     e.process(&dead('^')).unwrap(); // pending = '^'
-    // Pressing another dead key must emit '^' as literal and set new pending
+                                    // Pressing another dead key must emit '^' as literal and set new pending
     e.process(&dead('(')).unwrap();
     // Buffer now has '^' as literal; pending = '('
     // Then 'a' combines with '('
@@ -212,7 +212,11 @@ fn altgr_with_no_preedit_passes_through() {
     let t = e
         .process(&InputEvent::KeyDown(Key::Char('e'), Modifiers::altgr()))
         .unwrap();
-    assert_eq!(t, StateTransition::PassThrough, "AltGr on empty preedit must PassThrough");
+    assert_eq!(
+        t,
+        StateTransition::PassThrough,
+        "AltGr on empty preedit must PassThrough"
+    );
 }
 
 #[test]
@@ -230,9 +234,16 @@ fn altgr_commits_preedit_without_applying_rules() {
         "AltGr must commit pending preedit; got {t:?}"
     );
     if let StateTransition::CommitAndClear(committed) = t {
-        assert_eq!(committed.as_str(), "o", "committed text must be plain 'o', not 'ô'");
+        assert_eq!(
+            committed.as_str(),
+            "o",
+            "committed text must be plain 'o', not 'ô'"
+        );
     }
-    assert!(e.preedit().is_empty(), "preedit must be empty after AltGr commit");
+    assert!(
+        e.preedit().is_empty(),
+        "preedit must be empty after AltGr commit"
+    );
 }
 
 #[test]
@@ -243,8 +254,13 @@ fn altgr_does_not_apply_telex_vowel_rules() {
     assert_eq!(e.preedit().as_str(), "o");
 
     // Explicit Mod5 (altgr) flag — must commit 'o' and not produce 'ô'.
-    let mods = Modifiers { altgr: true, ..Modifiers::none() };
-    let t = e.process(&InputEvent::KeyDown(Key::Char('o'), mods)).unwrap();
+    let mods = Modifiers {
+        altgr: true,
+        ..Modifiers::none()
+    };
+    let t = e
+        .process(&InputEvent::KeyDown(Key::Char('o'), mods))
+        .unwrap();
     match t {
         StateTransition::CommitAndClear(c) => {
             assert_eq!(c.as_str(), "o", "AltGr+o must not fire oo→ô Telex rule");
@@ -365,14 +381,16 @@ fn arb_modifiers() -> impl Strategy<Value = Modifiers> {
         any::<bool>(),
         any::<bool>(),
     )
-        .prop_map(|(shift, ctrl, alt, super_key, caps_lock, altgr)| Modifiers {
-            shift,
-            ctrl,
-            alt,
-            super_key,
-            caps_lock,
-            altgr,
-        })
+        .prop_map(
+            |(shift, ctrl, alt, super_key, caps_lock, altgr)| Modifiers {
+                shift,
+                ctrl,
+                alt,
+                super_key,
+                caps_lock,
+                altgr,
+            },
+        )
 }
 
 fn arb_key() -> impl Strategy<Value = Key> {

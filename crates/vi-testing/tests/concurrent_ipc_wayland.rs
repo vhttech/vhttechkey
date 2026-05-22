@@ -50,8 +50,9 @@ async fn test_concurrent_ipc_and_compositor_events() {
     let committed: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
 
     let dir = TempDir::new().unwrap();
-    let sock_path =
-        dir.path().join(format!("concurrent-ipc-{}.sock", std::process::id()));
+    let sock_path = dir
+        .path()
+        .join(format!("concurrent-ipc-{}.sock", std::process::id()));
 
     // IPC server: SetMethod requests switch the input method on the shared engine.
     let engine_ipc = Arc::clone(&engine);
@@ -90,16 +91,19 @@ async fn test_concurrent_ipc_and_compositor_events() {
     // Task A: IPC client; alternates SetMethod Telex / VNI at ~100 req/sec.
     let sock_for_a = sock_path.clone();
     let task_a = tokio::spawn(async move {
-        let stream =
-            UnixStream::connect(&sock_for_a).await.expect("connect to IPC socket");
+        let stream = UnixStream::connect(&sock_for_a)
+            .await
+            .expect("connect to IPC socket");
         let (reader_half, mut writer_half) = stream.into_split();
         let mut lines = BufReader::new(reader_half).lines();
         let methods = ["telex", "vni"];
         for i in 0u32..500 {
             let method = methods[(i as usize) % 2];
-            let req =
-                serde_json::to_string(&Request::SetMethod { method: method.into() }).unwrap()
-                    + "\n";
+            let req = serde_json::to_string(&Request::SetMethod {
+                method: method.into(),
+            })
+            .unwrap()
+                + "\n";
             writer_half.write_all(req.as_bytes()).await.unwrap();
             // Drain the response so the server's write buffer does not fill up.
             let _ = lines.next_line().await;
@@ -146,7 +150,9 @@ async fn test_concurrent_ipc_and_compositor_events() {
     // Both tasks must complete without panic or deadlock within 30 seconds.
     timeout(Duration::from_secs(30), async {
         task_a.await.expect("Task A (IPC client) panicked");
-        task_b.await.expect("Task B (compositor simulation) panicked");
+        task_b
+            .await
+            .expect("Task B (compositor simulation) panicked");
     })
     .await
     .expect("test timed out after 30 s — possible deadlock");
@@ -160,5 +166,8 @@ async fn test_concurrent_ipc_and_compositor_events() {
 
     // No stuck preedit should remain after all tasks have finished.
     let preedit = engine.lock().unwrap().preedit().as_str().to_owned();
-    assert!(preedit.is_empty(), "preedit not cleared after test: {preedit:?}");
+    assert!(
+        preedit.is_empty(),
+        "preedit not cleared after test: {preedit:?}"
+    );
 }

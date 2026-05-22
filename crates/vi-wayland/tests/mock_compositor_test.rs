@@ -52,7 +52,10 @@ fn adapter_leave_disables_acknowledge() {
     a.on_done(1);
     // Simulate leave by verifying that after is_enabled() returns false we would
     // skip acknowledge_state.  The guard is: if !self.enabled { return; }
-    assert!(!a.is_enabled(), "adapter must start disabled (no real enter called)");
+    assert!(
+        !a.is_enabled(),
+        "adapter must start disabled (no real enter called)"
+    );
 }
 
 // ── KWin cursor clamping ──────────────────────────────────────────────────────
@@ -256,7 +259,10 @@ fn focus_change_guard_flushes_on_leave() {
     }
 
     assert_eq!(flushed_on_leave.as_deref(), Some("tiế"));
-    assert!(flushed_on_deactivate.is_none(), "Deactivate must not double-flush");
+    assert!(
+        flushed_on_deactivate.is_none(),
+        "Deactivate must not double-flush"
+    );
     assert!(pending.is_none());
 }
 

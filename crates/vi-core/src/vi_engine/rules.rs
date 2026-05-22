@@ -5,12 +5,8 @@ use std::sync::LazyLock;
 
 use regex::Regex;
 
-use crate::vi_engine::text::{
-    add_tone_to_char, find_mark_from_char, get_mark_family, is_vowel,
-};
-use crate::vi_engine::types::{
-    EffectType, Mark, ParsedInputMethod, Rule, Tone,
-};
+use crate::vi_engine::text::{add_tone_to_char, find_mark_from_char, get_mark_family, is_vowel};
+use crate::vi_engine::types::{EffectType, Mark, ParsedInputMethod, Rule, Tone};
 
 static REG_DSL: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"([a-zA-Z]+)_(\p{L}+)([_\p{L}]*)").expect("REG_DSL"));
@@ -147,27 +143,73 @@ fn get_appending_rule(key: char, value: &str) -> Option<Rule> {
 /// vhttechkey `InputMethodDefinitions` (Unicode path; bỏ charset table).
 pub(crate) fn input_method_definitions() -> HashMap<String, HashMap<String, String>> {
     [
-        ("Telex", vec![
-            ("z", "XoaDauThanh"), ("s", "DauSac"), ("f", "DauHuyen"), ("r", "DauHoi"),
-            ("x", "DauNga"), ("j", "DauNang"), ("a", "A_Â"), ("e", "E_Ê"),
-            ("o", "O_Ô"), ("w", "UOA_ƯƠĂ"), ("d", "D_Đ"),
-        ]),
-        ("VNI", vec![
-            ("0", "XoaDauThanh"), ("1", "DauSac"), ("2", "DauHuyen"), ("3", "DauHoi"),
-            ("4", "DauNga"), ("5", "DauNang"), ("6", "AEO_ÂÊÔ"), ("7", "UO_ƯƠ"),
-            ("8", "A_Ă"), ("9", "D_Đ"),
-        ]),
-        ("VIQR", vec![
-            ("0", "XoaDauThanh"), ("'", "DauSac"), ("`", "DauHuyen"), ("?", "DauHoi"),
-            ("~", "DauNga"), (".", "DauNang"), ("^", "AEO_ÂÊÔ"), ("+", "UO_ƯƠ"),
-            ("*", "UO_ƯƠ"), ("(", "A_Ă"), ("d", "D_Đ"),
-        ]),
-        ("Telex 2", vec![
-            ("z", "XoaDauThanh"), ("s", "DauSac"), ("f", "DauHuyen"), ("r", "DauHoi"),
-            ("x", "DauNga"), ("j", "DauNang"), ("a", "A_Â"), ("e", "E_Ê"),
-            ("o", "O_Ô"), ("w", "UOA_ƯƠĂ__Ư"), ("d", "D_Đ"),
-            ("]", "__ư"), ("[", "__ơ"), ("}", "_Ư"), ("{", "_Ơ"),
-        ]),
+        (
+            "Telex",
+            vec![
+                ("z", "XoaDauThanh"),
+                ("s", "DauSac"),
+                ("f", "DauHuyen"),
+                ("r", "DauHoi"),
+                ("x", "DauNga"),
+                ("j", "DauNang"),
+                ("a", "A_Â"),
+                ("e", "E_Ê"),
+                ("o", "O_Ô"),
+                ("w", "UOA_ƯƠĂ"),
+                ("d", "D_Đ"),
+            ],
+        ),
+        (
+            "VNI",
+            vec![
+                ("0", "XoaDauThanh"),
+                ("1", "DauSac"),
+                ("2", "DauHuyen"),
+                ("3", "DauHoi"),
+                ("4", "DauNga"),
+                ("5", "DauNang"),
+                ("6", "AEO_ÂÊÔ"),
+                ("7", "UO_ƯƠ"),
+                ("8", "A_Ă"),
+                ("9", "D_Đ"),
+            ],
+        ),
+        (
+            "VIQR",
+            vec![
+                ("0", "XoaDauThanh"),
+                ("'", "DauSac"),
+                ("`", "DauHuyen"),
+                ("?", "DauHoi"),
+                ("~", "DauNga"),
+                (".", "DauNang"),
+                ("^", "AEO_ÂÊÔ"),
+                ("+", "UO_ƯƠ"),
+                ("*", "UO_ƯƠ"),
+                ("(", "A_Ă"),
+                ("d", "D_Đ"),
+            ],
+        ),
+        (
+            "Telex 2",
+            vec![
+                ("z", "XoaDauThanh"),
+                ("s", "DauSac"),
+                ("f", "DauHuyen"),
+                ("r", "DauHoi"),
+                ("x", "DauNga"),
+                ("j", "DauNang"),
+                ("a", "A_Â"),
+                ("e", "E_Ê"),
+                ("o", "O_Ô"),
+                ("w", "UOA_ƯƠĂ__Ư"),
+                ("d", "D_Đ"),
+                ("]", "__ư"),
+                ("[", "__ơ"),
+                ("}", "_Ư"),
+                ("{", "_Ơ"),
+            ],
+        ),
     ]
     .into_iter()
     .map(|(n, pairs)| {

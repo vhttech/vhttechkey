@@ -214,8 +214,9 @@ mod tests {
     #[test]
     fn set_key_bindings_ok() {
         let config = make_config();
-        let bindings: HashMap<String, String> =
-            [("Toggle IME".into(), "ctrl+space".into())].into_iter().collect();
+        let bindings: HashMap<String, String> = [("Toggle IME".into(), "ctrl+space".into())]
+            .into_iter()
+            .collect();
         let resp = apply_key_bindings(&config, bindings.clone());
         assert!(matches!(resp, Response::Ok));
         assert_eq!(config.read().unwrap().key_bindings, bindings);

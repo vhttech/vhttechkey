@@ -5,7 +5,9 @@
 //! preserves the tone when the base vowel changes form:
 //!   a + s(ắc) → á, then w → ă-form → ắ
 
-use vi_core::{CompositionEngine, InputEvent, InputMethod, Key, Modifiers, StandardEngine, StateTransition};
+use vi_core::{
+    CompositionEngine, InputEvent, InputMethod, Key, Modifiers, StandardEngine, StateTransition,
+};
 
 fn telex() -> StandardEngine {
     StandardEngine::new(InputMethod::Telex)

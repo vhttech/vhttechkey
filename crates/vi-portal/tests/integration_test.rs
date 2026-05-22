@@ -21,7 +21,10 @@ struct MockPortalService {
 #[interface(name = "org.freedesktop.portal.InputMethod")]
 impl MockPortalService {
     async fn commit_string(&self, text: String) {
-        self.committed.lock().unwrap_or_else(|e| e.into_inner()).push(text);
+        self.committed
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .push(text);
     }
 
     /// Receives the `UpdatePreeditString` D-Bus method call (which the proxy
@@ -130,7 +133,11 @@ async fn test_portal_proxy_commit_nfc_normalised_vietnamese() {
     tokio::time::sleep(Duration::from_millis(80)).await;
 
     let calls = committed.lock().unwrap_or_else(|e| e.into_inner());
-    assert_eq!(calls.as_slice(), &[nfc_viet], "committed text must be NFC-normalised Vietnamese");
+    assert_eq!(
+        calls.as_slice(),
+        &[nfc_viet],
+        "committed text must be NFC-normalised Vietnamese"
+    );
 
     drop(service_conn);
 }

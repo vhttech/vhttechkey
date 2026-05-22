@@ -16,7 +16,8 @@ use tokio_util::sync::CancellationToken;
 use vi_daemon::ipc::{Request, Response};
 
 fn unique_sock(dir: &TempDir, label: &str) -> PathBuf {
-    dir.path().join(format!("{label}-{}.sock", std::process::id()))
+    dir.path()
+        .join(format!("{label}-{}.sock", std::process::id()))
 }
 
 /// Spawn an IPC server, send a malformed request and a panicking request, then
@@ -86,8 +87,11 @@ async fn test_ipc_survives_malformed_and_panicking_requests() {
     );
 
     // ── Panicking handler ───────────────────────────────────────────────────
-    let panic_req =
-        serde_json::to_string(&Request::SetMethod { method: "panic".into() }).unwrap() + "\n";
+    let panic_req = serde_json::to_string(&Request::SetMethod {
+        method: "panic".into(),
+    })
+    .unwrap()
+        + "\n";
     timeout(
         Duration::from_millis(200),
         writer_half.write_all(panic_req.as_bytes()),
@@ -161,8 +165,12 @@ async fn test_socket_file_mode_is_0o600() {
 
     let server_path = path.clone();
     tokio::spawn(async move {
-        vi_daemon::ipc::serve(server_path, |_: Request| Response::Ok, Duration::from_secs(30))
-            .await;
+        vi_daemon::ipc::serve(
+            server_path,
+            |_: Request| Response::Ok,
+            Duration::from_secs(30),
+        )
+        .await;
     });
 
     // Poll until the socket exists (permissions are set right after bind).

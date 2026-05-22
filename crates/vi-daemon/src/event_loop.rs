@@ -60,16 +60,25 @@ async fn dispatch_transition(
 ) -> Result<(), vi_platform::PlatformError> {
     match transition {
         Ok(StateTransition::PreeditUpdated(p)) => {
-            tracing::trace!(preedit_chars = p.as_str().chars().count(), "dispatch: update_preedit");
+            tracing::trace!(
+                preedit_chars = p.as_str().chars().count(),
+                "dispatch: update_preedit"
+            );
             backend.update_preedit(&p, CharCursor(p.cursor_byte_offset))
         }
         Ok(StateTransition::CommitThenPassThrough(c)) => {
-            tracing::trace!(commit_chars = c.as_str().chars().count(), "dispatch: commit_replacing_preedit + forward_key");
+            tracing::trace!(
+                commit_chars = c.as_str().chars().count(),
+                "dispatch: commit_replacing_preedit + forward_key"
+            );
             backend.commit_replacing_preedit(c.as_nfc())?;
             backend.forward_key(event)
         }
         Ok(StateTransition::Commit(c)) | Ok(StateTransition::CommitAndClear(c)) => {
-            tracing::trace!(commit_chars = c.as_str().chars().count(), "dispatch: commit_replacing_preedit");
+            tracing::trace!(
+                commit_chars = c.as_str().chars().count(),
+                "dispatch: commit_replacing_preedit"
+            );
             backend.commit_replacing_preedit(c.as_nfc())?;
             match event {
                 InputEvent::KeyDown(Key::Return | Key::Tab, _) => {
@@ -108,7 +117,9 @@ async fn dispatch_transition(
                 Ok(mut g) => g.reset(),
                 Err(poisoned) => poisoned.into_inner().reset(),
             }
-            Err(vi_platform::PlatformError::DBus(format!("composition error: {e}")))
+            Err(vi_platform::PlatformError::DBus(format!(
+                "composition error: {e}"
+            )))
         }
     }
 }
@@ -125,12 +136,24 @@ mod tests {
 
     struct NullBackend;
     impl ImeBackend for NullBackend {
-        fn commit(&self, _: &NfcString) -> Result<()> { Ok(()) }
-        fn update_preedit(&self, _: &PreeditText, _: CharCursor) -> Result<()> { Ok(()) }
-        fn clear_preedit(&self) -> Result<()> { Ok(()) }
-        fn forward_key(&self, _: &InputEvent) -> Result<()> { Ok(()) }
-        fn surrounding_text(&self) -> Result<Option<SurroundingText>> { Ok(None) }
-        fn capabilities(&self) -> Capabilities { Capabilities::default() }
+        fn commit(&self, _: &NfcString) -> Result<()> {
+            Ok(())
+        }
+        fn update_preedit(&self, _: &PreeditText, _: CharCursor) -> Result<()> {
+            Ok(())
+        }
+        fn clear_preedit(&self) -> Result<()> {
+            Ok(())
+        }
+        fn forward_key(&self, _: &InputEvent) -> Result<()> {
+            Ok(())
+        }
+        fn surrounding_text(&self) -> Result<Option<SurroundingText>> {
+            Ok(None)
+        }
+        fn capabilities(&self) -> Capabilities {
+            Capabilities::default()
+        }
     }
 
     /// Backend that records which methods were called and in what order.
@@ -142,11 +165,17 @@ mod tests {
 
     impl RecordingBackend {
         fn new() -> Self {
-            Self { calls: StdMutex::new(vec![]), fail_update_preedit: false }
+            Self {
+                calls: StdMutex::new(vec![]),
+                fail_update_preedit: false,
+            }
         }
 
         fn new_failing() -> Self {
-            Self { calls: StdMutex::new(vec![]), fail_update_preedit: true }
+            Self {
+                calls: StdMutex::new(vec![]),
+                fail_update_preedit: true,
+            }
         }
 
         fn recorded(&self) -> Vec<&'static str> {
@@ -179,8 +208,12 @@ mod tests {
             self.calls.lock().unwrap().push("commit_replacing_preedit");
             Ok(())
         }
-        fn surrounding_text(&self) -> Result<Option<SurroundingText>> { Ok(None) }
-        fn capabilities(&self) -> Capabilities { Capabilities::default() }
+        fn surrounding_text(&self) -> Result<Option<SurroundingText>> {
+            Ok(None)
+        }
+        fn capabilities(&self) -> Capabilities {
+            Capabilities::default()
+        }
     }
 
     /// Backend that records calls but does NOT override `commit_replacing_preedit`,
@@ -192,7 +225,9 @@ mod tests {
 
     impl DefaultImplRecordingBackend {
         fn new() -> Self {
-            Self { calls: StdMutex::new(vec![]) }
+            Self {
+                calls: StdMutex::new(vec![]),
+            }
         }
 
         fn recorded(&self) -> Vec<&'static str> {
@@ -217,8 +252,12 @@ mod tests {
             self.calls.lock().unwrap().push("forward_key");
             Ok(())
         }
-        fn surrounding_text(&self) -> Result<Option<SurroundingText>> { Ok(None) }
-        fn capabilities(&self) -> Capabilities { Capabilities::default() }
+        fn surrounding_text(&self) -> Result<Option<SurroundingText>> {
+            Ok(None)
+        }
+        fn capabilities(&self) -> Capabilities {
+            Capabilities::default()
+        }
         // commit_replacing_preedit intentionally NOT overridden → default impl
     }
 
@@ -242,7 +281,10 @@ mod tests {
             &engine,
         )
         .await;
-        assert!(result.is_err(), "composition error must not be silently swallowed");
+        assert!(
+            result.is_err(),
+            "composition error must not be silently swallowed"
+        );
     }
 
     #[tokio::test]
@@ -254,7 +296,10 @@ mod tests {
         {
             let mut eng = engine.lock().unwrap();
             let _ = eng.process(&dummy);
-            assert!(!eng.preedit().is_empty(), "preedit must have content after 'a'");
+            assert!(
+                !eng.preedit().is_empty(),
+                "preedit must have content after 'a'"
+            );
         }
 
         let _ = dispatch_transition(
@@ -267,12 +312,17 @@ mod tests {
 
         {
             let eng = engine.lock().unwrap();
-            assert!(eng.preedit().is_empty(), "engine preedit must be empty after composition error reset");
+            assert!(
+                eng.preedit().is_empty(),
+                "engine preedit must be empty after composition error reset"
+            );
         }
 
         let (tx, rx) = mpsc::channel(16);
         let (shutdown_tx, shutdown_rx) = broadcast::channel(1);
-        tx.send(InputEvent::KeyDown(Key::Char('b'), Modifiers::none())).await.unwrap();
+        tx.send(InputEvent::KeyDown(Key::Char('b'), Modifiers::none()))
+            .await
+            .unwrap();
         shutdown_tx.send(()).unwrap();
         run_event_loop(Arc::clone(&engine), Arc::clone(&backend), rx, shutdown_rx).await;
     }
@@ -286,9 +336,13 @@ mod tests {
         let backend: BackendHandle = Arc::clone(&recording) as Arc<dyn ImeBackend>;
 
         let event = InputEvent::KeyDown(Key::Char('a'), Modifiers::none());
-        let transition = Ok(StateTransition::PreeditUpdated(PreeditText::new("a".to_string())));
+        let transition = Ok(StateTransition::PreeditUpdated(PreeditText::new(
+            "a".to_string(),
+        )));
 
-        dispatch_transition(transition, &event, &backend, &engine).await.unwrap();
+        dispatch_transition(transition, &event, &backend, &engine)
+            .await
+            .unwrap();
 
         assert_eq!(
             recording.recorded(),
@@ -309,11 +363,16 @@ mod tests {
         let _ = helper.process(&InputEvent::KeyDown(Key::Char('a'), Modifiers::none()));
         let event = InputEvent::KeyDown(
             Key::Char('c'),
-            Modifiers { ctrl: true, ..Modifiers::none() },
+            Modifiers {
+                ctrl: true,
+                ..Modifiers::none()
+            },
         );
         let transition = helper.process(&event);
 
-        dispatch_transition(transition, &event, &backend, &engine).await.unwrap();
+        dispatch_transition(transition, &event, &backend, &engine)
+            .await
+            .unwrap();
 
         assert_eq!(
             recording.recorded(),
@@ -331,7 +390,9 @@ mod tests {
         let event = InputEvent::KeyDown(Key::Char('q'), Modifiers::none());
         let transition = Ok(StateTransition::PassThrough);
 
-        dispatch_transition(transition, &event, &backend, &engine).await.unwrap();
+        dispatch_transition(transition, &event, &backend, &engine)
+            .await
+            .unwrap();
 
         assert_eq!(
             recording.recorded(),
@@ -351,7 +412,9 @@ mod tests {
         let event = InputEvent::KeyDown(Key::Char(' '), Modifiers::none());
         let transition = helper.process(&event);
 
-        dispatch_transition(transition, &event, &backend, &engine).await.unwrap();
+        dispatch_transition(transition, &event, &backend, &engine)
+            .await
+            .unwrap();
 
         assert_eq!(
             recording.recorded(),
@@ -367,11 +430,16 @@ mod tests {
         let backend: BackendHandle = Arc::clone(&failing) as Arc<dyn ImeBackend>;
 
         let event = InputEvent::KeyDown(Key::Char('a'), Modifiers::none());
-        let transition = Ok(StateTransition::PreeditUpdated(PreeditText::new("a".to_string())));
+        let transition = Ok(StateTransition::PreeditUpdated(PreeditText::new(
+            "a".to_string(),
+        )));
 
         let result = dispatch_transition(transition, &event, &backend, &engine).await;
 
-        assert!(result.is_err(), "update_preedit failure must propagate as Err from dispatch");
+        assert!(
+            result.is_err(),
+            "update_preedit failure must propagate as Err from dispatch"
+        );
         assert_eq!(failing.recorded(), vec!["update_preedit"]);
     }
 
@@ -398,7 +466,9 @@ mod tests {
         ];
         for event in &events {
             let transition = engine.lock().unwrap().process(event);
-            dispatch_transition(transition, event, &backend, &engine).await.unwrap();
+            dispatch_transition(transition, event, &backend, &engine)
+                .await
+                .unwrap();
         }
 
         let calls = recording.recorded();
@@ -444,7 +514,9 @@ mod tests {
         let event = InputEvent::KeyDown(Key::Char(' '), Modifiers::none());
         let transition = helper.process(&event);
 
-        dispatch_transition(transition, &event, &backend, &engine).await.unwrap();
+        dispatch_transition(transition, &event, &backend, &engine)
+            .await
+            .unwrap();
 
         assert_eq!(
             recording.recorded(),
@@ -465,7 +537,9 @@ mod tests {
         let preedit = PreeditText::new("b".to_string());
         let transition = Ok(StateTransition::CommitThenPreedit(committed, preedit));
 
-        dispatch_transition(transition, &event, &backend, &engine).await.unwrap();
+        dispatch_transition(transition, &event, &backend, &engine)
+            .await
+            .unwrap();
 
         assert_eq!(
             recording.recorded(),
@@ -495,7 +569,9 @@ mod tests {
         //       (preedit "a"), or
         //   (b) receives shutdown first → preedit unchanged ("a").
         // Either way the assertion holds.
-        tx.send(InputEvent::KeyDown(Key::Char('b'), Modifiers::none())).await.unwrap();
+        tx.send(InputEvent::KeyDown(Key::Char('b'), Modifiers::none()))
+            .await
+            .unwrap();
         shutdown_tx.send(()).unwrap();
         run_event_loop(Arc::clone(&engine), backend, rx, shutdown_rx).await;
 

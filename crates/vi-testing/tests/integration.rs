@@ -47,7 +47,8 @@ async fn test_nfc_invariant() {
 async fn test_key_repeat_no_duplicate_commit() {
     let h = IntegrationHarness::new(InputMethod::Telex);
     for _ in 0..10 {
-        h.send_event(InputEvent::KeyRepeat(Key::Char('a'), Modifiers::default())).await;
+        h.send_event(InputEvent::KeyRepeat(Key::Char('a'), Modifiers::default()))
+            .await;
     }
     h.send_event(InputEvent::FocusOut).await;
     assert_eq!(h.committed().len(), 1);

@@ -14,7 +14,8 @@ struct Lcg(u64);
 
 impl Lcg {
     fn next(&mut self) -> u64 {
-        self.0 = self.0
+        self.0 = self
+            .0
             .wrapping_mul(6_364_136_223_846_793_005)
             .wrapping_add(1_442_695_040_888_963_407);
         self.0
@@ -27,15 +28,14 @@ impl Lcg {
 
 /// Representative Telex key sequences covering all six tones and common vowels.
 const SYLLABLES: &[&str] = &[
-    "toi", "viet", "an", "em", "hay",
-    "af", "as", "ar", "ax", "aj",   // a + tones
+    "toi", "viet", "an", "em", "hay", "af", "as", "ar", "ax", "aj", // a + tones
     "tooi", "toof", "toos", "toor", // tô + tones
-    "uws", "uwf", "uwr",            // ư + tones
-    "ees", "eef",                   // ê + tones
-    "oof", "oos",                   // ô + tones
-    "owf", "ows",                   // ơ + tones
-    "awf", "aws",                   // ă + tones
-    "ddi",                          // đi
+    "uws", "uwf", "uwr", // ư + tones
+    "ees", "eef", // ê + tones
+    "oof", "oos", // ô + tones
+    "owf", "ows", // ơ + tones
+    "awf", "aws", // ă + tones
+    "ddi", // đi
 ];
 
 fn compose_one(engine: &mut StandardEngine, syllable: &str) -> Option<String> {
@@ -70,8 +70,8 @@ pub fn multithreaded_stress_run(
         .map(|thread_id| {
             let engine = Arc::clone(&engine);
             thread::spawn(move || {
-                let mut rng =
-                    Lcg(0xDEAD_BEEF_u64.wrapping_add((thread_id as u64).wrapping_mul(0x9E37_79B9_7F4A_7C15)));
+                let mut rng = Lcg(0xDEAD_BEEF_u64
+                    .wrapping_add((thread_id as u64).wrapping_mul(0x9E37_79B9_7F4A_7C15)));
                 let mut results: Vec<String> = Vec::with_capacity(syllables_per_thread);
 
                 for _ in 0..syllables_per_thread {

@@ -35,7 +35,13 @@ fn ret() -> InputEvent {
 }
 
 fn ctrl(c: char) -> InputEvent {
-    InputEvent::KeyDown(Key::Char(c), Modifiers { ctrl: true, ..Modifiers::none() })
+    InputEvent::KeyDown(
+        Key::Char(c),
+        Modifiers {
+            ctrl: true,
+            ..Modifiers::none()
+        },
+    )
 }
 
 // ── Single-keypress emission ───────────────────────────────────────────────────
@@ -66,22 +72,34 @@ fn telex_composing_sequence_t_to_toi() {
     let mut e = telex();
 
     let t = e.process(&kd('t')).unwrap();
-    assert!(matches!(t, StateTransition::PreeditUpdated(_)), "step 't': {t:?}");
+    assert!(
+        matches!(t, StateTransition::PreeditUpdated(_)),
+        "step 't': {t:?}"
+    );
     assert_eq!(e.preedit().as_str(), "t");
 
     e.process(&ku('t')).unwrap();
     let t = e.process(&kd('o')).unwrap();
-    assert!(matches!(t, StateTransition::PreeditUpdated(_)), "step 'o': {t:?}");
+    assert!(
+        matches!(t, StateTransition::PreeditUpdated(_)),
+        "step 'o': {t:?}"
+    );
     assert_eq!(e.preedit().as_str(), "to");
 
     e.process(&ku('o')).unwrap();
     let t = e.process(&kd('o')).unwrap(); // oo → ô rule fires
-    assert!(matches!(t, StateTransition::PreeditUpdated(_)), "step 'oo': {t:?}");
+    assert!(
+        matches!(t, StateTransition::PreeditUpdated(_)),
+        "step 'oo': {t:?}"
+    );
     assert_eq!(e.preedit().as_str(), "tô");
 
     e.process(&ku('o')).unwrap();
     let t = e.process(&kd('i')).unwrap();
-    assert!(matches!(t, StateTransition::PreeditUpdated(_)), "step 'i': {t:?}");
+    assert!(
+        matches!(t, StateTransition::PreeditUpdated(_)),
+        "step 'i': {t:?}"
+    );
     assert_eq!(e.preedit().as_str(), "tôi");
 }
 
@@ -194,7 +212,9 @@ fn rapid_keydown_50_distinct_chars_no_drops() {
 
     let mut e = telex();
     for &c in &chars {
-        let t = e.process(&InputEvent::KeyDown(Key::Char(c), Modifiers::none())).unwrap();
+        let t = e
+            .process(&InputEvent::KeyDown(Key::Char(c), Modifiers::none()))
+            .unwrap();
         assert!(
             matches!(
                 t,

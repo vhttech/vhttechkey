@@ -31,7 +31,10 @@ fn sent_commits_is_strictly_monotonic_across_operations() {
         let serial_used = sent_commits;
         sent_commits = sent_commits.wrapping_add(1);
 
-        assert_eq!(serial_used, i, "serial used in operation {i} must equal {i}");
+        assert_eq!(
+            serial_used, i,
+            "serial used in operation {i} must equal {i}"
+        );
         assert_eq!(sent_commits, i + 1, "sent_commits must be {}", i + 1);
     }
 }
@@ -44,25 +47,32 @@ fn two_separate_calls_produce_future_serial_hazard() {
     let mut sent_commits: u32 = 0;
 
     // Hypothetical two-call path (the bug):
-    let serial_first = sent_commits;      // 0 — sent to compositor
+    let serial_first = sent_commits; // 0 — sent to compositor
     sent_commits = serial_first.wrapping_add(1);
 
     // compositor has not emitted done(1) yet at this point
-    let serial_second = sent_commits;     // 1 — FUTURE serial, compositor rejects
+    let serial_second = sent_commits; // 1 — FUTURE serial, compositor rejects
     sent_commits = serial_second.wrapping_add(1);
 
     assert_eq!(serial_first, 0);
-    assert_eq!(serial_second, 1, "two-call path sends a future serial before done(1) arrives");
+    assert_eq!(
+        serial_second, 1,
+        "two-call path sends a future serial before done(1) arrives"
+    );
 
     // Atomic single-call path (the fix):
     let mut sent_commits_fixed: u32 = 0;
-    let serial_atomic = sent_commits_fixed;     // 0
+    let serial_atomic = sent_commits_fixed; // 0
     sent_commits_fixed = serial_atomic.wrapping_add(1);
 
     assert_eq!(serial_atomic, 0, "atomic path uses serial 0");
-    assert_eq!(sent_commits_fixed, 1,   "atomic path consumes exactly one slot");
     assert_eq!(
-        sent_commits_fixed, sent_commits - 1,
+        sent_commits_fixed, 1,
+        "atomic path consumes exactly one slot"
+    );
+    assert_eq!(
+        sent_commits_fixed,
+        sent_commits - 1,
         "atomic path uses one fewer serial slot than the buggy two-call path"
     );
 }
@@ -112,17 +122,26 @@ fn niri_guard_wrapping_sub_is_safe_after_activate() {
     let sent_commits: u32 = 0;
 
     let guard_fires = niri.niri_dual_protocol && sent_commits.wrapping_sub(ti_serial) > 2;
-    assert!(!guard_fires, "Niri guard must not fire immediately after Activate");
+    assert!(
+        !guard_fires,
+        "Niri guard must not fire immediately after Activate"
+    );
 
     // Simulate two normal operations — guard must still not fire.
     let sent_commits2 = sent_commits.wrapping_add(2);
     let guard_fires2 = niri.niri_dual_protocol && sent_commits2.wrapping_sub(ti_serial) > 2;
-    assert!(!guard_fires2, "Niri guard must not fire after two normal operations");
+    assert!(
+        !guard_fires2,
+        "Niri guard must not fire after two normal operations"
+    );
 
     // Simulate a large divergence (> 2 ops without a ti_serial update) — guard fires.
     let sent_commits3 = sent_commits.wrapping_add(3);
     let guard_fires3 = niri.niri_dual_protocol && sent_commits3.wrapping_sub(ti_serial) > 2;
-    assert!(guard_fires3, "Niri guard must fire when sent_commits leads ti_serial by > 2");
+    assert!(
+        guard_fires3,
+        "Niri guard must fire when sent_commits leads ti_serial by > 2"
+    );
 }
 
 // ── commit_replacing_preedit serial contract ─────────────────────────────────
@@ -149,7 +168,10 @@ fn commit_replacing_preedit_consumes_one_serial_slot() {
     // Verify the next operation uses a distinct serial.
     let serial_next = sent_commits;
     sent_commits = serial_next.wrapping_add(1);
-    assert_ne!(serial_used, serial_next, "consecutive operations use distinct serials");
+    assert_ne!(
+        serial_used, serial_next,
+        "consecutive operations use distinct serials"
+    );
     assert_eq!(serial_next, 1);
     assert_eq!(sent_commits, 2);
 }
@@ -167,7 +189,10 @@ fn buggy_two_call_clear_then_commit_reuses_same_serial() {
     // commit() also reads serial 5.
     let serial_commit = sent_commits;
 
-    assert_eq!(serial_clear, serial_commit, "buggy path: both calls use the same serial");
+    assert_eq!(
+        serial_clear, serial_commit,
+        "buggy path: both calls use the same serial"
+    );
     assert_eq!(serial_clear, 5);
     // The compositor drops the second im.commit(5); text is silently lost.
 }
@@ -196,6 +221,10 @@ fn hyprland_update_preedit_increments_serial_each_call() {
         sent_commits = sent_commits.wrapping_add(1);
     }
 
-    assert_eq!(serials_used, vec![0, 1, 2, 3, 4], "each update_preedit must use a distinct serial");
+    assert_eq!(
+        serials_used,
+        vec![0, 1, 2, 3, 4],
+        "each update_preedit must use a distinct serial"
+    );
     assert_eq!(sent_commits, 5);
 }

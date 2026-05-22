@@ -16,11 +16,11 @@ pub mod adapter;
 pub mod compat;
 pub mod quirks;
 
+use parking_lot::Mutex;
 use std::{
     collections::{HashMap, HashSet},
     sync::Arc,
 };
-use parking_lot::Mutex;
 
 use adapter::{clamp_preedit_cursor, TextInputAdapter};
 use compat::{guard_surrounding_text, needs_text_input_lifecycle};
@@ -69,7 +69,13 @@ pub struct MonitorInfo {
 
 impl Default for MonitorInfo {
     fn default() -> Self {
-        Self { x: 0, y: 0, width: 1920, height: 1080, scale_factor: 1.0 }
+        Self {
+            x: 0,
+            y: 0,
+            width: 1920,
+            height: 1080,
+            scale_factor: 1.0,
+        }
     }
 }
 
@@ -165,14 +171,17 @@ impl Dispatch<wl_registry::WlRegistry, GlobalListContents> for WlState {
         qh: &QueueHandle<Self>,
     ) {
         match event {
-            wl_registry::Event::Global { name, interface, version }
-                if interface == "wl_output" =>
-            {
+            wl_registry::Event::Global {
+                name,
+                interface,
+                version,
+            } if interface == "wl_output" => {
                 // Bind up to version 4 (which adds wl_output.name /
                 // wl_output.description; version 2 added scale).
-                let output: wl_output::WlOutput =
-                    registry.bind(name, version.min(4), qh, ());
-                state.monitor_map.insert(output.id(), MonitorInfo::default());
+                let output: wl_output::WlOutput = registry.bind(name, version.min(4), qh, ());
+                state
+                    .monitor_map
+                    .insert(output.id(), MonitorInfo::default());
                 state.outputs.push((name, output));
             }
             wl_registry::Event::GlobalRemove { name } => {
@@ -251,10 +260,18 @@ impl Dispatch<ZwpInputMethodV2, ()> for WlState {
                     }
                 }
             }
-            zwp_input_method_v2::Event::SurroundingText { text, cursor, anchor } => {
+            zwp_input_method_v2::Event::SurroundingText {
+                text,
+                cursor,
+                anchor,
+            } => {
                 // Hyprland/wlroots sends empty surrounding_text for widgets
                 // with no text; discard it to avoid clobbering valid context.
-                if matches!(state.quirks.profile, CompositorProfile::Hyprland | CompositorProfile::Labwc) && !guard_surrounding_text(&text) {
+                if matches!(
+                    state.quirks.profile,
+                    CompositorProfile::Hyprland | CompositorProfile::Labwc
+                ) && !guard_surrounding_text(&text)
+                {
                     return;
                 }
                 let mut s = state.shared.lock();
@@ -429,8 +446,7 @@ impl Dispatch<ZwpInputMethodKeyboardGrabV2, ()> for WlState {
                 state: key_state,
                 ..
             } => {
-                let pressed =
-                    matches!(key_state, WEnum::Value(wl_keyboard::KeyState::Pressed));
+                let pressed = matches!(key_state, WEnum::Value(wl_keyboard::KeyState::Pressed));
 
                 // Track pressed keys to distinguish genuine presses from
                 // compositor-generated key-repeat events.
@@ -447,9 +463,7 @@ impl Dispatch<ZwpInputMethodKeyboardGrabV2, ()> for WlState {
                     return;
                 }
 
-                if let Some(ev) =
-                    map_evdev_to_input_event(key, pressed, &state.modifier_state)
-                {
+                if let Some(ev) = map_evdev_to_input_event(key, pressed, &state.modifier_state) {
                     if !state.modifier_state.ctrl {
                         // Convert compositor repeat presses to KeyRepeat so the
                         // engine does not re-fire composition rules.
@@ -502,8 +516,8 @@ pub struct WaylandBackend {
 impl WaylandBackend {
     /// Connect to the Wayland compositor and bind IME protocols.
     pub fn connect(rt: tokio::runtime::Handle, tx: mpsc::Sender<InputEvent>) -> Result<Self> {
-        let conn = Connection::connect_to_env()
-            .map_err(|e| PlatformError::Wayland(e.to_string()))?;
+        let conn =
+            Connection::connect_to_env().map_err(|e| PlatformError::Wayland(e.to_string()))?;
 
         let (globals, mut eq) = registry_queue_init::<WlState>(&conn)
             .map_err(|e| PlatformError::Wayland(e.to_string()))?;
@@ -514,12 +528,10 @@ impl WaylandBackend {
         let mut wl = WlState::new(Arc::clone(&shared), quirks, tx);
 
         // Bind seat (required for input-method and virtual-keyboard).
-        let seat: Option<wl_seat::WlSeat> =
-            globals.bind(&qh, 1..=8, ()).ok();
+        let seat: Option<wl_seat::WlSeat> = globals.bind(&qh, 1..=8, ()).ok();
 
         // Try to bind input-method-v2.
-        let im_mgr: Option<ZwpInputMethodManagerV2> =
-            globals.bind(&qh, 1..=1, ()).ok();
+        let im_mgr: Option<ZwpInputMethodManagerV2> = globals.bind(&qh, 1..=1, ()).ok();
 
         if let (Some(mgr), Some(s)) = (&im_mgr, &seat) {
             let im = mgr.get_input_method(s, &qh, ());
@@ -529,13 +541,14 @@ impl WaylandBackend {
             info!("Wayland: bound zwp_input_method_v2");
         } else {
             // No input-method-v2 — try virtual-keyboard-v1 fallback.
-            let vk_mgr: Option<ZwpVirtualKeyboardManagerV1> =
-                globals.bind(&qh, 1..=1, ()).ok();
+            let vk_mgr: Option<ZwpVirtualKeyboardManagerV1> = globals.bind(&qh, 1..=1, ()).ok();
             if let (Some(mgr), Some(s)) = (vk_mgr, &seat) {
                 let vk = mgr.create_virtual_keyboard(s, &qh, ());
                 wl.virtual_keyboard = Some(vk);
                 if quirks.virtual_keyboard_fallback {
-                    info!("Wayland: LXQt/Openbox compositor; using zwp_virtual_keyboard_v1 fallback");
+                    info!(
+                        "Wayland: LXQt/Openbox compositor; using zwp_virtual_keyboard_v1 fallback"
+                    );
                 } else {
                     info!("Wayland: using zwp_virtual_keyboard_v1 fallback");
                 }
@@ -549,8 +562,7 @@ impl WaylandBackend {
         }
 
         // Bind text-input-v3 for focus sync (optional).
-        let ti_mgr: Option<ZwpTextInputManagerV3> =
-            globals.bind(&qh, 1..=1, ()).ok();
+        let ti_mgr: Option<ZwpTextInputManagerV3> = globals.bind(&qh, 1..=1, ()).ok();
         if let (Some(mgr), Some(s)) = (ti_mgr, &seat) {
             let ti = mgr.get_text_input(s, &qh, ());
             wl._text_input = Some(ti);
@@ -610,12 +622,7 @@ impl WaylandBackend {
         let wl = self.wl.lock();
         let map = &wl.monitor_map;
         map.values()
-            .find(|m| {
-                cx >= m.x
-                    && cx < m.x + m.width
-                    && cy >= m.y
-                    && cy < m.y + m.height
-            })
+            .find(|m| cx >= m.x && cx < m.x + m.width && cy >= m.y && cy < m.y + m.height)
             .or_else(|| map.values().next())
             .cloned()
     }
@@ -623,7 +630,8 @@ impl WaylandBackend {
     fn flush(&self) -> Result<()> {
         let mut eq = self.eq.lock();
         let mut wl = self.wl.lock();
-        eq.flush().map_err(|e| PlatformError::Wayland(e.to_string()))?;
+        eq.flush()
+            .map_err(|e| PlatformError::Wayland(e.to_string()))?;
         eq.dispatch_pending(&mut *wl)
             .map_err(|e| PlatformError::Wayland(e.to_string()))?;
         Ok(())
@@ -646,8 +654,7 @@ impl WaylandBackend {
         // The protocol requires commit(serial) where serial is the count of
         // zwp_input_method_v2::done events received since the last Activate.
         let serial = shared.serial;
-        if self.quirks.niri_dual_protocol
-            && shared.sent_commits.wrapping_sub(shared.ti_serial) > 2
+        if self.quirks.niri_dual_protocol && shared.sent_commits.wrapping_sub(shared.ti_serial) > 2
         {
             warn!(
                 "Niri dual-protocol serial desync: im={} ti={} — proceeding",
@@ -830,14 +837,42 @@ fn map_evdev_to_input_event(key: u32, pressed: bool, mods: &Modifiers) -> Option
 fn evdev_to_char(key: u32, shifted: bool) -> Option<char> {
     // Evdev keycodes follow the physical US QWERTY layout.
     let lower = match key {
-        2 => '1', 3 => '2', 4 => '3', 5 => '4', 6 => '5',
-        7 => '6', 8 => '7', 9 => '8', 10 => '9', 11 => '0',
-        16 => 'q', 17 => 'w', 18 => 'e', 19 => 'r', 20 => 't',
-        21 => 'y', 22 => 'u', 23 => 'i', 24 => 'o', 25 => 'p',
-        30 => 'a', 31 => 's', 32 => 'd', 33 => 'f', 34 => 'g',
-        35 => 'h', 36 => 'j', 37 => 'k', 38 => 'l',
-        44 => 'z', 45 => 'x', 46 => 'c', 47 => 'v', 48 => 'b',
-        49 => 'n', 50 => 'm',
+        2 => '1',
+        3 => '2',
+        4 => '3',
+        5 => '4',
+        6 => '5',
+        7 => '6',
+        8 => '7',
+        9 => '8',
+        10 => '9',
+        11 => '0',
+        16 => 'q',
+        17 => 'w',
+        18 => 'e',
+        19 => 'r',
+        20 => 't',
+        21 => 'y',
+        22 => 'u',
+        23 => 'i',
+        24 => 'o',
+        25 => 'p',
+        30 => 'a',
+        31 => 's',
+        32 => 'd',
+        33 => 'f',
+        34 => 'g',
+        35 => 'h',
+        36 => 'j',
+        37 => 'k',
+        38 => 'l',
+        44 => 'z',
+        45 => 'x',
+        46 => 'c',
+        47 => 'v',
+        48 => 'b',
+        49 => 'n',
+        50 => 'm',
         _ => return None,
     };
     if shifted {
@@ -849,9 +884,9 @@ fn evdev_to_char(key: u32, shifted: bool) -> Option<char> {
 
 fn input_event_to_vk(event: &InputEvent) -> (u32, u32, u32) {
     let code = match event {
-        InputEvent::KeyDown(k, _)
-        | InputEvent::KeyUp(k)
-        | InputEvent::KeyRepeat(k, _) => key_to_evdev(k),
+        InputEvent::KeyDown(k, _) | InputEvent::KeyUp(k) | InputEvent::KeyRepeat(k, _) => {
+            key_to_evdev(k)
+        }
         _ => return (0, 0, 0),
     };
     let state = match event {
@@ -892,10 +927,20 @@ fn char_to_evdev(c: char) -> u32 {
 #[allow(dead_code)]
 fn mods_to_xkb(mods: &Modifiers) -> u32 {
     let mut m = 0u32;
-    if mods.shift { m |= 1; }
-    if mods.caps_lock { m |= 2; }
-    if mods.ctrl { m |= 4; }
-    if mods.alt { m |= 8; }
-    if mods.super_key { m |= 1 << 26; }
+    if mods.shift {
+        m |= 1;
+    }
+    if mods.caps_lock {
+        m |= 2;
+    }
+    if mods.ctrl {
+        m |= 4;
+    }
+    if mods.alt {
+        m |= 8;
+    }
+    if mods.super_key {
+        m |= 1 << 26;
+    }
     m
 }

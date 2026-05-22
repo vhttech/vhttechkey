@@ -86,11 +86,7 @@ fn telex_composing_chars_return_preedit_updated() {
 /// return `PreeditUpdated` and the final committed text must be correct.
 #[test]
 fn telex_phrase_every_char_returns_preedit_updated() {
-    let cases: &[(&str, &str)] = &[
-        ("tooi", "tôi"),
-        ("yeeu", "yêu"),
-        ("vieejt", "việt"),
-    ];
+    let cases: &[(&str, &str)] = &[("tooi", "tôi"), ("yeeu", "yêu"), ("vieejt", "việt")];
 
     for &(seq, expected) in cases {
         let mut e = engine(InputMethod::Telex);
@@ -103,7 +99,11 @@ fn telex_phrase_every_char_returns_preedit_updated() {
         let commit = e.process(&ret()).unwrap();
         match commit {
             StateTransition::CommitAndClear(c) => {
-                assert_eq!(c.as_str(), expected, "committed text mismatch for Telex {seq:?}");
+                assert_eq!(
+                    c.as_str(),
+                    expected,
+                    "committed text mismatch for Telex {seq:?}"
+                );
             }
             other => panic!("Return must CommitAndClear for Telex {seq:?}, got {other:?}"),
         }
@@ -115,10 +115,7 @@ fn telex_phrase_every_char_returns_preedit_updated() {
 /// VNI sequences: every composing character must return `PreeditUpdated`.
 #[test]
 fn vni_composing_chars_return_preedit_updated() {
-    let cases: &[(&str, &str)] = &[
-        ("to6i", "tôi"),
-        ("vie65t", "việt"),
-    ];
+    let cases: &[(&str, &str)] = &[("to6i", "tôi"), ("vie65t", "việt")];
 
     for &(seq, expected) in cases {
         let mut e = engine(InputMethod::Vni);
@@ -131,7 +128,11 @@ fn vni_composing_chars_return_preedit_updated() {
         let commit = e.process(&ret()).unwrap();
         match commit {
             StateTransition::CommitAndClear(c) => {
-                assert_eq!(c.as_str(), expected, "committed text mismatch for VNI {seq:?}");
+                assert_eq!(
+                    c.as_str(),
+                    expected,
+                    "committed text mismatch for VNI {seq:?}"
+                );
             }
             other => panic!("Return must CommitAndClear for VNI {seq:?}, got {other:?}"),
         }
@@ -143,10 +144,7 @@ fn vni_composing_chars_return_preedit_updated() {
 /// VIQR sequences: every composing character must return `PreeditUpdated`.
 #[test]
 fn viqr_composing_chars_return_preedit_updated() {
-    let cases: &[(&str, &str)] = &[
-        ("to^i", "tôi"),
-        ("a'", "á"),
-    ];
+    let cases: &[(&str, &str)] = &[("to^i", "tôi"), ("a'", "á")];
 
     for &(seq, expected) in cases {
         let mut e = engine(InputMethod::Viqr);
@@ -159,7 +157,11 @@ fn viqr_composing_chars_return_preedit_updated() {
         let commit = e.process(&ret()).unwrap();
         match commit {
             StateTransition::CommitAndClear(c) => {
-                assert_eq!(c.as_str(), expected, "committed text mismatch for VIQR {seq:?}");
+                assert_eq!(
+                    c.as_str(),
+                    expected,
+                    "committed text mismatch for VIQR {seq:?}"
+                );
             }
             other => panic!("Return must CommitAndClear for VIQR {seq:?}, got {other:?}"),
         }
@@ -189,7 +191,9 @@ fn rapid_typing_200_chars_stress() {
         let mut saw_preedit_update = false;
 
         for &ch in &seq {
-            let t = e.process(&kd(ch)).expect("engine must not error during stress run");
+            let t = e
+                .process(&kd(ch))
+                .expect("engine must not error during stress run");
             if matches!(t, StateTransition::PreeditUpdated(_)) {
                 saw_preedit_update = true;
             }
@@ -202,7 +206,9 @@ fn rapid_typing_200_chars_stress() {
             "{method:?}: preedit was never updated during 200-char stress run",
         );
 
-        let final_t = e.process(&ret()).expect("Return must not error after stress run");
+        let final_t = e
+            .process(&ret())
+            .expect("Return must not error after stress run");
         assert!(
             matches!(
                 final_t,
@@ -210,7 +216,10 @@ fn rapid_typing_200_chars_stress() {
             ),
             "{method:?}: Return after stress run must CommitAndClear or PassThrough; got {final_t:?}",
         );
-        assert!(e.preedit().is_empty(), "{method:?}: preedit must be empty after final Return");
+        assert!(
+            e.preedit().is_empty(),
+            "{method:?}: preedit must be empty after final Return"
+        );
     }
 }
 
@@ -276,16 +285,26 @@ fn focus_out_commits_pending_preedit() {
     let t = e.process(&InputEvent::FocusOut).unwrap();
     match t {
         StateTransition::CommitAndClear(c) => {
-            assert_eq!(c.as_str(), "viê", "FocusOut must commit the preedit content");
+            assert_eq!(
+                c.as_str(),
+                "viê",
+                "FocusOut must commit the preedit content"
+            );
         }
         other => panic!("FocusOut on non-empty preedit must CommitAndClear; got {other:?}"),
     }
-    assert!(e.preedit().is_empty(), "preedit must be empty after FocusOut commit");
+    assert!(
+        e.preedit().is_empty(),
+        "preedit must be empty after FocusOut commit"
+    );
 
     // FocusIn returns Consumed and leaves the engine in a clean state.
     let t = e.process(&InputEvent::FocusIn).unwrap();
     assert_eq!(t, StateTransition::Consumed, "FocusIn must return Consumed");
-    assert!(e.preedit().is_empty(), "preedit must remain empty after FocusIn");
+    assert!(
+        e.preedit().is_empty(),
+        "preedit must remain empty after FocusIn"
+    );
 
     // Engine is ready for fresh composition.
     let t = e.process(&kd('a')).unwrap();
@@ -293,7 +312,11 @@ fn focus_out_commits_pending_preedit() {
         matches!(t, StateTransition::PreeditUpdated(_)),
         "First char after FocusIn must be PreeditUpdated; got {t:?}",
     );
-    assert_eq!(preedit(&e), "a", "preedit must start fresh after focus cycle");
+    assert_eq!(
+        preedit(&e),
+        "a",
+        "preedit must start fresh after focus cycle"
+    );
 }
 
 /// `FocusOut` on an already-empty preedit must return `Consumed`, not an error.
@@ -301,7 +324,11 @@ fn focus_out_commits_pending_preedit() {
 fn focus_out_on_empty_preedit_returns_consumed() {
     let mut e = engine(InputMethod::Telex);
     let t = e.process(&InputEvent::FocusOut).unwrap();
-    assert_eq!(t, StateTransition::Consumed, "FocusOut on empty buffer must return Consumed");
+    assert_eq!(
+        t,
+        StateTransition::Consumed,
+        "FocusOut on empty buffer must return Consumed"
+    );
 }
 
 // ── Rapid-typing regression ───────────────────────────────────────────────────
@@ -329,7 +356,9 @@ fn rapid_typing_50_chars_every_composing_char_returns_preedit_updated() {
     let mut violations: Vec<(char, StateTransition)> = Vec::new();
 
     for &ch in &chars {
-        let t = e.process(&kd(ch)).expect("engine must not error during rapid typing");
+        let t = e
+            .process(&kd(ch))
+            .expect("engine must not error during rapid typing");
         let _ = e.process(&ku(ch));
 
         if ch != ' ' {

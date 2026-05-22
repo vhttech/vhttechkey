@@ -19,7 +19,10 @@ pub fn focus_stress_run(method: InputMethod, iterations: usize) -> usize {
     for _ in 0..iterations {
         let _ = engine.process(&InputEvent::KeyDown(Key::Char('a'), Modifiers::none()));
         let _ = engine.process(&InputEvent::FocusIn);
-        match engine.process(&InputEvent::FocusOut).unwrap_or(StateTransition::Consumed) {
+        match engine
+            .process(&InputEvent::FocusOut)
+            .unwrap_or(StateTransition::Consumed)
+        {
             StateTransition::Commit(_) | StateTransition::CommitAndClear(_) => {
                 commits += 1;
             }
@@ -59,8 +62,14 @@ mod tests {
     fn focus_out_on_empty_preedit_is_consumed() {
         let mut engine = StandardEngine::new(InputMethod::Telex);
         for _ in 0..1_000 {
-            let r = engine.process(&InputEvent::FocusOut).expect("must not fail");
-            assert_eq!(r, StateTransition::Consumed, "FocusOut on empty must be Consumed");
+            let r = engine
+                .process(&InputEvent::FocusOut)
+                .expect("must not fail");
+            assert_eq!(
+                r,
+                StateTransition::Consumed,
+                "FocusOut on empty must be Consumed"
+            );
         }
     }
 
@@ -70,7 +79,11 @@ mod tests {
         let mut engine = StandardEngine::new(InputMethod::Telex);
         for _ in 0..1_000 {
             let r = engine.process(&InputEvent::FocusIn).expect("must not fail");
-            assert_eq!(r, StateTransition::Consumed, "FocusIn on idle must be Consumed");
+            assert_eq!(
+                r,
+                StateTransition::Consumed,
+                "FocusIn on idle must be Consumed"
+            );
         }
     }
 
@@ -91,9 +104,15 @@ mod tests {
                 StateTransition::Commit(_) | StateTransition::CommitAndClear(_) => total += 1,
                 _ => {}
             }
-            assert!(engine.preedit().is_empty(), "preedit must be clear after FocusOut");
+            assert!(
+                engine.preedit().is_empty(),
+                "preedit must be clear after FocusOut"
+            );
         }
 
-        assert_eq!(total, 1_000, "expected one commit per FocusOut on non-empty preedit");
+        assert_eq!(
+            total, 1_000,
+            "expected one commit per FocusOut on non-empty preedit"
+        );
     }
 }

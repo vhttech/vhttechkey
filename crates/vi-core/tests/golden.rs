@@ -1,7 +1,9 @@
 #![allow(clippy::unwrap_used)]
 //! Regression golden-file tests for Telex, VNI, and VIQR key sequences.
 
-use vi_core::{CompositionEngine, InputEvent, InputMethod, Key, Modifiers, StandardEngine, StateTransition};
+use vi_core::{
+    CompositionEngine, InputEvent, InputMethod, Key, Modifiers, StandardEngine, StateTransition,
+};
 
 fn engine(method: InputMethod) -> StandardEngine {
     StandardEngine::new(method)
@@ -120,8 +122,21 @@ fn english_words_commit_correctly() {
     // then second 's' triggers the double-tone undo → "mes" (no Vietnamese char).
     // Continuation after the undo uses the composition output ("mesa"…) rather than raw
     // keys ("messa"…), so "message" yields "mesage". This matches ibus-lotus behaviour.
-    for word in &["permission", "monitor", "server", "system", "network", "process", "resource",
-                  "access", "session", "address", "protocol", "request", "response"] {
+    for word in &[
+        "permission",
+        "monitor",
+        "server",
+        "system",
+        "network",
+        "process",
+        "resource",
+        "access",
+        "session",
+        "address",
+        "protocol",
+        "request",
+        "response",
+    ] {
         let mut e = engine(InputMethod::Telex);
         for ch in word.chars() {
             e.process(&key(ch)).unwrap();
@@ -133,7 +148,11 @@ fn english_words_commit_correctly() {
             StateTransition::PassThrough => e.preedit().as_str().to_owned(),
             _ => format!("{r:?}"),
         };
-        assert_eq!(committed, *word, "English word '{}' was mangled to '{}'", word, committed);
+        assert_eq!(
+            committed, *word,
+            "English word '{}' was mangled to '{}'",
+            word, committed
+        );
     }
 }
 

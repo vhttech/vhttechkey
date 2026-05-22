@@ -95,7 +95,10 @@ fn multiple_rollbacks_never_produce_garbage() {
     // but we just check rollbacks never panic and always produce valid UTF-8.
     loop {
         let p = preedit(&e);
-        assert!(std::str::from_utf8(p.as_bytes()).is_ok(), "invalid UTF-8 in preedit");
+        assert!(
+            std::str::from_utf8(p.as_bytes()).is_ok(),
+            "invalid UTF-8 in preedit"
+        );
         use vi_core::StateTransition;
         let t = e.process(&bs()).unwrap();
         if t == StateTransition::PassThrough {

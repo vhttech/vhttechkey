@@ -31,8 +31,7 @@ fn niri_ti_serial_resets_on_activate() {
         niri_dual_protocol: true,
         ..Default::default()
     };
-    let guard_fires = niri.niri_dual_protocol
-        && sent_commits.wrapping_sub(ti_serial) > 2;
+    let guard_fires = niri.niri_dual_protocol && sent_commits.wrapping_sub(ti_serial) > 2;
     assert!(
         !guard_fires,
         "Niri guard must not fire immediately after Activate reset; \
@@ -65,8 +64,14 @@ fn commit_then_preedit_atomic_uses_one_serial_slot() {
     let serial_used = sent_commits;
     sent_commits = serial_used.wrapping_add(1);
 
-    assert_eq!(serial_used, 0, "commit_then_preedit uses the first available serial");
-    assert_eq!(sent_commits, 1, "exactly one serial slot consumed per logical operation");
+    assert_eq!(
+        serial_used, 0,
+        "commit_then_preedit uses the first available serial"
+    );
+    assert_eq!(
+        sent_commits, 1,
+        "exactly one serial slot consumed per logical operation"
+    );
 }
 
 /// After an atomic commit_then_update_preedit the compositor sends done(N+1),
@@ -96,7 +101,10 @@ fn next_operation_after_commit_then_preedit_uses_different_serial() {
         serial_commit_preedit.wrapping_add(1),
         "next serial must be exactly N+1"
     );
-    assert_eq!(sent_commits, 2, "two operations consumed two serial slots total");
+    assert_eq!(
+        sent_commits, 2,
+        "two operations consumed two serial slots total"
+    );
 }
 
 /// Documents the serial hazard in a hypothetical two-call path.
@@ -125,11 +133,15 @@ fn two_call_path_would_send_future_serial_for_preedit() {
     sent_commits = serial_preedit_buggy.wrapping_add(1);
 
     assert_eq!(serial_commit, 0);
-    assert_eq!(serial_preedit_buggy, 1,
+    assert_eq!(
+        serial_preedit_buggy, 1,
         "second with_im() uses serial 1 before done(1) has been received; \
-         GNOME/Mutter drops im.commit(1) because it has not yet emitted done(1)");
-    assert_eq!(sent_commits, 2,
-        "two serial slots consumed — but only serial 0 was actually valid in this frame");
+         GNOME/Mutter drops im.commit(1) because it has not yet emitted done(1)"
+    );
+    assert_eq!(
+        sent_commits, 2,
+        "two serial slots consumed — but only serial 0 was actually valid in this frame"
+    );
 }
 
 /// Regression: `update_preedit` via the `buffer_preedit_updates` path
@@ -161,17 +173,23 @@ fn update_preedit_increments_sent_commits_on_hyprland() {
     let serial_second = sent_commits; // 1
     sent_commits = serial_second.wrapping_add(1);
 
-    assert_eq!(sent_commits, 2,
-        "sent_commits must be 2 after two update_preedit calls");
-    assert_ne!(serial_first, serial_second,
+    assert_eq!(
+        sent_commits, 2,
+        "sent_commits must be 2 after two update_preedit calls"
+    );
+    assert_ne!(
+        serial_first, serial_second,
         "each update_preedit must use a distinct serial \
-         (first={serial_first}, second={serial_second})");
+         (first={serial_first}, second={serial_second})"
+    );
 
     // Regression: without the increment sent_commits stays at 0 and every call
     // uses serial=0. Compositors that detect duplicate serials drop duplicates.
     let buggy_sent_commits: u32 = 0; // never incremented in the old path
-    assert_eq!(buggy_sent_commits, serial_first,
-        "unfixed path reuses serial 0 on every call — compositors drop duplicates");
+    assert_eq!(
+        buggy_sent_commits, serial_first,
+        "unfixed path reuses serial 0 on every call — compositors drop duplicates"
+    );
 }
 
 // ── text-input-v3 Done event: ti_serial must increment per event ───────────────
@@ -222,7 +240,8 @@ fn niri_guard_does_not_fire_when_ti_serial_in_sync() {
     assert!(
         !guard_fires,
         "Niri guard must not fire when sent_commits={sent_commits} and ti_serial={ti_serial} \
-         are in sync; wrapping_sub={}", sent_commits.wrapping_sub(ti_serial)
+         are in sync; wrapping_sub={}",
+        sent_commits.wrapping_sub(ti_serial)
     );
 }
 

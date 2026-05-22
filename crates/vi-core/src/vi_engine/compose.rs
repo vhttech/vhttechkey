@@ -10,17 +10,20 @@ use crate::vi_engine::flat;
 use crate::vi_engine::spell::is_valid_cvc;
 use crate::vi_engine::text::{find_tone_from_char, in_key_list, is_alpha, is_vowel};
 use crate::vi_engine::types::{
-    EffectType, EFREE_TONE_MARKING, ENGLISH_MODE, ESTANDARD_TONE_STYLE, Mark, Rule, Tone, Trans,
-    TransInner, VIETNAMESE_MODE, LOWERCASE_MODE, MARK_LESS, TONE_LESS,
+    EffectType, Mark, Rule, Tone, Trans, TransInner, EFREE_TONE_MARKING, ENGLISH_MODE,
+    ESTANDARD_TONE_STYLE, LOWERCASE_MODE, MARK_LESS, TONE_LESS, VIETNAMESE_MODE,
 };
 
 static REG_UOH_TAIL: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"(uơ|ưo)\p{L}+").expect("REG_UOH_TAIL"));
-static REG_UH_O: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"(ưo|ươ)").expect("REG_UH_O"));
+static REG_UH_O: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(ưo|ươ)").expect("REG_UH_O"));
 
 pub(crate) fn new_trans(rule: Rule, target: Option<Trans>, is_upper_case: bool) -> Trans {
-    Arc::new(RwLock::new(TransInner { rule, target, is_upper_case }))
+    Arc::new(RwLock::new(TransInner {
+        rule,
+        target,
+        is_upper_case,
+    }))
 }
 
 pub(crate) fn find_last_appending_trans(composition: &[Trans]) -> Option<Trans> {
@@ -47,7 +50,11 @@ pub(crate) fn new_appending_trans(key: char, is_upper_case: bool) -> Trans {
     )
 }
 
-pub(crate) fn generate_appending_trans(rules: &[Rule], lower_key: char, is_upper_case: bool) -> Trans {
+pub(crate) fn generate_appending_trans(
+    rules: &[Rule],
+    lower_key: char,
+    is_upper_case: bool,
+) -> Trans {
     for rule in rules {
         if rule.key == lower_key && rule.effect_type == EffectType::Appending {
             let mut r = rule.clone();
@@ -130,15 +137,23 @@ pub(crate) fn find_tone_target(composition: &[Trans], std_style: bool) -> Option
         if !lc.is_empty() {
             target = Some(vowels[1].clone());
         } else {
-            let s = flat::flatten(&vowels, ENGLISH_MODE | LOWERCASE_MODE | TONE_LESS | MARK_LESS);
-            target = Some(if s == "oa" || s == "oe" || s == "uy" || s == "ue" || s == "uo" {
-                vowels[1].clone()
-            } else {
-                vowels[0].clone()
-            });
+            let s = flat::flatten(
+                &vowels,
+                ENGLISH_MODE | LOWERCASE_MODE | TONE_LESS | MARK_LESS,
+            );
+            target = Some(
+                if s == "oa" || s == "oe" || s == "uy" || s == "ue" || s == "uo" {
+                    vowels[1].clone()
+                } else {
+                    vowels[0].clone()
+                },
+            );
         }
     } else if vowels.len() == 3 {
-        let s = flat::flatten(&vowels, ENGLISH_MODE | LOWERCASE_MODE | TONE_LESS | MARK_LESS);
+        let s = flat::flatten(
+            &vowels,
+            ENGLISH_MODE | LOWERCASE_MODE | TONE_LESS | MARK_LESS,
+        );
         target = Some(if s == "uye" {
             vowels[2].clone()
         } else {
@@ -158,7 +173,9 @@ pub(crate) fn has_valid_tone(composition: &[Trans], tone: Tone) -> bool {
     }
     let last_consonants = flat::flatten(&lc, ENGLISH_MODE | LOWERCASE_MODE);
     let dot_with_consonants = ["c", "k", "p", "t", "ch"];
-    !dot_with_consonants.iter().any(|s| *s == last_consonants.as_str())
+    !dot_with_consonants
+        .iter()
+        .any(|s| *s == last_consonants.as_str())
 }
 
 pub(crate) fn get_last_tone_transformation(composition: &[Trans]) -> Option<Trans> {
@@ -174,7 +191,11 @@ pub(crate) fn get_last_tone_transformation(composition: &[Trans]) -> Option<Tran
 pub(crate) fn is_free(composition: &[Trans], trans: &Trans, effect_type: EffectType) -> bool {
     for t in composition {
         let inner = t.read();
-        if inner.target.as_ref().map(|x| Arc::ptr_eq(x, trans)).unwrap_or(false)
+        if inner
+            .target
+            .as_ref()
+            .map(|x| Arc::ptr_eq(x, trans))
+            .unwrap_or(false)
             && inner.rule.effect_type == effect_type
         {
             return false;
@@ -183,7 +204,11 @@ pub(crate) fn is_free(composition: &[Trans], trans: &Trans, effect_type: EffectT
     true
 }
 
-fn extract_atomic_trans(composition: &[Trans], last: Vec<Trans>, last_is_vowel: bool) -> (Vec<Trans>, Vec<Trans>) {
+fn extract_atomic_trans(
+    composition: &[Trans],
+    last: Vec<Trans>,
+    last_is_vowel: bool,
+) -> (Vec<Trans>, Vec<Trans>) {
     if composition.is_empty() {
         return (composition.to_vec(), last);
     }
@@ -241,7 +266,10 @@ pub(crate) fn extract_cvc_trans(composition: &[Trans]) -> (Vec<Trans>, Vec<Trans
         if inner.target.is_none() {
             appending_list.push(trans.clone());
         } else if let Some(ref targ) = inner.target {
-            trans_map.entry(Arc::as_ptr(targ) as usize).or_default().push(trans.clone());
+            trans_map
+                .entry(Arc::as_ptr(targ) as usize)
+                .or_default()
+                .push(trans.clone());
         }
     }
 
@@ -286,7 +314,10 @@ pub(crate) fn extract_last_word_with_punctuation_marks(
     (Vec::new(), composition.to_vec())
 }
 
-pub(crate) fn extract_last_word(composition: &[Trans], effect_keys: &[char]) -> (Vec<Trans>, Vec<Trans>) {
+pub(crate) fn extract_last_word(
+    composition: &[Trans],
+    effect_keys: &[char],
+) -> (Vec<Trans>, Vec<Trans>) {
     for i in (0..composition.len()).rev() {
         let canvas = flat::get_canvas(
             &composition[i..],
@@ -445,7 +476,8 @@ pub(crate) fn generate_undo_transformations(
                     );
                     let mut app = composition.to_vec();
                     app.push(undo_trans.clone());
-                    if str_flat == flat::flatten(&app, VIETNAMESE_MODE | TONE_LESS | LOWERCASE_MODE) {
+                    if str_flat == flat::flatten(&app, VIETNAMESE_MODE | TONE_LESS | LOWERCASE_MODE)
+                    {
                         continue;
                     }
                     transformations.push(undo_trans);
@@ -530,7 +562,9 @@ pub(crate) fn generate_transformations(
             );
             let mut try_comp = composition.to_vec();
             try_comp.push(trans.clone());
-            if let Some((Some(target), applicable_rule)) = find_target(&try_comp, applicable_rules, flags) {
+            if let Some((Some(target), applicable_rule)) =
+                find_target(&try_comp, applicable_rules, flags)
+            {
                 if !Arc::ptr_eq(&target, &vowels[0]) {
                     transformations.push(trans);
                     transformations.push(new_trans(applicable_rule, Some(target), is_upper_case));
@@ -560,8 +594,11 @@ pub(crate) fn generate_fallback_transformations(
     for mut appended_rule in appended {
         let _is_upper_case = is_upper_case || appended_rule.effect_on.is_uppercase();
         appended_rule.key = '\0';
-        appended_rule.effect_on =
-            appended_rule.effect_on.to_lowercase().next().unwrap_or(appended_rule.effect_on);
+        appended_rule.effect_on = appended_rule
+            .effect_on
+            .to_lowercase()
+            .next()
+            .unwrap_or(appended_rule.effect_on);
         appended_rule.result = appended_rule.effect_on;
         transformations.push(new_trans(appended_rule, None, _is_upper_case));
     }

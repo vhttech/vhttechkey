@@ -1,8 +1,6 @@
 use std::time::{Duration, Instant};
 
-use criterion::{
-    black_box, criterion_group, criterion_main, Criterion, SamplingMode,
-};
+use criterion::{black_box, criterion_group, criterion_main, Criterion, SamplingMode};
 use vi_core::{CompositionEngine, InputEvent, InputMethod, Key, Modifiers, StandardEngine};
 
 fn make_events(keys: &str) -> Vec<InputEvent> {

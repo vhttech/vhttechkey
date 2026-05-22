@@ -1,9 +1,7 @@
 //! Record and replay InputEvent streams for regression testing.
 
 use serde::{Deserialize, Serialize};
-use vi_core::{
-    CompositionEngine, InputEvent, InputMethod, Key, StandardEngine, StateTransition,
-};
+use vi_core::{CompositionEngine, InputEvent, InputMethod, Key, StandardEngine, StateTransition};
 
 /// A recorded input session: the sequence of events and the text committed
 /// during replay.
@@ -38,7 +36,10 @@ pub fn replay_session(session: &ReplaySession) -> Vec<String> {
     let mut commits: Vec<String> = Vec::new();
 
     for event in &session.events {
-        match engine.process(event).expect("engine must not fail during replay") {
+        match engine
+            .process(event)
+            .expect("engine must not fail during replay")
+        {
             StateTransition::Commit(c) | StateTransition::CommitAndClear(c) => {
                 commits.push(c.as_str().to_owned());
             }

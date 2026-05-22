@@ -59,10 +59,7 @@ pub fn resolve_ui_setup_path() -> String {
             return p;
         }
     }
-    for candidate in [
-        SYSTEM_UI,
-        "/usr/local/lib/vhttechkey/vi-ui",
-    ] {
+    for candidate in [SYSTEM_UI, "/usr/local/lib/vhttechkey/vi-ui"] {
         if Path::new(candidate).exists() {
             return candidate.to_string();
         }
