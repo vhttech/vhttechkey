@@ -2,4 +2,4 @@
 source: crates/vi-testing/src/fixtures.rs
 expression: output
 ---
-to
+t

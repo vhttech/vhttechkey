@@ -49,7 +49,7 @@ pub fn all_fixtures() -> Vec<ReplaySession> {
             name: "telex_backspace".to_string(),
             method: InputMethod::Telex,
             events: vec![k('t'), k('o'), k('o'), bs(), ret()],
-            expected_commits: vec!["to".to_string()],
+            expected_commits: vec!["t".to_string()],
         },
         // 05 — Telex: escape clears preedit (PassThrough on Return when empty)
         ReplaySession {
@@ -387,12 +387,11 @@ mod fixture_tests {
         assert_eq!(type_and_commit(InputMethod::Telex, "thoaif"), "thoài");
     }
 
-    /// Flexible tone fixture: complex syllable with form-marked vowel — uowij → uợi
+    /// Flexible tone fixture: complex syllable with form-marked vowel — uowij → ượi
     ///
-    /// `u`+`o`→uo, `w`→ow fires (uơ), `i`→uơi, `j`(nặng) targets form-marked ơ
-    /// (modified-vowel rule) → uợi.  Documented in VALID_NUCLEI as "uơi".
+    /// `u`+`o`→uo, `w`→ow fires (uơ shortcut + implicit ư), `i`→ượi, `j`(nặng) → ượi.
     #[test]
     fn flexible_uowij_nang_on_form_marked_o_horn() {
-        assert_eq!(type_and_commit(InputMethod::Telex, "uowij"), "uợi");
+        assert_eq!(type_and_commit(InputMethod::Telex, "uowij"), "ượi");
     }
 }

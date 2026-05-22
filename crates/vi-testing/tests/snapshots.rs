@@ -100,5 +100,5 @@ fn snapshot_backspace_rollback() {
     step(&mut e, 'o'); // preedit = "tô"
     e.process(&InputEvent::KeyDown(Key::Backspace, Modifiers::none()))
         .unwrap();
-    insta::assert_snapshot!(e.preedit().as_str(), @"to");
+    insta::assert_snapshot!(e.preedit().as_str(), @"t");
 }

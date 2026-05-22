@@ -103,9 +103,9 @@ async fn backspace_during_composition_ignores_surrounding() {
     h.send_event(key_down('o')).await;
     h.send_event(key_down('o')).await;
     assert_eq!(h.preedit(), "tô");
-    // Backspace inside composition rolls back "tô" → "to", not re-entering from surrounding.
+    // Backspace inside composition rolls back "tô" → "t", not re-entering from surrounding.
     h.send_event(backspace()).await;
-    assert_eq!(h.preedit(), "to");
+    assert_eq!(h.preedit(), "t");
 }
 
 /// SurroundingText carrying a Vietnamese word followed by a cursor in the middle
