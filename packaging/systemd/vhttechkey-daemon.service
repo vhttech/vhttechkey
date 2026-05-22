@@ -1,0 +1,22 @@
+[Unit]
+Description=VHTTechKey Vietnamese IME Daemon
+Documentation=https://git.hocitvn.com/vhttech/miliondolar/vhttechkey
+# Start after the D-Bus session bus is available.
+After=dbus.socket graphical-session.target
+Requires=dbus.socket
+PartOf=graphical-session.target
+
+[Service]
+Type=notify
+ExecStart=/usr/lib/vhttechkey/vi-daemon
+Restart=on-failure
+RestartSec=2s
+# Watchdog: vi-daemon sends WATCHDOG=1 heartbeats at half this interval.
+WatchdogSec=10s
+# Let the daemon flush preedit on clean shutdown.
+TimeoutStopSec=5s
+# IPC socket lands in XDG_RUNTIME_DIR which systemd provides.
+Environment=XDG_RUNTIME_DIR=/run/user/%U
+
+[Install]
+WantedBy=graphical-session.target

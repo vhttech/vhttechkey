@@ -1,0 +1,21 @@
+[package]
+name = "vi-ibus"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+vi-core = { path = "../vi-core" }
+vi-platform = { path = "../vi-platform" }
+vi-config = { path = "../vi-config" }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+serde = { workspace = true }
+tokio = { workspace = true }
+zbus = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true }

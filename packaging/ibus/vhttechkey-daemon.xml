@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component>
+    <name>org.freedesktop.IBus.vhttechkey</name>
+    <description>VHTTechKey — bộ gõ tiếng Việt</description>
+    <exec>/usr/lib/vhttechkey/vi-daemon</exec>
+    <version>0.1.0</version>
+    <author>VHT Tech &lt;vinhhp@vhttech.com&gt;</author>
+    <license>GPLv3+</license>
+    <homepage>https://git.hocitvn.com/vhttech/miliondolar/vhttechkey</homepage>
+    <textdomain>vhttechkey</textdomain>
+    <engines>
+        <engine>
+            <name>vhttechkey</name>
+            <longname>VHTTechKey</longname>
+            <description>Bộ gõ tiếng Việt — chọn kiểu gõ (Telex/VNI/VIQR) trong cài đặt</description>
+            <language>vi</language>
+            <license>GPLv3+</license>
+            <author>VHT Tech &lt;vinhhp@vhttech.com&gt;</author>
+            <icon>/usr/share/vhttechkey/icons/vi.svg</icon>
+            <layout>default</layout>
+            <rank>99</rank>
+            <setup>/usr/lib/vhttechkey/vi-ui</setup>
+        </engine>
+    </engines>
+</component>

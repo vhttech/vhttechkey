@@ -1,0 +1,27 @@
+name: Wayland Matrix
+on: [push, pull_request]
+jobs:
+  wayland:
+    runs-on: ubuntu-24.04
+    continue-on-error: false
+    strategy:
+      matrix:
+        compositor: [weston, sway]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Install ${{ matrix.compositor }}
+        run: sudo apt-get install -y ${{ matrix.compositor }}
+      - name: Start weston
+        if: matrix.compositor == 'weston'
+        run: weston --socket=wayland-test --backend=headless-backend.so --no-config &
+      - name: Start sway
+        if: matrix.compositor == 'sway'
+        run: WLR_BACKENDS=headless WLR_RENDERER=pixman sway &
+        env:
+          WAYLAND_DISPLAY: wayland-test
+      - name: Wayland integration tests
+        run: cargo test -p vime-wayland --test '*'
+        env:
+          WAYLAND_DISPLAY: wayland-test

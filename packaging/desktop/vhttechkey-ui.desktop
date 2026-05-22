@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=VHTTechKey Settings
+Name[vi]=Cài đặt VHTTechKey
+Comment=Configure the VHTTechKey Vietnamese input method
+Comment[vi]=Cấu hình bộ gõ tiếng Việt VHTTechKey
+Exec=/usr/lib/vhttechkey/vi-ui
+Icon=/usr/share/vhttechkey/icons/vi.svg
+Categories=Settings;Utility;
+Keywords=vietnamese;ime;input;tiengviet;go;
+StartupNotify=true
+NoDisplay=false

@@ -1,0 +1,37 @@
+[package]
+name = "vi-testing"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+vi-core = { path = "../vi-core" }
+vi-config = { path = "../vi-config" }
+vi-platform = { path = "../vi-platform" }
+unicode-normalization = { workspace = true }
+serde = { workspace = true }
+bincode = { workspace = true }
+zbus = { workspace = true }
+tokio = { workspace = true }
+
+[dev-dependencies]
+insta = { workspace = true }
+criterion = { workspace = true }
+proptest = { workspace = true }
+tempfile = { workspace = true }
+tokio = { workspace = true }
+tokio-util = { workspace = true }
+serde_json = { workspace = true }
+vi-daemon = { path = "../vi-daemon" }
+wayland-server = "0.31"
+
+[[bench]]
+name = "composition_bench"
+harness = false
+
+[[bench]]
+name = "latency_bench"
+harness = false

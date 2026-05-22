@@ -1,0 +1,26 @@
+[package]
+name = "vi-tools"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lints]
+workspace = true
+
+[[bin]]
+name = "vi-tools"
+path = "src/main.rs"
+
+[dependencies]
+vi-core = { path = "../vi-core" }
+vi-config = { path = "../vi-config" }
+vi-daemon = { path = "../vi-daemon" }
+vi-testing = { path = "../vi-testing" }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+serde = { workspace = true }
+bincode = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }

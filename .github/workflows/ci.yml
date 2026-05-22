@@ -1,0 +1,93 @@
+name: CI
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    container: ${{ matrix.container }}
+    strategy:
+      matrix:
+        include:
+          - name: ubuntu
+          - name: fedora-40
+            container: fedora:40
+    steps:
+      - name: Install Fedora dependencies
+        if: matrix.name == 'fedora-40'
+        run: dnf install -y git ibus-devel fcitx5-devel dbus-daemon
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy,rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fmt --check --all
+      - run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: Integration tests
+        run: cargo test --workspace
+      - run: cargo test --workspace --all-features
+      - name: Bench compile check
+        run: cargo bench --workspace --no-run
+      - run: cargo install cargo-deny --locked && cargo deny check
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: miri
+      - name: Miri (vi-core)
+        run: cargo +nightly miri test -p vi-core
+        env:
+          MIRIFLAGS: -Zmiri-strict-provenance
+      - name: Miri (vi-core preedit/commit rollback)
+        run: cargo +nightly miri test -p vi-core -- preedit_buffer commit_engine
+        env:
+          MIRIFLAGS: -Zmiri-strict-provenance
+
+  integration:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: sudo apt-get install -y dbus
+      - name: IBus integration tests
+        run: dbus-run-session -- cargo test -p vi-testing --test integration_ibus
+      - name: Fcitx5 integration tests
+        run: dbus-run-session -- cargo test -p vi-testing --test integration_fcitx5
+
+  stress:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Memory and throughput stress tests
+        run: cargo test -p vi-testing --test stress_test -- --nocapture
+
+  bench:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Benchmark regression gate
+        run: |
+          cargo bench -p vi-core --bench telex_throughput \
+            -- --output-format bencher | tee bench-current.txt
+          if [ -f bench-baseline.txt ]; then
+            python3 scripts/check_bench_regression.py \
+              bench-baseline.txt bench-current.txt --max-regression-pct 10
+          fi
+      - name: Latency regression gate (p50 ≤ 1ms, p99 ≤ 5ms)
+        run: cargo bench -p vi-testing --bench latency_bench
+
+  x11-integration:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Install Xvfb
+        run: sudo apt-get install -y xvfb
+      - name: Start Xvfb
+        run: Xvfb :99 -screen 0 1920x1080x24 &
+      - name: X11 integration tests
+        run: cargo test -p vime-x11 --test '*'
+        env:
+          DISPLAY: ":99"

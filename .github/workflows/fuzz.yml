@@ -1,0 +1,19 @@
+name: Fuzz
+on:
+  schedule:
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+jobs:
+  fuzz:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
+      - run: cargo install cargo-fuzz
+      - working-directory: fuzz
+        run: |
+          cargo fuzz run fuzz_key_sequence -- -max_total_time=60
+          cargo fuzz run fuzz_unicode_pipeline -- -max_total_time=60
+          cargo fuzz run fuzz_config -- -max_total_time=60
+          cargo fuzz run fuzz_vime_key_sequence -- -max_total_time=60
+          cargo fuzz run fuzz_vime_unicode_pipeline -- -max_total_time=60

@@ -1,0 +1,20 @@
+[package]
+name = "vi-portal"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+vi-core     = { path = "../vi-core" }
+vi-config   = { path = "../vi-config" }
+vi-platform = { path = "../vi-platform" }
+thiserror   = { workspace = true }
+tracing     = { workspace = true }
+tokio       = { workspace = true }
+zbus        = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true }

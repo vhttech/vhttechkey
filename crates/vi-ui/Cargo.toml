@@ -1,0 +1,27 @@
+[package]
+name = "vi-ui"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[[bin]]
+name = "vi-ui"
+path = "src/main.rs"
+
+[dependencies]
+vi-core = { path = "../vi-core" }
+vi-config = { path = "../vi-config" }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+toml = { workspace = true }
+nix = { workspace = true }
+egui = "0.29"
+eframe = { version = "0.29", default-features = false, features = [
+    "default_fonts",
+    "glow",
+    "wgpu",
+    "x11",
+    "wayland",
+] }

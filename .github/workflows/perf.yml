@@ -1,0 +1,17 @@
+name: performance
+on: [push, pull_request]
+jobs:
+  perf:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: startup benchmark
+        run: cargo bench --bench startup -p vi-daemon -- --save-baseline ci 2>&1 | tee bench_startup.txt
+      - name: latency benchmark
+        run: cargo bench --bench telex_throughput -p vi-core -- --save-baseline ci 2>&1 | tee bench_latency.txt
+      - name: memory test
+        run: cargo test -p vi-testing memory_budget -- --nocapture
+      - name: enforce budgets
+        run: python3 scripts/check_perf_regression.py --startup-max-ms 50 --latency-max-p99-us 1000

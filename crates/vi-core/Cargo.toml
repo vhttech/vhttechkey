@@ -1,0 +1,28 @@
+[package]
+name = "vi-core"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+unicode-normalization = "0.1"
+thiserror = "2"
+serde = { version = "1", features = ["derive"] }
+tracing = "0.1"
+regex = "1.11"
+parking_lot = { workspace = true }
+
+[dev-dependencies]
+criterion = { workspace = true }
+proptest = { workspace = true }
+
+[[bench]]
+name = "telex_throughput"
+harness = false
+
+[[bench]]
+name = "key_latency"
+harness = false

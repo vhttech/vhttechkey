@@ -1,0 +1,6 @@
+---
+source: crates/vi-testing/src/fixtures.rs
+assertion_line: 222
+expression: output
+---
+tôi

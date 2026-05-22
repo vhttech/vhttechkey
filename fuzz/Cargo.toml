@@ -1,0 +1,69 @@
+[package]
+name = "vi-fuzz"
+version = "0.0.1"
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+# Fuzz packages must NOT be in the workspace.
+
+[dependencies]
+libfuzzer-sys = "0.4"
+vi-core = { path = "../crates/vi-core" }
+vi-config = { path = "../crates/vi-config", features = [] }
+vi-wayland = { path = "../crates/vi-wayland" }
+unicode-normalization = "0.1"
+serde = { version = "1", features = ["derive"] }
+bincode = "1"
+serde_json = "1"
+zvariant = { version = "4.1", features = ["gvariant"] }
+
+[[bin]]
+name = "fuzz_key_sequence"
+path = "fuzz_targets/fuzz_key_sequence.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "fuzz_config"
+path = "fuzz_targets/fuzz_config.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "fuzz_unicode_pipeline"
+path = "fuzz_targets/fuzz_unicode_pipeline.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "fuzz_wayland_events"
+path = "fuzz_targets/fuzz_wayland_events.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "fuzz_dead_key_altgr"
+path = "fuzz_targets/fuzz_dead_key_altgr.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "fuzz_wayland_frame"
+path = "fuzz_targets/fuzz_wayland_frame.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "fuzz_ibus_gvariant"
+path = "fuzz_targets/fuzz_ibus_gvariant.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "fuzz_fcitx5_dbus"
+path = "fuzz_targets/fuzz_fcitx5_dbus.rs"
+test = false
+doc = false
