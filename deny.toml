@@ -3,7 +3,9 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [advisories]
 version = 2
-ignore = []
+ignore = [
+    "RUSTSEC-2025-0141", # bincode 1.x unmaintained; blocked on zbus migration
+]
 
 [licenses]
 version = 2
@@ -16,16 +18,99 @@ allow = [
     "ISC",
     "Unicode-3.0",
     "Zlib",
+    "GPL-3.0-or-later",
+    "OFL-1.1",
+    "CC0-1.0",
 ]
+
+# epaint_default_fonts bundles fonts under OFL-1.1 AND a non-SPDX UFL-1.0
+# reference (LicenseRef-UFL-1.0). Allow it explicitly here.
+[[licenses.exceptions]]
+allow = ["LicenseRef-UFL-1.0", "OFL-1.1"]
+name = "epaint_default_fonts"
 
 [bans]
 multiple-versions = "deny"
 wildcards = "warn"
 highlight = "all"
 
-# Deny multiple versions of these critical crates (zbus, tokio, serde).
-# Add [[bans.skip]] entries here for crates that legitimately need
-# multiple versions in the transitive dep graph.
+# Transitive dep graph has legitimate version splits — typically one from the
+# wayland/winit/egui stack and one from zbus/tokio/config. Skip each pair.
+[[bans.skip]]
+name = "bitflags"
+version = "1"
+
+[[bans.skip]]
+name = "calloop"
+version = "0.13"
+
+[[bans.skip]]
+name = "calloop-wayland-source"
+version = "0.3"
+
+[[bans.skip]]
+name = "cfg_aliases"
+version = "0.1"
+
+[[bans.skip]]
+name = "getrandom"
+version = "0.2"
+
+[[bans.skip]]
+name = "glow"
+version = "0.13"
+
+[[bans.skip]]
+name = "hashbrown"
+version = "0.15"
+
+[[bans.skip]]
+name = "linux-raw-sys"
+version = "0.4"
+
+[[bans.skip]]
+name = "memmap2"
+version = "0.8"
+
+[[bans.skip]]
+name = "mio"
+version = "0.8"
+
+[[bans.skip]]
+name = "rustc-hash"
+version = "1"
+
+[[bans.skip]]
+name = "rustix"
+version = "0.38"
+
+[[bans.skip]]
+name = "smithay-client-toolkit"
+version = "0.19"
+
+[[bans.skip]]
+name = "thiserror"
+version = "1"
+
+[[bans.skip]]
+name = "thiserror-impl"
+version = "1"
+
+[[bans.skip]]
+name = "toml_datetime"
+version = "0.6"
+
+[[bans.skip]]
+name = "toml_edit"
+version = "0.22"
+
+[[bans.skip]]
+name = "wayland-protocols"
+version = "0.31"
+
+[[bans.skip]]
+name = "winnow"
+version = "0.7"
 
 [sources]
 unknown-registry = "warn"

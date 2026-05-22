@@ -58,7 +58,6 @@ pub struct IbusConfig {
     pub commit_mode: IbusCommitMode,
 }
 
-
 /// Top-level configuration file structure.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {

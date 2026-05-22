@@ -1417,7 +1417,10 @@ impl ViUiApp {
                         status_dot(ui, dot);
                         ui.label(RichText::new(txt).size(11.0));
                         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                            if !is_ours && self.setup.ibus_registered && ui.button("Kích hoạt").clicked() {
+                            if !is_ours
+                                && self.setup.ibus_registered
+                                && ui.button("Kích hoạt").clicked()
+                            {
                                 self.setup.ibus_switch_to_vhttechkey();
                             }
                         });
@@ -1501,7 +1504,10 @@ impl ViUiApp {
                         status_dot(ui, dot);
                         ui.label(RichText::new(txt).size(11.0));
                         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                            if !is_ours && self.setup.fcitx5_in_profile && ui.button("Kích hoạt").clicked() {
+                            if !is_ours
+                                && self.setup.fcitx5_in_profile
+                                && ui.button("Kích hoạt").clicked()
+                            {
                                 self.setup.fcitx5_switch();
                             }
                         });

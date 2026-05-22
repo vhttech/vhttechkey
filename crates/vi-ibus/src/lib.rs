@@ -2259,7 +2259,11 @@ mod tests {
         force_preedit_mode: bool,
     ) -> (IbusEngineIface, Arc<Mutex<SharedState>>) {
         use vi_core::InputMethod;
-        let state = SharedState { force_chrome_direct, force_preedit_mode, ..Default::default() };
+        let state = SharedState {
+            force_chrome_direct,
+            force_preedit_mode,
+            ..Default::default()
+        };
         let state_arc = Arc::new(Mutex::new(state));
         let iface = IbusEngineIface {
             engine: Arc::new(Mutex::new(StandardEngine::new(InputMethod::Telex))),

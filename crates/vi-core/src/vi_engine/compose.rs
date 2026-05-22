@@ -515,8 +515,7 @@ pub(crate) fn generate_transformations(
         }
     }
 
-    if let Some((Some(target), applicable_rule)) =
-        find_target(composition, applicable_rules, flags)
+    if let Some((Some(target), applicable_rule)) = find_target(composition, applicable_rules, flags)
     {
         transformations.push(new_trans(
             applicable_rule.clone(),
