@@ -9,11 +9,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@nightly
-      - run: cargo install cargo-fuzz
-      - working-directory: fuzz
+      - name: Install dependencies
         run: |
-          cargo fuzz run fuzz_key_sequence -- -max_total_time=60
-          cargo fuzz run fuzz_unicode_pipeline -- -max_total_time=60
-          cargo fuzz run fuzz_config -- -max_total_time=60
-          cargo fuzz run fuzz_vime_key_sequence -- -max_total_time=60
-          cargo fuzz run fuzz_vime_unicode_pipeline -- -max_total_time=60
+          sudo apt-get update -qq
+          sudo apt-get install -y \
+            build-essential pkg-config \
+            libdbus-1-dev libglib2.0-dev libibus-1.0-dev \
+            libwayland-dev wayland-protocols \
+            libxcb1-dev libxkbcommon-dev libxkbcommon-x11-dev \
+            libgl1-mesa-dev
+      - run: cargo install cargo-fuzz
+      - name: Fuzz targets
+        working-directory: fuzz
+        run: |
+          cargo fuzz run fuzz_key_sequence       -- -max_total_time=60
+          cargo fuzz run fuzz_unicode_pipeline   -- -max_total_time=60
+          cargo fuzz run fuzz_config             -- -max_total_time=60
+          cargo fuzz run fuzz_wayland_events     -- -max_total_time=60
+          cargo fuzz run fuzz_dead_key_altgr     -- -max_total_time=60
+          cargo fuzz run fuzz_wayland_frame      -- -max_total_time=60
+          cargo fuzz run fuzz_ibus_gvariant      -- -max_total_time=60
+          cargo fuzz run fuzz_fcitx5_dbus        -- -max_total_time=60

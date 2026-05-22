@@ -17,11 +17,13 @@ jobs:
 
       - name: Install system dependencies
         run: |
-          sudo apt-get update
+          sudo apt-get update -qq
           sudo apt-get install -y \
-            libdbus-1-dev libglib2.0-dev libibus-1.0-dev \
-            libwayland-dev wayland-protocols libxcb1-dev \
-            libgl1-mesa-dev pkg-config
+            build-essential pkg-config \
+            libdbus-1-dev libglib2.0-dev libibus-1.0-dev libfcitx5-qt-dev \
+            libwayland-dev wayland-protocols \
+            libxcb1-dev libxkbcommon-dev libxkbcommon-x11-dev \
+            libgl1-mesa-dev
 
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2

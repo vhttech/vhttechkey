@@ -1,35 +1,58 @@
 name: CI
 on: [push, pull_request]
+
 jobs:
   test:
+    name: Test (${{ matrix.name }})
     runs-on: ubuntu-24.04
-    container: ${{ matrix.container }}
+    container: ${{ matrix.container || '' }}
     strategy:
+      fail-fast: false
       matrix:
         include:
           - name: ubuntu
           - name: fedora-40
             container: fedora:40
     steps:
+      - name: Install Ubuntu dependencies
+        if: matrix.name == 'ubuntu'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y \
+            build-essential pkg-config \
+            libdbus-1-dev libglib2.0-dev libibus-1.0-dev libfcitx5-qt-dev \
+            libwayland-dev wayland-protocols \
+            libxcb1-dev libxkbcommon-dev libxkbcommon-x11-dev \
+            libgl1-mesa-dev
+
       - name: Install Fedora dependencies
         if: matrix.name == 'fedora-40'
-        run: dnf install -y git ibus-devel fcitx5-devel dbus-daemon
+        run: |
+          dnf install -y \
+            git gcc gcc-c++ pkg-config \
+            dbus-devel glib2-devel ibus-devel fcitx5-devel \
+            wayland-devel wayland-protocols-devel \
+            libxcb-devel libxkbcommon-devel libxkbcommon-x11-devel \
+            mesa-libGL-devel
+
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy,rustfmt
       - uses: Swatinem/rust-cache@v2
+
       - run: cargo fmt --check --all
       - run: cargo clippy --workspace --all-targets -- -D warnings
-      - name: Integration tests
+      - name: Unit & integration tests
         run: cargo test --workspace
       - run: cargo test --workspace --all-features
       - name: Bench compile check
         run: cargo bench --workspace --no-run
       - run: cargo install cargo-deny --locked && cargo deny check
+
       - uses: dtolnay/rust-toolchain@nightly
         with:
-          components: miri
+          components: miri,rust-src
       - name: Miri (vi-core)
         run: cargo +nightly miri test -p vi-core
         env:
@@ -40,30 +63,59 @@ jobs:
           MIRIFLAGS: -Zmiri-strict-provenance
 
   integration:
+    name: Integration tests (IBus / Fcitx5)
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y \
+            build-essential pkg-config \
+            libdbus-1-dev libglib2.0-dev libibus-1.0-dev libfcitx5-qt-dev \
+            libwayland-dev wayland-protocols \
+            libxcb1-dev libxkbcommon-dev libxkbcommon-x11-dev \
+            libgl1-mesa-dev dbus
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-      - run: sudo apt-get install -y dbus
       - name: IBus integration tests
         run: dbus-run-session -- cargo test -p vi-testing --test integration_ibus
       - name: Fcitx5 integration tests
         run: dbus-run-session -- cargo test -p vi-testing --test integration_fcitx5
 
   stress:
+    name: Memory & throughput stress tests
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y \
+            build-essential pkg-config \
+            libdbus-1-dev libglib2.0-dev libibus-1.0-dev \
+            libwayland-dev wayland-protocols \
+            libxcb1-dev libxkbcommon-dev libxkbcommon-x11-dev \
+            libgl1-mesa-dev
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - name: Memory and throughput stress tests
         run: cargo test -p vi-testing --test stress_test -- --nocapture
 
   bench:
+    name: Benchmark regression gate
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y \
+            build-essential pkg-config \
+            libdbus-1-dev libglib2.0-dev libibus-1.0-dev \
+            libwayland-dev wayland-protocols \
+            libxcb1-dev libxkbcommon-dev libxkbcommon-x11-dev \
+            libgl1-mesa-dev
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - name: Benchmark regression gate
@@ -78,16 +130,23 @@ jobs:
         run: cargo bench -p vi-testing --bench latency_bench
 
   x11-integration:
+    name: X11 integration tests
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y \
+            build-essential pkg-config \
+            libdbus-1-dev libglib2.0-dev libibus-1.0-dev \
+            libxcb1-dev libxkbcommon-dev libxkbcommon-x11-dev \
+            xvfb
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-      - name: Install Xvfb
-        run: sudo apt-get install -y xvfb
       - name: Start Xvfb
         run: Xvfb :99 -screen 0 1920x1080x24 &
       - name: X11 integration tests
-        run: cargo test -p vime-x11 --test '*'
+        run: cargo test -p vi-x11 --test '*'
         env:
           DISPLAY: ":99"

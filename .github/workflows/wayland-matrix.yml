@@ -5,23 +5,48 @@ jobs:
     runs-on: ubuntu-24.04
     continue-on-error: false
     strategy:
+      fail-fast: false
       matrix:
         compositor: [weston, sway]
     steps:
       - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y \
+            build-essential pkg-config \
+            libdbus-1-dev libglib2.0-dev libibus-1.0-dev \
+            libwayland-dev wayland-protocols \
+            libxcb1-dev libxkbcommon-dev libxkbcommon-x11-dev \
+            libgl1-mesa-dev libgles2-mesa-dev libegl1-mesa-dev \
+            ${{ matrix.compositor }}
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-      - name: Install ${{ matrix.compositor }}
-        run: sudo apt-get install -y ${{ matrix.compositor }}
-      - name: Start weston
+
+      - name: Setup XDG_RUNTIME_DIR
+        run: |
+          mkdir -p /run/user/$(id -u)
+          chmod 700 /run/user/$(id -u)
+          echo "XDG_RUNTIME_DIR=/run/user/$(id -u)" >> "$GITHUB_ENV"
+
+      - name: Start weston (headless)
         if: matrix.compositor == 'weston'
-        run: weston --socket=wayland-test --backend=headless-backend.so --no-config &
-      - name: Start sway
+        run: |
+          weston --backend=headless --renderer=pixman \
+            --socket=wayland-test --no-config &
+          sleep 1
+
+      - name: Start sway (headless)
         if: matrix.compositor == 'sway'
-        run: WLR_BACKENDS=headless WLR_RENDERER=pixman sway &
+        run: |
+          WLR_BACKENDS=headless WLR_RENDERER=pixman \
+            sway -c /dev/null &
+          sleep 1
         env:
           WAYLAND_DISPLAY: wayland-test
+          WLR_LIBINPUT_NO_DEVICES: "1"
+
       - name: Wayland integration tests
-        run: cargo test -p vime-wayland --test '*'
+        run: cargo test -p vi-wayland --test '*'
         env:
           WAYLAND_DISPLAY: wayland-test
