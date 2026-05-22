@@ -2,6 +2,59 @@
 
 Bộ gõ tiếng Việt hiện đại, nhận biết compositor, dành cho Linux — viết bằng Rust.
 
+---
+
+## Cài đặt nhanh
+
+> **Dành cho người dùng.** Không cần biết lập trình, không cần cài Rust.
+
+### Cách 1: AppImage — Khuyên dùng (mọi distro)
+
+1. Tải file từ trang [Releases](../../releases/latest):
+   **`vhttechkey-installer-linux-x86_64.AppImage`**
+2. Mở terminal, chạy:
+   ```bash
+   chmod +x vhttechkey-installer-linux-x86_64.AppImage
+   ./vhttechkey-installer-linux-x86_64.AppImage
+   ```
+3. Nhập mật khẩu khi được hỏi.
+4. **Đăng xuất và đăng nhập lại** → gõ tiếng Việt ngay!
+
+> Hoặc double-click file AppImage trong trình quản lý file (cần FUSE được cài).
+
+---
+
+### Cách 2: Ubuntu / Debian / Linux Mint
+
+1. Tải file **`vhttechkey_0.1.0_amd64.deb`** từ trang [Releases](../../releases/latest).
+2. Double-click vào file `.deb` → Ubuntu Software mở → bấm **Install**.
+3. **Đăng xuất và đăng nhập lại.**
+
+Hoặc qua terminal:
+```bash
+sudo dpkg -i vhttechkey_0.1.0_amd64.deb
+```
+
+---
+
+### Cách 3: Fedora / RHEL / openSUSE
+
+```bash
+sudo rpm -i vhttechkey-0.1.0-1.x86_64.rpm
+```
+
+---
+
+### Sau khi cài
+
+| Thao tác | Cách làm |
+|---|---|
+| Bật/tắt bộ gõ | `Ctrl+Space` |
+| Mở cài đặt | Tìm **VHTTechKey Settings** trong menu ứng dụng |
+| Kiểm tra hoạt động | Mở gedit, gõ `viet nam` → nhận được `việt nam` |
+
+---
+
 ## Tính năng
 
 - **Ba kiểu gõ tích hợp**: Telex, VNI, VIQR — chuyển đổi không cần khởi động lại
@@ -14,7 +67,11 @@ Bộ gõ tiếng Việt hiện đại, nhận biết compositor, dành cho Linux
 - **Đầu ra NFC đảm bảo**: mọi văn bản commit đều qua pipeline chuẩn hóa Unicode
 - **Giao diện cài đặt egui**: bản đồ nhiệt bàn phím, bài test gõ với phân tích NFC, xem log
 
-## Yêu cầu
+---
+
+## Dành cho Developer
+
+### Yêu cầu build
 
 ```bash
 # Debian / Ubuntu
@@ -31,7 +88,7 @@ sudo dnf install \
 Cần Rust toolchain (stable) — xem [docs/contributing.md](docs/contributing.md) để biết
 đầy đủ phụ thuộc, các bước build và công cụ tùy chọn (Miri, fuzz).
 
-## Bắt đầu nhanh
+### Bắt đầu nhanh (build từ source)
 
 Năm lệnh để bắt đầu gõ:
 

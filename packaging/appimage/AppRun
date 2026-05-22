@@ -1,0 +1,109 @@
+#!/usr/bin/env bash
+# AppRun — Entry point của VHTTechKey Installer AppImage.
+# Khi user double-click hoặc chạy ./vhttechkey-installer.AppImage,
+# script này được thực thi bên trong môi trường AppImage mount.
+set -euo pipefail
+
+# Resolve thư mục thật của AppImage (dù chạy từ FUSE hay extract)
+APPDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# ── Màu sắc cho terminal ──
+RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
+BOLD='\033[1m'; RESET='\033[0m'
+
+print_header() {
+    echo ""
+    echo -e "${BOLD}╔══════════════════════════════════════════════════════╗${RESET}"
+    echo -e "${BOLD}║        Trình cài đặt VHTTechKey                      ║${RESET}"
+    echo -e "${BOLD}║        Bộ gõ tiếng Việt hiện đại cho Linux           ║${RESET}"
+    echo -e "${BOLD}╚══════════════════════════════════════════════════════╝${RESET}"
+    echo ""
+}
+
+detect_environment() {
+    IME_FRAMEWORK=""
+    if command -v ibus &>/dev/null; then
+        IME_FRAMEWORK="ibus"
+    elif command -v fcitx5 &>/dev/null; then
+        IME_FRAMEWORK="fcitx5"
+    else
+        IME_FRAMEWORK="none"
+    fi
+
+    SESSION_TYPE="${XDG_SESSION_TYPE:-unknown}"
+    echo -e "  Hệ thống:       $(uname -m) / $(lsb_release -sd 2>/dev/null || grep PRETTY_NAME /etc/os-release 2>/dev/null | cut -d'"' -f2 || echo 'Linux')"
+    echo -e "  Phiên:          ${SESSION_TYPE}"
+    echo -e "  Bộ khung IME:   ${IME_FRAMEWORK}"
+    echo ""
+}
+
+check_root() {
+    if [[ $EUID -eq 0 ]]; then
+        echo -e "${RED}Lỗi: Không chạy AppImage với quyền root.${RESET}"
+        echo "  Chạy lại với user thường: ./vhttechkey-installer.AppImage"
+        exit 1
+    fi
+}
+
+run_privileged_install() {
+    local priv_script="$APPDIR/install-privileged.sh"
+
+    echo -e "${BOLD}→ Cài đặt file hệ thống (cần mật khẩu quản trị)...${RESET}"
+
+    # Thử pkexec trước (hiện dialog GUI xin password)
+    if command -v pkexec &>/dev/null && [[ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]]; then
+        pkexec bash "$priv_script" "$APPDIR" "$IME_FRAMEWORK" || {
+            echo -e "${YELLOW}pkexec thất bại. Thử sudo...${RESET}"
+            sudo bash "$priv_script" "$APPDIR" "$IME_FRAMEWORK"
+        }
+    else
+        sudo bash "$priv_script" "$APPDIR" "$IME_FRAMEWORK"
+    fi
+}
+
+run_user_setup() {
+    echo -e "${BOLD}→ Cấu hình cho tài khoản hiện tại...${RESET}"
+    bash "$APPDIR/post-install-user.sh" "$IME_FRAMEWORK"
+}
+
+print_success() {
+    echo ""
+    echo -e "${GREEN}${BOLD}╔══════════════════════════════════════════════════════╗${RESET}"
+    echo -e "${GREEN}${BOLD}║       ✓ Cài đặt VHTTechKey thành công!              ║${RESET}"
+    echo -e "${GREEN}${BOLD}╠══════════════════════════════════════════════════════╣${RESET}"
+    echo -e "${GREEN}${BOLD}║                                                      ║${RESET}"
+    echo -e "${GREEN}${BOLD}║  Vui lòng ĐĂNG XUẤT và ĐĂNG NHẬP LẠI để bắt đầu   ║${RESET}"
+    echo -e "${GREEN}${BOLD}║  gõ tiếng Việt.                                      ║${RESET}"
+    echo -e "${GREEN}${BOLD}║                                                      ║${RESET}"
+    echo -e "${GREEN}${BOLD}║  Phím tắt: Ctrl+Space để bật/tắt bộ gõ              ║${RESET}"
+    echo -e "${GREEN}${BOLD}║  Cài đặt:  Tìm 'VHTTechKey Settings' trong menu     ║${RESET}"
+    echo -e "${GREEN}${BOLD}╚══════════════════════════════════════════════════════╝${RESET}"
+    echo ""
+
+    # Hiện dialog GUI nếu có zenity
+    if command -v zenity &>/dev/null && [[ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]]; then
+        zenity --info \
+            --title="VHTTechKey đã cài xong" \
+            --text="✓ Cài đặt thành công!\n\nVui lòng đăng xuất và đăng nhập lại\nđể bắt đầu gõ tiếng Việt.\n\nPhím tắt: Ctrl+Space" \
+            --width=400 2>/dev/null || true
+    fi
+}
+
+main() {
+    print_header
+    check_root
+    detect_environment
+
+    if [[ "${1:-}" == "--uninstall" ]]; then
+        echo -e "${BOLD}→ Gỡ cài đặt VHTTechKey...${RESET}"
+        sudo bash "$APPDIR/install-privileged.sh" "$APPDIR" "$IME_FRAMEWORK" --uninstall
+        echo -e "${GREEN}✓ Đã gỡ cài đặt VHTTechKey.${RESET}"
+        exit 0
+    fi
+
+    run_privileged_install
+    run_user_setup
+    print_success
+}
+
+main "$@"

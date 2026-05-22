@@ -113,11 +113,23 @@ install_fcitx5() {
 }
 
 install_systemd() {
-    echo "→ Installing systemd user service to $SYSTEMD_USER_DIR"
+    echo "→ Cài đặt systemd user service tới $SYSTEMD_USER_DIR"
     install -d "$SYSTEMD_USER_DIR"
     install -m 644 "$SCRIPT_DIR/../systemd/vhttechkey-daemon.service" "$SYSTEMD_USER_DIR/vhttechkey-daemon.service"
-    systemctl --user daemon-reload 2>/dev/null || true
-    echo "  To enable autostart: systemctl --user enable --now vhttechkey-daemon"
+    systemctl daemon-reload 2>/dev/null || true
+
+    # Tự động enable service cho user đang đăng nhập
+    local real_user="${SUDO_USER:-}"
+    if [[ -n "$real_user" ]]; then
+        local uid
+        uid=$(id -u "$real_user")
+        sudo -u "$real_user" \
+            XDG_RUNTIME_DIR="/run/user/$uid" \
+            DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$uid/bus" \
+            systemctl --user enable --now vhttechkey-daemon 2>/dev/null \
+            && echo "  ✓ Daemon đã được kích hoạt tự động khởi động" \
+            || echo "  (Daemon sẽ tự khởi động sau khi đăng nhập lại)"
+    fi
 }
 
 install_desktop() {
@@ -142,11 +154,16 @@ main() {
     install_desktop
 
     echo ""
-    echo "✓ vhttechkey installed successfully."
     echo ""
-    echo "Next steps:"
-    echo "  1. Enable autostart:  systemctl --user enable --now vhttechkey-daemon"
-    echo "  2. Open settings:     vi-ui"
+    echo "╔══════════════════════════════════════════════════════╗"
+    echo "║       ✓ Cài đặt VHTTechKey thành công!              ║"
+    echo "╠══════════════════════════════════════════════════════╣"
+    echo "║  Vui lòng ĐĂNG XUẤT và ĐĂNG NHẬP LẠI để bắt đầu   ║"
+    echo "║  gõ tiếng Việt.                                      ║"
+    echo "║                                                      ║"
+    echo "║  Phím tắt: Ctrl+Space để bật/tắt bộ gõ              ║"
+    echo "║  Cài đặt:  Tìm 'VHTTechKey Settings' trong menu ứng dụng ║"
+    echo "╚══════════════════════════════════════════════════════╝"
 }
 
 main "$@"

@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=VHTTechKey Installer
+Name[vi]=Trình cài đặt VHTTechKey
+Comment=Install the VHTTechKey Vietnamese input method
+Comment[vi]=Cài đặt bộ gõ tiếng Việt VHTTechKey
+Exec=vhttechkey-installer
+Icon=vhttechkey
+Categories=System;Settings;
+Keywords=vietnamese;ime;input;tiengviet;install;
+StartupNotify=true
+X-AppImage-Version=0.1.0

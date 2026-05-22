@@ -1,0 +1,13 @@
+Package: vhttechkey
+Version: 0.1.0
+Architecture: amd64
+Maintainer: VHT Tech <vinhhp@vhttech.com>
+Section: utils
+Priority: optional
+Depends: libibus-1.0-5 | fcitx5, dbus, libglib2.0-0
+Recommends: ibus | fcitx5
+Description: Bộ gõ tiếng Việt hiện đại cho Linux
+ VHTTechKey là bộ gõ tiếng Việt nhận biết compositor, hỗ trợ Wayland và X11.
+ Tích hợp với IBus và Fcitx5. Hỗ trợ ba kiểu gõ: Telex, VNI, VIQR.
+ .
+ Sau khi cài, đăng xuất và đăng nhập lại để bắt đầu gõ tiếng Việt.

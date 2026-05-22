@@ -1,0 +1,192 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: Build release binaries
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libdbus-1-dev libglib2.0-dev libibus-1.0-dev \
+            libwayland-dev wayland-protocols libxcb1-dev \
+            libgl1-mesa-dev pkg-config
+
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Build release binaries
+        run: make build-release
+
+      - name: Upload binaries artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: binaries
+          path: |
+            target/release/vi-daemon
+            target/release/vi-ui
+            target/release/vi-tools
+          retention-days: 1
+
+  package-deb:
+    name: Build .deb package
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: binaries
+          path: target/release/
+
+      - name: Fix permissions
+        run: chmod +x target/release/vi-daemon target/release/vi-ui target/release/vi-tools
+
+      - name: Build .deb
+        run: bash packaging/build-deb.sh
+
+      - name: Upload .deb artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: deb-package
+          path: dist/*.deb
+          retention-days: 1
+
+  package-rpm:
+    name: Build .rpm package
+    needs: build
+    runs-on: ubuntu-24.04
+    container: fedora:40
+    steps:
+      - name: Install tools
+        run: dnf install -y git rpm-build rpmdevtools
+
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: binaries
+          path: target/release/
+
+      - name: Fix permissions
+        run: chmod +x target/release/vi-daemon target/release/vi-ui target/release/vi-tools
+
+      - name: Build .rpm
+        run: bash packaging/build-rpm.sh
+
+      - name: Upload .rpm artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rpm-package
+          path: dist/*.rpm
+          retention-days: 1
+
+  package-appimage:
+    name: Build AppImage installer
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: binaries
+          path: target/release/
+
+      - name: Fix permissions
+        run: chmod +x target/release/vi-daemon target/release/vi-ui target/release/vi-tools
+
+      - name: Download appimagetool
+        run: |
+          curl -fsSL -o /usr/local/bin/appimagetool \
+            https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
+          chmod +x /usr/local/bin/appimagetool
+
+      - name: Build AppImage
+        run: make appimage
+        env:
+          ARCH: x86_64
+
+      - name: Upload AppImage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: appimage
+          path: dist/*.AppImage
+          retention-days: 1
+
+  release:
+    name: Create GitHub Release
+    needs: [package-deb, package-rpm, package-appimage]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist/
+
+      - name: Flatten dist directory
+        run: |
+          mkdir -p release-assets
+          find dist/ -type f \( -name "*.deb" -o -name "*.rpm" -o -name "*.AppImage" \) \
+            -exec cp {} release-assets/ \;
+
+      - name: Build tar.gz archive
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          mkdir -p release-assets
+          find dist/ -type f -name "vi-*" -exec cp {} /tmp/ \; 2>/dev/null || true
+          tar -czf "release-assets/vhttechkey-${VERSION}-linux-x86_64.tar.gz" \
+            -C dist/binaries . \
+            --transform "s|^|vhttechkey-${VERSION}/|"
+
+      - name: Compute SHA256 checksums
+        working-directory: release-assets
+        run: sha256sum * > SHA256SUMS
+
+      - name: Extract version
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "VHTTechKey ${{ steps.version.outputs.version }}"
+          body: |
+            ## Cài đặt
+
+            ### Cách 1: AppImage (mọi distro) — Khuyên dùng
+            ```bash
+            chmod +x vhttechkey-installer-linux-x86_64.AppImage
+            ./vhttechkey-installer-linux-x86_64.AppImage
+            ```
+            Sau đó đăng xuất và đăng nhập lại.
+
+            ### Cách 2: Ubuntu / Debian
+            Tải file `.deb` → double-click → Install.
+
+            ### Cách 3: Fedora / RHEL
+            ```bash
+            sudo rpm -i vhttechkey-${{ steps.version.outputs.version }}-1.x86_64.rpm
+            ```
+
+            ### Cách 4: Cài thủ công (mọi distro)
+            Tải `.tar.gz`, giải nén, chạy `sudo bash packaging/scripts/install.sh`.
+
+            ---
+            Kiểm tra SHA256 với file `SHA256SUMS`.
+          files: release-assets/*
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}

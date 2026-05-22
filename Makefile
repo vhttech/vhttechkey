@@ -81,11 +81,29 @@ fuzz-list: ## Liệt kê các fuzz target
 fuzz: ## Chạy fuzz target: make fuzz TARGET=<tên-target>
 	$(CARGO) fuzz run --manifest-path fuzz/Cargo.toml $(TARGET)
 
+##@ Đóng gói phát hành
+
+.PHONY: deb
+deb: build-release ## Tạo file .deb (Ubuntu/Debian) → dist/vhttechkey_*.deb
+	bash packaging/build-deb.sh
+
+.PHONY: rpm
+rpm: build-release ## Tạo file .rpm (Fedora/RHEL) → dist/vhttechkey-*.rpm
+	bash packaging/build-rpm.sh
+
+.PHONY: appimage
+appimage: build-release ## Tạo AppImage installer → dist/vhttechkey-installer-linux-x86_64.AppImage
+	bash packaging/build-appimage.sh
+
+.PHONY: packages
+packages: deb rpm appimage ## Tạo tất cả gói phát hành (.deb + .rpm + AppImage)
+
 ##@ Dọn dẹp
 
 .PHONY: clean
-clean: ## Xoá toàn bộ artifacts build
+clean: ## Xoá toàn bộ artifacts build và thư mục dist
 	$(CARGO) clean
+	rm -rf dist/
 
 .PHONY: clean-doc
 clean-doc: ## Xoá thư mục docs được tạo ra
