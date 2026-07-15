@@ -1158,7 +1158,7 @@ impl ViUiApp {
                 if selected {
                     let r = resp.rect;
                     ui.painter()
-                        .hline(r.x_range(), r.max.y, egui::Stroke::new(2.0, ACCENT));
+                        .hline(r.x_range(), r.max.y, egui::Stroke::new(2.0_f32, ACCENT));
                 }
                 ui.add_space(4.0);
             }

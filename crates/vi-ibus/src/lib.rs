@@ -1526,7 +1526,15 @@ fn ibus_address() -> Option<String> {
     if let Ok(addr) = std::env::var("IBUS_ADDRESS") {
         return Some(addr);
     }
-    let display = std::env::var("DISPLAY").unwrap_or_else(|_| ":0".to_string());
+    // On Wayland, IBus writes its discovery file with `WAYLAND_DISPLAY`
+    // (for example `...-unix-wayland-0`).  Falling back to `DISPLAY` first
+    // makes an XWayland `:0` value select a non-existent bus file and causes
+    // the engine to connect to the session bus instead of IBus.
+    let display = std::env::var("WAYLAND_DISPLAY")
+        .ok()
+        .filter(|value| !value.is_empty())
+        .or_else(|| std::env::var("DISPLAY").ok())
+        .unwrap_or_else(|| ":0".to_string());
     let display_clean = display.trim_start_matches(':').replace(':', "-");
     let machine_id = std::fs::read_to_string("/etc/machine-id")
         .or_else(|_| std::fs::read_to_string("/var/lib/dbus/machine-id"))
