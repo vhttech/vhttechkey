@@ -61,13 +61,17 @@ const IBUS_ENGINE_PREEDIT_COMMIT: u32 = 1;
 
 // ── IBus GVariant helpers ─────────────────────────────────────────────────────
 
-/// Build an IBusAttrList GVariant `(sa{sv}av)` with a single NONE-type
+/// Build an IBusAttrList GVariant `(sa{sv}av)` with a single no-underline
 /// attribute spanning `[0, char_len)`.
 ///
 /// Chrome/Electron need a non-empty IBusAttrList to render preedit inline —
-/// an empty list causes Chrome to show nothing.  We use IBUS_ATTR_TYPE_NONE
+/// an empty list causes Chrome to show nothing. We use the real
+/// IBUS_ATTR_TYPE_UNDERLINE (= 1) attribute type with IBUS_ATTR_UNDERLINE_NONE
 /// (= 0) so the attribute exists (satisfying Chrome) but adds no visible
-/// decoration.  This matches vhttechkey IBnoUnderline default behaviour.
+/// decoration. A prior version used attribute type `0`, which is not a valid
+/// IBusAttrType — GNOME Shell's `ibus_attr_list_copy_format_to_rgba` has no
+/// case for it and logged (and stumbled over) an error on every single
+/// keystroke, causing visible input lag under Wayland/GNOME Shell sessions.
 fn ibus_attr_list_value(char_len: u32) -> Value<'static> {
     let mut attr = StructureBuilder::new();
     attr.push_value(Value::Str("IBusAttribute".to_string().into()));
@@ -75,8 +79,8 @@ fn ibus_attr_list_value(char_len: u32) -> Value<'static> {
         Signature::from_str_unchecked("s"),
         Signature::from_str_unchecked("v"),
     )));
-    attr.push_value(Value::U32(0)); // IBUS_ATTR_TYPE_NONE (no visible decoration)
-    attr.push_value(Value::U32(1)); // IBUS_ATTR_UNDERLINE_SINGLE (value ignored for NONE type)
+    attr.push_value(Value::U32(1)); // IBUS_ATTR_TYPE_UNDERLINE
+    attr.push_value(Value::U32(0)); // IBUS_ATTR_UNDERLINE_NONE (no visible decoration)
     attr.push_value(Value::U32(0)); // start_index
     attr.push_value(Value::U32(char_len)); // end_index
     let attr_variant: Value<'static> = Value::Value(Box::new(Value::Structure(attr.build())));
@@ -116,11 +120,11 @@ fn ibus_attr_list_empty() -> Value<'static> {
 /// Build an IBusText GVariant `(sa{sv}sv)` wrapping `text`.
 ///
 /// `with_preedit_placeholder_attrs`: when `true`, attach a **non-empty**
-/// `IBusAttrList` whose sole entry uses `IBUS_ATTR_TYPE_NONE` (no visible
-/// underline) spanning the whole string — this matches vhttechkey
-/// “no underline” preedit while still satisfying Chromium, which ignores an
-/// empty attribute list.  When `false`, use an empty attribute list (typical
-/// for `CommitText`).
+/// `IBusAttrList` whose sole entry uses `IBUS_ATTR_TYPE_UNDERLINE` with
+/// `IBUS_ATTR_UNDERLINE_NONE` (no visible underline) spanning the whole
+/// string — this matches vhttechkey “no underline” preedit while still
+/// satisfying Chromium, which ignores an empty attribute list.  When
+/// `false`, use an empty attribute list (typical for `CommitText`).
 fn ibus_text_value(text: &str, with_preedit_placeholder_attrs: bool) -> Value<'static> {
     let name: Value<'static> = Value::Str("IBusText".to_string().into());
     let props: Value<'static> = Value::Dict(Dict::new(
@@ -149,9 +153,10 @@ fn ibus_text_owned(text: &str) -> OwnedValue {
 
 /// Build an IBusText `OwnedValue` for use in UpdatePreeditText signals.
 ///
-/// Uses IBUS_ATTR_TYPE_NONE so no underline is shown (vhttechkey default).
-/// Chrome/Electron still renders the preedit inline because the IBusAttrList
-/// is non-empty; an empty list would suppress inline rendering in Chrome.
+/// Uses IBUS_ATTR_TYPE_UNDERLINE / IBUS_ATTR_UNDERLINE_NONE so no underline is
+/// shown (vhttechkey default). Chrome/Electron still renders the preedit
+/// inline because the IBusAttrList is non-empty; an empty list would
+/// suppress inline rendering in Chrome.
 fn ibus_preedit_text_owned(text: &str) -> OwnedValue {
     OwnedValue::try_from(ibus_text_value(text, true)).expect("IBusText structure is well-formed")
 }
